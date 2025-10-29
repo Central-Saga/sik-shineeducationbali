@@ -28,9 +28,9 @@ https://shine.local.test {
         Referrer-Policy "strict-origin-when-cross-origin"
     }
     
-    # Handle API routes ke Laravel backend
+    # Handle API routes ke Laravel backend (HTTP server)
     handle /api/* {
-        reverse_proxy backend:9000 {
+        reverse_proxy backend:8000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
             header_up X-Forwarded-Proto {scheme}
@@ -38,9 +38,9 @@ https://shine.local.test {
         }
     }
     
-    # Handle static files dari Laravel (opsional, jika ada)
+    # Handle static files dari Laravel
     handle /storage/* {
-        reverse_proxy backend:9000 {
+        reverse_proxy backend:8000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
             header_up X-Forwarded-Proto {scheme}

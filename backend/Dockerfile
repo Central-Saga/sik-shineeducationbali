@@ -50,8 +50,11 @@ RUN sed -i 's/listen = .*/listen = 9000/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/user = www-data/user = www-data/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/group = www-data/group = www-data/' /usr/local/etc/php-fpm.d/www.conf
 
-# Expose port 9000 for PHP-FPM
-EXPOSE 9000
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Start PHP-FPM
-CMD ["php-fpm"]
+# Expose port 8000 for HTTP server
+EXPOSE 8000
+
+# Start Laravel HTTP server (can be overridden in docker-compose.yml)
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

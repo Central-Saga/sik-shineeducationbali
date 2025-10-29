@@ -50,13 +50,14 @@ services:
       - APP_URL=https://shine.local.test
       - LOG_CHANNEL=stderr
       - LOG_LEVEL=debug
+    command: sh -c "php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       db:
         condition: service_healthy
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "php artisan --version || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

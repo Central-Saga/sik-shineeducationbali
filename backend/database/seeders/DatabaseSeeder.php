@@ -15,11 +15,35 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Seed beberapa users untuk testing
+        $users = [
+            [
+                'name' => 'Wira Budhi',
+                'email' => 'wira@shineeducationbali.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Shine Admin',
+                'email' => 'admin@shineeducationbali.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'email_verified_at' => now(),
+            ],
+        ];
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        foreach ($users as $user) {
+            User::updateOrCreate(
+                ['email' => $user['email']],
+                $user
+            );
+        }
+
+        $this->command->info('✅ Seeded ' . count($users) . ' users successfully!');
     }
 }
