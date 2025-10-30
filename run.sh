@@ -249,14 +249,33 @@ setup_env_files() {
                 sed -i "s|APP_URL=.*|APP_URL=https://$DOMAIN|g" backend/.env
             fi
             print_success "APP_URL diupdate ke https://$DOMAIN"
+
+            # Pastikan APP_NAME yang mengandung spasi diberi kutip
+            if grep -q '^APP_NAME=' backend/.env; then
+                if grep -q '^APP_NAME=.* ' backend/.env && ! grep -q '^APP_NAME="' backend/.env; then
+                    if [ "$OS" = "macos" ]; then
+                        sed -i '' 's/^APP_NAME=.*/APP_NAME="Shine Education"/' backend/.env
+                    else
+                        sed -i 's/^APP_NAME=.*/APP_NAME="Shine Education"/' backend/.env
+                    fi
+                    print_success "APP_NAME dikutip agar valid"
+                fi
+            else
+                echo 'APP_NAME="Shine Education"' >> backend/.env
+            fi
         else
             print_warning "backend/.env.example tidak ditemukan. Membuat backend/.env dasar..."
             cat > backend/.env <<EOF
-APP_NAME=Shine Education
+APP_NAME="Shine Education"
 APP_ENV=local
 APP_KEY=
 APP_DEBUG=true
+APP_TIMEZONE=Asia/Jakarta
 APP_URL=https://$DOMAIN
+APP_LOCALE=en
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=en_US
+APP_MAINTENANCE_DRIVER=file
 
 DB_CONNECTION=mysql
 DB_HOST=db
@@ -264,6 +283,27 @@ DB_PORT=3306
 DB_DATABASE=shine_db
 DB_USERNAME=shine_user
 DB_PASSWORD=shine_password
+SESSION_DRIVER=database
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=log
+MAIL_SCHEME=null
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="\${APP_NAME}"
+
+VITE_APP_NAME="\${APP_NAME}"
 EOF
             print_success "backend/.env dasar berhasil dibuat"
         fi
@@ -342,6 +382,16 @@ setup_laravel() {
     print_info "Menunggu backend container ready..."
     sleep 3
     
+    # Install PHP dependencies (dev) di dalam container
+    print_info "Menginstall PHP dependencies (termasuk dev) di container backend..."
+    set +e
+    if docker compose exec -T backend composer install --no-interaction 2>/dev/null; then
+        print_success "Composer install selesai"
+    else
+        print_warning "Composer install gagal (mungkin sudah terinstall). Melanjutkan..."
+    fi
+    set -e
+
     # Generate APP_KEY jika belum ada
     print_info "Memeriksa APP_KEY..."
     if docker compose exec -T backend php artisan key:generate --show 2>/dev/null | grep -q "APP_KEY="; then
@@ -359,6 +409,10 @@ setup_laravel() {
         print_success "APP_KEY berhasil di-generate"
     fi
     
+    # Clear dan cache config agar membaca .env terbaru
+    print_info "Membersihkan cache konfigurasi..."
+    docker compose exec -T backend php artisan optimize:clear || true
+    
     # Run migrations (non-critical, continue even if fails)
     print_info "Menjalankan database migrations..."
     set +e
@@ -366,6 +420,16 @@ setup_laravel() {
         print_success "Database migrations berhasil dijalankan"
     else
         print_warning "Migration gagal atau sudah up-to-date (ini normal jika sudah dijalankan sebelumnya)"
+    fi
+    set -e
+    
+    # Jalankan seeder (non-critical saat sudah ter-seed)
+    print_info "Menjalankan database seeder..."
+    set +e
+    if docker compose exec -T backend php artisan db:seed --force 2>/dev/null; then
+        print_success "Database seeding berhasil"
+    else
+        print_warning "Seeding gagal atau data sudah ada (aman untuk diabaikan jika sudah terisi)"
     fi
     set -e
     

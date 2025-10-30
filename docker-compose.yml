@@ -45,7 +45,6 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-shine_password}
       - APP_NAME=${APP_NAME:-Shine Education}
       - APP_ENV=${APP_ENV:-local}
-      - APP_KEY=${APP_KEY:-}
       - APP_DEBUG=${APP_DEBUG:-true}
       - APP_URL=https://shine.local.test
       - LOG_CHANNEL=stderr
