@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Permission\PermissionController;
 use App\Http\Controllers\Api\V1\Role\RoleController;
 use App\Http\Controllers\Api\V1\User\UserController;
@@ -15,6 +16,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     // Test API connection (public, no auth needed)
     Route::get('/test', [UserController::class, 'test']);
+
+    // Authentication routes (public)
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
 
     // Users API - Resource routes with permission middleware
     Route::middleware(['auth:sanctum'])->group(function () {
@@ -39,6 +44,13 @@ Route::prefix('v1')->group(function () {
     // Permissions API - Read only with permission middleware
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view');
+    });
+
+    // Auth routes (protected - requires authentication)
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     });
 });
 
