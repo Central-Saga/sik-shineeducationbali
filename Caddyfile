@@ -28,6 +28,17 @@ https://shine.local.test {
         Referrer-Policy "strict-origin-when-cross-origin"
     }
     
+    # Handle vendor assets PERTAMA (untuk log-viewer frontend assets)
+    # PENTING: Handle ini harus sebelum /log-viewer* agar tidak diintercept
+    handle /vendor/* {
+        reverse_proxy backend:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+    
     # Handle API routes ke Laravel backend (HTTP server)
     handle /api/* {
         reverse_proxy backend:8000 {
@@ -40,6 +51,16 @@ https://shine.local.test {
     
     # Handle static files dari Laravel
     handle /storage/* {
+        reverse_proxy backend:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+    
+    # Handle Log Viewer routes ke Laravel backend (setelah vendor assets)
+    handle /log-viewer* {
         reverse_proxy backend:8000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}

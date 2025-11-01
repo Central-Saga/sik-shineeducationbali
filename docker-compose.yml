@@ -45,6 +45,7 @@ services:
       - APP_ENV=${APP_ENV:-local}
       - APP_DEBUG=${APP_DEBUG:-true}
       - APP_URL=https://shine.local.test
+      - ASSET_URL=https://shine.local.test
       - LOG_CHANNEL=stderr
       - LOG_LEVEL=debug
     command: sh -c "php artisan serve --host=0.0.0.0 --port=8000"
