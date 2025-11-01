@@ -35,15 +35,37 @@ class DatabaseSeeder extends Seeder
                 'password' => \Illuminate\Support\Facades\Hash::make('password'),
                 'email_verified_at' => now(),
             ],
+            [
+                'name' => 'John Doe',
+                'email' => 'john.doe@shineeducationbali.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Jane Smith',
+                'email' => 'jane.smith@shineeducationbali.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'email_verified_at' => now(),
+            ],
         ];
 
-        foreach ($users as $user) {
-            User::updateOrCreate(
-                ['email' => $user['email']],
-                $user
+        $createdCount = 0;
+        $updatedCount = 0;
+
+        foreach ($users as $userData) {
+            $user = User::updateOrCreate(
+                ['email' => $userData['email']],
+                $userData
             );
+            
+            if ($user->wasRecentlyCreated) {
+                $createdCount++;
+            } else {
+                $updatedCount++;
+            }
         }
 
-        $this->command->info('✅ Seeded ' . count($users) . ' users successfully!');
+        $this->command->info("✅ Seeded {$createdCount} new users and updated {$updatedCount} existing users successfully!");
+        $this->command->info("📊 Total users in database: " . User::count());
     }
 }

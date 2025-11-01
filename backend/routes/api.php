@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Test API connection
-Route::get('/test', [UserController::class, 'test']);
+// API Version 1
+Route::prefix('v1')->group(function () {
+    // Test API connection
+    Route::get('/test', [UserController::class, 'test']);
 
-// Users API
-Route::prefix('users')->group(function () {
-    Route::get('/', [UserController::class, 'index']);
-    Route::get('/{id}', [UserController::class, 'show']);
+    // Users API - Resource routes
+    Route::apiResource('users', UserController::class);
 });
 

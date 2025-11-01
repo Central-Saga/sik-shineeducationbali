@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
     libjpeg62-turbo-dev \
     libwebp-dev \
     libxpm-dev \
+    libicu-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
@@ -29,7 +31,12 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-x
     bcmath \
     gd \
     zip \
-    opcache
+    opcache \
+    intl
+
+# Install Redis PHP extension via PECL
+RUN pecl install redis \
+    && docker-php-ext-enable redis
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

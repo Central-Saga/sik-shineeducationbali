@@ -26,11 +26,16 @@ export default function Home() {
 
   useEffect(() => {
     // Test API connection first
-    fetch(`${apiBase}/test`)
-      .then((res) => res.json())
+    fetch(`${apiBase}/v1/test`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
         if (data.success) {
-          setApiStatus(`✅ ${data.message} (${data.backend})`);
+          setApiStatus(`✅ ${data.message}`);
+        } else {
+          setApiStatus(`❌ ${data.message || 'API connection failed'}`);
         }
       })
       .catch((err) => {
@@ -38,14 +43,23 @@ export default function Home() {
       });
 
     // Fetch users
-    fetch(`${apiBase}/users`)
+    fetch(`${apiBase}/v1/users`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
       })
-      .then((data: ApiResponse) => {
+      .then((data: any) => {
+        // Handle Laravel Resource response format
+        // Format: { success: true, message: "...", data: [...] }
         if (data.success) {
-          setUsers(data.data);
+          if (data.data && Array.isArray(data.data)) {
+            setUsers(data.data);
+          } else if (Array.isArray(data)) {
+            // Fallback: jika langsung array
+            setUsers(data);
+          } else {
+            setError(data.message || "Invalid response format");
+          }
         } else {
           setError(data.message || "Failed to fetch users");
         }
