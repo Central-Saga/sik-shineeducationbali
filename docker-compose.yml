@@ -46,8 +46,9 @@ services:
       - APP_DEBUG=${APP_DEBUG:-true}
       - APP_URL=https://shine.local.test
       - ASSET_URL=https://shine.local.test
-      - LOG_CHANNEL=stderr
+      - LOG_CHANNEL=daily
       - LOG_LEVEL=debug
+      - LOG_DAILY_DAYS=14
     command: sh -c "php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       db:
