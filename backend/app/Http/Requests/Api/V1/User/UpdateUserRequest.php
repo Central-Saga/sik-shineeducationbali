@@ -12,7 +12,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user() && $this->user()->can('users.edit');
     }
 
     /**
@@ -22,7 +22,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $userId = $this->route('user') ?? $this->route('id');
+        $userId = $this->route('id');
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],

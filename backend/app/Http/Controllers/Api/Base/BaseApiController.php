@@ -70,5 +70,15 @@ abstract class BaseApiController extends Controller
     {
         return $this->validationErrorResponse($errors, $message);
     }
-}
 
+    /**
+     * Return a forbidden JSON response.
+     *
+     * @param  string  $message
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function forbidden(string $message = 'Forbidden'): JsonResponse
+    {
+        return $this->forbiddenResponse($message);
+    }
+}

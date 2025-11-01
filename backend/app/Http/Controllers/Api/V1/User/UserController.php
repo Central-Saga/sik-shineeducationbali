@@ -36,7 +36,7 @@ class UserController extends BaseApiController
      */
     public function index(): JsonResponse
     {
-        $users = $this->userService->getAll();
+        $users = $this->userService->getAll()->load('roles');
         return $this->success(
             UserResource::collection($users),
             'Users retrieved successfully'
@@ -67,6 +67,7 @@ class UserController extends BaseApiController
     public function show($id): JsonResponse
     {
         $user = $this->userService->getById($id);
+        $user->load('roles');
         return $this->success(
             new UserResource($user),
             'User retrieved successfully'

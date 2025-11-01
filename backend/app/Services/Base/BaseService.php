@@ -3,6 +3,7 @@
 namespace App\Services\Base;
 
 use App\Repositories\Base\BaseRepositoryInterface;
+use App\Traits\HasAuthorization;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 abstract class BaseService implements BaseServiceInterface
 {
+    use HasAuthorization;
     /**
      * The repository instance.
      *
