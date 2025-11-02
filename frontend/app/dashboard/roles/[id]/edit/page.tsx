@@ -144,19 +144,17 @@ export default function EditRolePage() {
             </div>
           </div>
 
-          <div className="max-w-4xl">
-            <RoleForm
-              initialData={{
-                name: role.name,
-                guard_name: role.guard_name as "web" | "api",
-                permissions: role.permissions,
-              }}
-              onSubmit={handleSubmit}
-              onCancel={() => router.push("/dashboard/roles")}
-              submitLabel="Perbarui Peran"
-              isLoading={loading}
-            />
-          </div>
+          <RoleForm
+            initialData={{
+              name: role.name,
+              guard_name: role.guard_name as "web" | "api",
+              permissions: role.permissions,
+            }}
+            onSubmit={handleSubmit}
+            onCancel={() => router.push("/dashboard/roles")}
+            submitLabel="Perbarui Peran"
+            isLoading={loading}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>

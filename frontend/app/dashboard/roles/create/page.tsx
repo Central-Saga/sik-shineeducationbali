@@ -89,13 +89,11 @@ export default function CreateRolePage() {
             </div>
           </div>
 
-          <div className="max-w-4xl">
-            <RoleForm
-              onSubmit={handleSubmit}
-              onCancel={() => router.push("/dashboard/roles")}
-              submitLabel="Buat Peran"
-            />
-          </div>
+          <RoleForm
+            onSubmit={handleSubmit}
+            onCancel={() => router.push("/dashboard/roles")}
+            submitLabel="Buat Peran"
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>
