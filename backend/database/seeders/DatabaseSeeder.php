@@ -2,70 +2,42 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\PermissionRegistrar;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
+     *
+     * Seed urutan:
+     * 1. Roles & Permissions (harus pertama karena users butuh roles)
+     * 2. Users (dengan assign roles)
      */
     public function run(): void
     {
-        // Seed beberapa users untuk testing
-        $users = [
-            [
-                'name' => 'Wira Budhi',
-                'email' => 'wira@shineeducationbali.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-            [
-                'name' => 'Shine Admin',
-                'email' => 'admin@shineeducationbali.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-            [
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-            [
-                'name' => 'John Doe',
-                'email' => 'john.doe@shineeducationbali.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-            [
-                'name' => 'Jane Smith',
-                'email' => 'jane.smith@shineeducationbali.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-        ];
+        // Reset cached roles and permissions sebelum seeding
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $createdCount = 0;
-        $updatedCount = 0;
+        $this->command->info('🚀 Starting database seeding...');
+        $this->command->newLine();
 
-        foreach ($users as $userData) {
-            $user = User::updateOrCreate(
-                ['email' => $userData['email']],
-                $userData
-            );
-            
-            if ($user->wasRecentlyCreated) {
-                $createdCount++;
-            } else {
-                $updatedCount++;
-            }
-        }
+        // Seed Roles and Permissions terlebih dahulu
+        $this->call([
+            RolePermissionSeeder::class,
+        ]);
 
-        $this->command->info("✅ Seeded {$createdCount} new users and updated {$updatedCount} existing users successfully!");
-        $this->command->info("📊 Total users in database: " . User::count());
+        $this->command->newLine();
+
+        // Seed Users dengan roles
+        $this->call([
+            UserSeeder::class,
+        ]);
+
+        // Reset cached roles and permissions setelah seeding
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $this->command->newLine();
+        $this->command->info('✅ Database seeding completed successfully!');
     }
 }

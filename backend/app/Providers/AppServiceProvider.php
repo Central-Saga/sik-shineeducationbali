@@ -19,10 +19,20 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\User\UserRepository::class
         );
 
+        $this->app->bind(
+            \App\Repositories\Contracts\RoleRepositoryInterface::class,
+            \App\Repositories\Role\RoleRepository::class
+        );
+
         // Service bindings
         $this->app->bind(
             \App\Services\Contracts\UserServiceInterface::class,
             \App\Services\User\UserService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\RoleServiceInterface::class,
+            \App\Services\Role\RoleService::class
         );
     }
 
