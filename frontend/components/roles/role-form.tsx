@@ -30,7 +30,7 @@ export function RoleForm({
   onSubmit,
   onCancel,
   isLoading = false,
-  submitLabel = "Create Role",
+  submitLabel = "Buat Peran",
   className,
 }: RoleFormProps) {
   const [formData, setFormData] = React.useState<RoleFormData>({
@@ -50,7 +50,7 @@ export function RoleForm({
     // Client-side validation
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) {
-      newErrors.name = "Nama role wajib diisi.";
+      newErrors.name = "Nama peran wajib diisi.";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -66,7 +66,7 @@ export function RoleForm({
       if (error?.errors) {
         setErrors(error.errors);
       } else {
-        setErrors({ submit: error?.message || "Failed to save role" });
+        setErrors({ submit: error?.message || "Gagal menyimpan peran" });
       }
     } finally {
       setIsSubmitting(false);
@@ -89,22 +89,22 @@ export function RoleForm({
     <form onSubmit={handleSubmit} className={cn("space-y-6", className)}>
       <Card>
         <CardHeader>
-          <CardTitle>Role Information</CardTitle>
+          <CardTitle>Informasi Peran</CardTitle>
           <CardDescription>
-            Enter the basic information for this role
+            Masukkan informasi dasar untuk peran ini
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Name Field */}
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium leading-none">
-              Role Name <span className="text-destructive">*</span>
+              Nama Peran <span className="text-destructive">*</span>
             </label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="e.g., Manager, Admin, Editor"
+              placeholder="contoh: Manager, Admin, Editor"
               aria-invalid={!!errors.name}
               disabled={isSubmitting || isLoading}
             />
@@ -119,7 +119,7 @@ export function RoleForm({
               htmlFor="guard_name"
               className="text-sm font-medium leading-none"
             >
-              Guard Name
+              Nama Guard
             </label>
             <Select
               value={formData.guard_name}
@@ -129,7 +129,7 @@ export function RoleForm({
               disabled={isSubmitting || isLoading}
             >
               <SelectTrigger id="guard_name">
-                <SelectValue placeholder="Select guard" />
+                <SelectValue placeholder="Pilih guard" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="web">Web</SelectItem>
@@ -137,7 +137,7 @@ export function RoleForm({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Select the guard name for this role (default: web)
+              Pilih nama guard untuk peran ini (default: web)
             </p>
             {errors.guard_name && (
               <p className="text-sm text-destructive">{errors.guard_name}</p>
@@ -149,9 +149,9 @@ export function RoleForm({
       {/* Permissions */}
       <Card>
         <CardHeader>
-          <CardTitle>Permissions</CardTitle>
+          <CardTitle>Izin</CardTitle>
           <CardDescription>
-            Select the permissions to assign to this role
+            Pilih izin yang akan ditetapkan untuk peran ini
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -190,11 +190,11 @@ export function RoleForm({
             onClick={onCancel}
             disabled={isSubmitting || isLoading}
           >
-            Cancel
+            Batal
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting || isLoading}>
-          {isSubmitting ? "Saving..." : submitLabel}
+          {isSubmitting ? "Menyimpan..." : submitLabel}
         </Button>
       </div>
     </form>

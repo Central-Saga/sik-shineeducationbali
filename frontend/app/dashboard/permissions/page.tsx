@@ -74,7 +74,7 @@ export default function PermissionsPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Permissions</BreadcrumbPage>
+                <BreadcrumbPage>Izin</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -84,10 +84,10 @@ export default function PermissionsPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
               <Shield className="h-6 w-6" />
-              Permissions
+              Izin
             </h1>
             <p className="text-muted-foreground">
-              View all available permissions in the system
+              Lihat semua izin yang tersedia di sistem
             </p>
           </div>
 
@@ -102,7 +102,7 @@ export default function PermissionsPage() {
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search permissions..."
+              placeholder="Cari izin..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -113,7 +113,7 @@ export default function PermissionsPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border p-4">
               <div className="text-sm font-medium text-muted-foreground">
-                Total Permissions
+                Total Izin
               </div>
               <div className="text-2xl font-bold mt-1">
                 {loading ? "..." : permissions.length}
@@ -121,7 +121,7 @@ export default function PermissionsPage() {
             </div>
             <div className="rounded-lg border p-4">
               <div className="text-sm font-medium text-muted-foreground">
-                Resource Groups
+                Grup Sumber Daya
               </div>
               <div className="text-2xl font-bold mt-1">
                 {loading ? "..." : Object.keys(groupedPermissions).length}
@@ -153,12 +153,12 @@ export default function PermissionsPage() {
                 <div className="text-center py-8">
                   <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
-                    No permissions found
+                    Tidak ada izin ditemukan
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {searchQuery
-                      ? `No permissions match "${searchQuery}"`
-                      : "No permissions available"}
+                      ? `Tidak ada izin yang cocok dengan "${searchQuery}"`
+                      : "Tidak ada izin yang tersedia"}
                   </p>
                 </div>
               </CardContent>
@@ -171,7 +171,7 @@ export default function PermissionsPage() {
                     <CardHeader>
                       <CardTitle className="text-lg capitalize flex items-center justify-between">
                         <span>{resource}</span>
-                        <Badge variant="secondary">{perms.length} permissions</Badge>
+                        <Badge variant="secondary">{perms.length} izin</Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>

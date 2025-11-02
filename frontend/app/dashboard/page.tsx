@@ -43,7 +43,7 @@ export default function DashboardPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Overview</BreadcrumbPage>
+                <BreadcrumbPage>Ringkasan</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -54,18 +54,18 @@ export default function DashboardPage() {
               Dashboard
             </h1>
             <p className="text-muted-foreground">
-              Welcome to SIK - Shine Education Bali Management System
+              Selamat datang di SIK - Sistem Manajemen Shine Education Bali
             </p>
           </div>
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
             <div className="bg-muted/50 aspect-video rounded-xl p-4 flex flex-col justify-center items-center">
-              <p className="text-sm text-muted-foreground">Quick Stats</p>
+              <p className="text-sm text-muted-foreground">Statistik Cepat</p>
             </div>
             <div className="bg-muted/50 aspect-video rounded-xl p-4 flex flex-col justify-center items-center">
-              <p className="text-sm text-muted-foreground">Recent Activity</p>
+              <p className="text-sm text-muted-foreground">Aktivitas Terbaru</p>
             </div>
             <div className="bg-muted/50 aspect-video rounded-xl p-4 flex flex-col justify-center items-center">
-              <p className="text-sm text-muted-foreground">Notifications</p>
+              <p className="text-sm text-muted-foreground">Notifikasi</p>
             </div>
           </div>
         </div>

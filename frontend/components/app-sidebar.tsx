@@ -42,92 +42,92 @@ const data: { navMain: NavItem[] } = {
       icon: LayoutDashboard,
     },
     {
-      title: "Users",
+      title: "Pengguna",
       url: "/dashboard/users",
       icon: Users,
       items: [
         {
-          title: "All Users",
+          title: "Semua Pengguna",
           url: "/dashboard/users",
         },
         {
-          title: "Add User",
+          title: "Tambah Pengguna",
           url: "/dashboard/users/create",
         },
       ],
     },
     {
-      title: "Roles & Permissions",
+      title: "Peran & Izin",
       url: "/dashboard/roles",
       icon: Shield,
       items: [
         {
-          title: "All Roles",
+          title: "Semua Peran",
           url: "/dashboard/roles",
         },
         {
-          title: "Create Role",
+          title: "Buat Peran",
           url: "/dashboard/roles/create",
         },
         {
-          title: "Permissions",
+          title: "Izin",
           url: "/dashboard/permissions",
         },
       ],
     },
     {
-      title: "Students",
+      title: "Siswa",
       url: "/dashboard/students",
       icon: GraduationCap,
       items: [
         {
-          title: "All Students",
+          title: "Semua Siswa",
           url: "/dashboard/students",
         },
         {
-          title: "Add Student",
+          title: "Tambah Siswa",
           url: "/dashboard/students/create",
         },
         {
-          title: "Classes",
+          title: "Kelas",
           url: "/dashboard/students/classes",
         },
       ],
     },
     {
-      title: "Courses",
+      title: "Kursus",
       url: "/dashboard/courses",
       icon: BookOpen,
       items: [
         {
-          title: "All Courses",
+          title: "Semua Kursus",
           url: "/dashboard/courses",
         },
         {
-          title: "Create Course",
+          title: "Buat Kursus",
           url: "/dashboard/courses/create",
         },
         {
-          title: "Categories",
+          title: "Kategori",
           url: "/dashboard/courses/categories",
         },
       ],
     },
     {
-      title: "Settings",
+      title: "Pengaturan",
       url: "/dashboard/settings",
       icon: Settings,
       items: [
         {
-          title: "General",
+          title: "Umum",
           url: "/dashboard/settings/general",
         },
         {
-          title: "Account",
+          title: "Akun",
           url: "/dashboard/settings/account",
         },
         {
-          title: "Security",
+          title: "Keamanan",
           url: "/dashboard/settings/security",
         },
       ],

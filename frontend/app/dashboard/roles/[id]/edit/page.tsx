@@ -33,7 +33,7 @@ export default function EditRolePage() {
   const handleSubmit = async (data: any) => {
     try {
       await update(data);
-      toast.success("Role updated successfully");
+      toast.success("Peran berhasil diperbarui");
       router.push("/dashboard/roles");
     } catch (error: any) {
       // Error will be handled by RoleForm component
@@ -57,7 +57,7 @@ export default function EditRolePage() {
           </header>
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 md:p-6">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Loading role...</p>
+            <p className="text-sm text-muted-foreground">Memuat peran...</p>
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -80,12 +80,12 @@ export default function EditRolePage() {
           </header>
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 md:p-6">
             <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Role not found</h2>
+              <h2 className="text-xl font-semibold mb-2">Peran tidak ditemukan</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                {error || "The role you're looking for doesn't exist."}
+                {error || "Peran yang Anda cari tidak ada."}
               </p>
               <Button asChild>
-                <Link href="/dashboard/roles">Back to Roles</Link>
+                <Link href="/dashboard/roles">Kembali ke Peran</Link>
               </Button>
             </div>
           </div>
@@ -117,11 +117,11 @@ export default function EditRolePage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard/roles">Roles</BreadcrumbLink>
+                <BreadcrumbLink href="/dashboard/roles">Peran</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Edit</BreadcrumbPage>
+                <BreadcrumbPage>Ubah</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -131,15 +131,15 @@ export default function EditRolePage() {
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard/roles">
                 <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Back</span>
+                <span className="sr-only">Kembali</span>
               </Link>
             </Button>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                Edit Role: {role.name}
+                Ubah Peran: {role.name}
               </h1>
               <p className="text-muted-foreground">
-                Update role information and permissions
+                Perbarui informasi peran dan izin
               </p>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function EditRolePage() {
               }}
               onSubmit={handleSubmit}
               onCancel={() => router.push("/dashboard/roles")}
-              submitLabel="Update Role"
+              submitLabel="Perbarui Peran"
               isLoading={loading}
             />
           </div>

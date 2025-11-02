@@ -68,7 +68,7 @@ export function RoleTable({
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString("id-ID", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -84,12 +84,12 @@ export function RoleTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>Nama</TableHead>
               <TableHead>Guard</TableHead>
-              <TableHead>Permissions</TableHead>
-              <TableHead>Users</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Izin</TableHead>
+              <TableHead>Pengguna</TableHead>
+              <TableHead>Dibuat</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -126,12 +126,12 @@ export function RoleTable({
       <div className={className}>
         <div className="rounded-lg border p-12 text-center">
           <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No roles found</h3>
+          <h3 className="text-lg font-semibold mb-2">Tidak ada peran ditemukan</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Get started by creating a new role.
+            Mulai dengan membuat peran baru.
           </p>
           <Button asChild>
-            <Link href="/dashboard/roles/create">Create Role</Link>
+            <Link href="/dashboard/roles/create">Buat Peran</Link>
           </Button>
         </div>
       </div>
@@ -144,12 +144,12 @@ export function RoleTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>Nama</TableHead>
               <TableHead>Guard</TableHead>
-              <TableHead>Permissions</TableHead>
-              <TableHead>Users</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Izin</TableHead>
+              <TableHead>Pengguna</TableHead>
+              <TableHead>Dibuat</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -161,13 +161,12 @@ export function RoleTable({
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary">
-                    {role.permissions_count} permission
-                    {role.permissions_count !== 1 ? "s" : ""}
+                    {role.permissions_count} izin
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">
-                    {role.users_count} user{role.users_count !== 1 ? "s" : ""}
+                    {role.users_count} pengguna
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
@@ -182,7 +181,7 @@ export function RoleTable({
                     >
                       <Link href={`/dashboard/roles/${role.id}/edit`}>
                         <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
+                        <span className="sr-only">Ubah</span>
                       </Link>
                     </Button>
                     {onDelete && (
@@ -192,7 +191,7 @@ export function RoleTable({
                         onClick={() => handleDeleteClick(role)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
-                        <span className="sr-only">Delete</span>
+                        <span className="sr-only">Hapus</span>
                       </Button>
                     )}
                   </div>
@@ -207,10 +206,10 @@ export function RoleTable({
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Role</DialogTitle>
+            <DialogTitle>Hapus Peran</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the role &quot;
-              {deletingRole?.name}&quot;? This action cannot be undone.
+              Apakah Anda yakin ingin menghapus peran &quot;
+              {deletingRole?.name}&quot;? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -222,14 +221,14 @@ export function RoleTable({
               }}
               disabled={isDeleting}
             >
-              Cancel
+              Batal
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteConfirm}
               disabled={isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? "Menghapus..." : "Hapus"}
             </Button>
           </DialogFooter>
         </DialogContent>

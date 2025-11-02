@@ -129,7 +129,7 @@ export function PermissionSelector({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search permissions..."
+          placeholder="Cari izin..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9"
@@ -152,7 +152,7 @@ export function PermissionSelector({
           htmlFor="select-all"
           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
         >
-          Select All Permissions
+          Pilih Semua Izin
         </label>
         <Badge variant="secondary" className="ml-auto">
           {selectedPermissions.length} / {permissions.length}
@@ -234,7 +234,7 @@ export function PermissionSelector({
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-sm text-muted-foreground">
-              No permissions found matching "{searchQuery}"
+              Tidak ada izin yang cocok dengan "{searchQuery}"
             </p>
           </CardContent>
         </Card>

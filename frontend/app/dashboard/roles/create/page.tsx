@@ -31,7 +31,7 @@ export default function CreateRolePage() {
   const handleSubmit = async (data: RoleFormData) => {
     try {
       await createRole(data);
-      toast.success("Role created successfully");
+      toast.success("Peran berhasil dibuat");
       router.push("/dashboard/roles");
     } catch (error: any) {
       // Error will be handled by RoleForm component
@@ -62,11 +62,11 @@ export default function CreateRolePage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard/roles">Roles</BreadcrumbLink>
+                <BreadcrumbLink href="/dashboard/roles">Peran</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Create</BreadcrumbPage>
+                <BreadcrumbPage>Buat</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -76,15 +76,15 @@ export default function CreateRolePage() {
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard/roles">
                 <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Back</span>
+                <span className="sr-only">Kembali</span>
               </Link>
             </Button>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                Create New Role
+                Buat Peran Baru
               </h1>
               <p className="text-muted-foreground">
-                Add a new role and assign permissions
+                Tambahkan peran baru dan tetapkan izin
               </p>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function CreateRolePage() {
             <RoleForm
               onSubmit={handleSubmit}
               onCancel={() => router.push("/dashboard/roles")}
-              submitLabel="Create Role"
+              submitLabel="Buat Peran"
             />
           </div>
         </div>
