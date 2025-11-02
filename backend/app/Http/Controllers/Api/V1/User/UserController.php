@@ -51,7 +51,16 @@ class UserController extends BaseApiController
      */
     public function store(StoreUserRequest $request): JsonResponse
     {
-        $user = $this->userService->create($request->validated());
+        $validated = $request->validated();
+        $roles = $validated['roles'] ?? [];
+        unset($validated['roles']);
+
+        $user = $this->userService->create($validated);
+
+        // Sync roles (can be empty array to assign no roles)
+        $user->syncRoles($roles ?? []);
+
+        $user->load('roles');
         return $this->created(
             new UserResource($user),
             'User created successfully'
@@ -83,7 +92,18 @@ class UserController extends BaseApiController
      */
     public function update(UpdateUserRequest $request, $id): JsonResponse
     {
-        $user = $this->userService->update($id, $request->validated());
+        $validated = $request->validated();
+        $roles = $validated['roles'] ?? null;
+        unset($validated['roles']);
+
+        $user = $this->userService->update($id, $validated);
+
+        // Sync roles if provided
+        if ($roles !== null) {
+            $user->syncRoles($roles);
+        }
+
+        $user->load('roles');
         return $this->success(
             new UserResource($user),
             'User updated successfully'
@@ -119,4 +139,3 @@ class UserController extends BaseApiController
         )->header('X-Backend-Version', app()->version());
     }
 }
-

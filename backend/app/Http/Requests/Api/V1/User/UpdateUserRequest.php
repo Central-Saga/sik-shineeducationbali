@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\V1\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -28,6 +29,14 @@ class UpdateUserRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,' . $userId],
             'password' => ['sometimes', 'nullable', 'string', Password::defaults()],
+            'roles' => ['sometimes', 'array'],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where(function ($query) {
+                    // Ensure role exists with guard_name matching user's guard (default: web)
+                    $query->where('guard_name', config('auth.defaults.guard', 'web'));
+                }),
+            ],
         ];
     }
 
@@ -47,4 +56,3 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 }
-

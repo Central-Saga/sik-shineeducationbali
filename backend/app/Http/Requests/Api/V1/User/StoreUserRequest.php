@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\V1\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
@@ -26,6 +27,14 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', Password::defaults()],
+            'roles' => ['sometimes', 'array'],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')->where(function ($query) {
+                    // Ensure role exists with guard_name matching user's guard (default: web)
+                    $query->where('guard_name', config('auth.defaults.guard', 'web'));
+                }),
+            ],
         ];
     }
 
@@ -48,4 +57,3 @@ class StoreUserRequest extends FormRequest
         ];
     }
 }
-
