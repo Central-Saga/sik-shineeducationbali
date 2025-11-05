@@ -24,6 +24,16 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\Role\RoleRepository::class
         );
 
+        $this->app->bind(
+            \App\Repositories\Contracts\EmployeeRepositoryInterface::class,
+            \App\Repositories\Employee\EmployeeRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\Contracts\AbsensiRepositoryInterface::class,
+            \App\Repositories\Absensi\AbsensiRepository::class
+        );
+
         // Service bindings
         $this->app->bind(
             \App\Services\Contracts\UserServiceInterface::class,
@@ -33,6 +43,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             \App\Services\Contracts\RoleServiceInterface::class,
             \App\Services\Role\RoleService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\EmployeeServiceInterface::class,
+            \App\Services\Employee\EmployeeService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\AbsensiServiceInterface::class,
+            \App\Services\Absensi\AbsensiService::class
         );
     }
 

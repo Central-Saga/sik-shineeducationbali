@@ -16,7 +16,7 @@ class PermissionController extends BaseApiController
     public function index(): JsonResponse
     {
         // Check permission
-        if (!auth()->user() || !auth()->user()->can('permissions.view')) {
+        if (!auth()->user() || !auth()->user()->can('mengelola permissions')) {
             return $this->forbidden('You do not have permission to view permissions.');
         }
 

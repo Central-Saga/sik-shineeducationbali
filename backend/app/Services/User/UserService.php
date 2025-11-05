@@ -40,7 +40,7 @@ class UserService extends BaseService implements UserServiceInterface
     public function getAll(): Collection
     {
         // Check permission
-        if (!$this->hasPermission('users.view')) {
+        if (!$this->hasPermission('mengelola users')) {
             abort(403, 'You do not have permission to view users.');
         }
 
@@ -58,7 +58,7 @@ class UserService extends BaseService implements UserServiceInterface
     public function getById($id): User
     {
         // Check permission
-        if (!$this->hasPermission('users.view')) {
+        if (!$this->hasPermission('mengelola users')) {
             abort(403, 'You do not have permission to view users.');
         }
 
@@ -86,7 +86,7 @@ class UserService extends BaseService implements UserServiceInterface
     public function create(array $data): User
     {
         // Check permission
-        if (!$this->hasPermission('users.create')) {
+        if (!$this->hasPermission('mengelola users')) {
             abort(403, 'You do not have permission to create users.');
         }
 
@@ -109,7 +109,7 @@ class UserService extends BaseService implements UserServiceInterface
     public function update($id, array $data): User
     {
         // Check permission
-        if (!$this->hasPermission('users.edit')) {
+        if (!$this->hasPermission('mengelola users')) {
             abort(403, 'You do not have permission to edit users.');
         }
 
@@ -132,7 +132,7 @@ class UserService extends BaseService implements UserServiceInterface
     public function delete($id): bool
     {
         // Check permission
-        if (!$this->hasPermission('users.delete')) {
+        if (!$this->hasPermission('mengelola users')) {
             abort(403, 'You do not have permission to delete users.');
         }
 

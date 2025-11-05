@@ -406,23 +406,26 @@ setup_laravel() {
     # Install PHP dependencies (dev) di dalam container
     print_info "Menginstall PHP dependencies (termasuk dev) di container backend..."
     set +e
+    # Tunggu container ready dulu
+    sleep 3
     if docker compose exec -T backend composer install --no-interaction 2>/dev/null; then
         print_success "Composer install selesai"
     else
-        print_warning "Composer install gagal (mungkin sudah terinstall). Melanjutkan..."
+        print_warning "Composer install gagal (mungkin sudah terinstall atau container belum ready). Melanjutkan..."
     fi
     
+    # Regenerate autoload untuk memastikan semua class ter-load dengan benar
+    print_info "Meregenerate autoload files..."
+    docker compose exec -T backend composer dump-autoload -o 2>/dev/null || print_warning "Autoload regeneration skipped"
+    
     # Install Predis (Redis client) jika belum ada
+    # Note: Predis seharusnya sudah ada di composer.json, jadi tidak perlu install manual
     print_info "Memeriksa Predis (Redis client)..."
     if docker compose exec -T backend composer show predis/predis --no-interaction 2>/dev/null >/dev/null; then
         print_success "Predis sudah terinstall"
     else
-        print_info "Menginstall Predis (Redis client)..."
-        if docker compose exec -T backend composer require predis/predis --no-interaction 2>/dev/null; then
-            print_success "Predis berhasil diinstall"
-        else
-            print_warning "Instalasi Predis gagal (akan dicoba lagi nanti jika diperlukan)"
-        fi
+        print_warning "Predis tidak ditemukan di vendor (seharusnya sudah ada di composer.json). Regenerating autoload..."
+        docker compose exec -T backend composer dump-autoload -o 2>/dev/null || true
     fi
     set -e
 

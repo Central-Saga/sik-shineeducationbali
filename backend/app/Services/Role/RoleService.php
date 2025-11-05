@@ -39,7 +39,7 @@ class RoleService extends BaseService implements RoleServiceInterface
     public function getAll(): Collection
     {
         // Check permission
-        if (!$this->hasPermission('roles.view')) {
+        if (!$this->hasPermission('mengelola roles')) {
             abort(403, 'You do not have permission to view roles.');
         }
 
@@ -57,7 +57,7 @@ class RoleService extends BaseService implements RoleServiceInterface
     public function getById($id): Role
     {
         // Check permission
-        if (!$this->hasPermission('roles.view')) {
+        if (!$this->hasPermission('mengelola roles')) {
             abort(403, 'You do not have permission to view roles.');
         }
 
@@ -86,7 +86,7 @@ class RoleService extends BaseService implements RoleServiceInterface
     public function getByIdWithPermissions($id): Role
     {
         // Check permission
-        if (!$this->hasPermission('roles.view')) {
+        if (!$this->hasPermission('mengelola roles')) {
             abort(403, 'You do not have permission to view roles.');
         }
 
@@ -108,7 +108,7 @@ class RoleService extends BaseService implements RoleServiceInterface
     public function getAllWithPermissions(): Collection
     {
         // Check permission
-        if (!$this->hasPermission('roles.view')) {
+        if (!$this->hasPermission('mengelola roles')) {
             abort(403, 'You do not have permission to view roles.');
         }
 
@@ -125,7 +125,7 @@ class RoleService extends BaseService implements RoleServiceInterface
     public function create(array $data): Role
     {
         // Check permission
-        if (!$this->hasPermission('roles.create')) {
+        if (!$this->hasPermission('mengelola roles')) {
             abort(403, 'You do not have permission to create roles.');
         }
 
@@ -148,7 +148,7 @@ class RoleService extends BaseService implements RoleServiceInterface
     public function update($id, array $data): Role
     {
         // Check permission
-        if (!$this->hasPermission('roles.edit')) {
+        if (!$this->hasPermission('mengelola roles')) {
             abort(403, 'You do not have permission to edit roles.');
         }
 
@@ -171,7 +171,7 @@ class RoleService extends BaseService implements RoleServiceInterface
     public function delete($id): bool
     {
         // Check permission
-        if (!$this->hasPermission('roles.delete')) {
+        if (!$this->hasPermission('mengelola roles')) {
             abort(403, 'You do not have permission to delete roles.');
         }
 

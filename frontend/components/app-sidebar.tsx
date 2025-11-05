@@ -7,6 +7,10 @@ import {
   Settings,
   Shield,
   Home,
+  CalendarDays,
+  DollarSign,
+  Briefcase,
+  Clock,
 } from "lucide-react"
 
 import {
@@ -76,40 +80,62 @@ const data: { navMain: NavItem[] } = {
       ],
     },
     {
-      title: "Siswa",
-      url: "/dashboard/students",
-      icon: GraduationCap,
+      title: "Karyawan",
+      url: "/dashboard/employees",
+      icon: Briefcase,
       items: [
         {
-          title: "Semua Siswa",
-          url: "/dashboard/students",
+          title: "Semua Karyawan",
+          url: "/dashboard/employees",
         },
         {
-          title: "Tambah Siswa",
-          url: "/dashboard/students/create",
+          title: "Tambah Karyawan",
+          url: "/dashboard/employees/create",
+        },
+        // {
+        //   title: "Kelas",
+        //   url: "/dashboard/students/classes",
+        // },
+      ],
+    },
+    {
+      title: "Gaji",
+      url: "/dashboard/salaries",
+      icon: DollarSign,
+      items: [
+        {
+          title: "Semua Gaji",
+          url: "/dashboard/salaries",
         },
         {
-          title: "Kelas",
-          url: "/dashboard/students/classes",
+          title: "Buat Gaji",
+          url: "/dashboard/salaries/create",
+        },
+        {
+          title: "Kategori",
+          url: "/dashboard/salaries/categories",
         },
       ],
     },
     {
-      title: "Kursus",
-      url: "/dashboard/courses",
-      icon: BookOpen,
+      title: "Cuti",
+      url: "/dashboard/leaves",
+      icon: CalendarDays,
       items: [
         {
-          title: "Semua Kursus",
-          url: "/dashboard/courses",
+          title: "Semua Cuti",
+          url: "/dashboard/leaves",
         },
+      ],
+    },
+    {
+      title: "Absensi",
+      url: "/dashboard/absensi",
+      icon: Clock,
+      items: [
         {
-          title: "Buat Kursus",
-          url: "/dashboard/courses/create",
-        },
-        {
-          title: "Kategori",
-          url: "/dashboard/courses/categories",
+          title: "Semua Absensi",
+          url: "/dashboard/absensi",
         },
       ],
     },
@@ -138,17 +164,17 @@ const data: { navMain: NavItem[] } = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="floating" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="bg-gradient-sidebar">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="/dashboard">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                <div className="bg-gradient-primary text-white flex aspect-square size-8 items-center justify-center rounded-lg shadow-md">
                   <GraduationCap className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">SIK</span>
-                  <span className="text-xs text-sidebar-foreground/70">
+                  <span className="font-semibold text-white">SIK</span>
+                  <span className="text-xs text-white/90">
                     Shine Education
                   </span>
                 </div>
@@ -164,10 +190,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               const Icon = item.icon || Home
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url} className="font-medium">
-                      <Icon className="size-4" />
-                      <span>{item.title}</span>
+                  <SidebarMenuButton asChild className="font-medium transition-all duration-200 hover:translate-x-1 group">
+                    <a href={item.url} className="flex items-center gap-2">
+                      <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-secondary" />
+                      <span className="transition-colors duration-200 group-hover:text-sidebar-primary">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                   {item.items?.length ? (

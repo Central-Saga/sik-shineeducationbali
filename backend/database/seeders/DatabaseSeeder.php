@@ -34,6 +34,20 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
         ]);
 
+        $this->command->newLine();
+
+        // Seed Employees
+        $this->call([
+            EmployeeSeeder::class,
+        ]);
+
+        $this->command->newLine();
+
+        // Seed Absensi
+        $this->call([
+            AbsensiSeeder::class,
+        ]);
+
         // Reset cached roles and permissions setelah seeding
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 

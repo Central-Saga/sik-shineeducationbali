@@ -18,11 +18,11 @@ class UserSeeder extends Seeder
         // Define users with their roles
         $users = [
             [
-                'name' => 'Wira Budhi',
-                'email' => 'wira@shineeducationbali.com',
+                'name' => 'Sri',
+                'email' => 'sri@shineeducationbali.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
-                'roles' => ['Super Admin'], // Assign Super Admin role
+                'roles' => ['Owner'], // Assign Owner role
             ],
             [
                 'name' => 'Shine Admin',
@@ -32,25 +32,18 @@ class UserSeeder extends Seeder
                 'roles' => ['Admin'], // Assign Admin role
             ],
             [
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-                'roles' => ['Teacher'], // Assign Teacher role
-            ],
-            [
                 'name' => 'John Doe',
                 'email' => 'john.doe@shineeducationbali.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
-                'roles' => ['Staff'], // Assign Staff role
+                'roles' => ['Karyawan'], // Assign Karyawan role
             ],
             [
                 'name' => 'Jane Smith',
                 'email' => 'jane.smith@shineeducationbali.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
-                'roles' => ['Student'], // Assign Student role
+                'roles' => ['Karyawan'], // Assign Karyawan role
             ],
         ];
 

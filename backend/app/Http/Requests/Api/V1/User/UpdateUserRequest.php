@@ -13,7 +13,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->can('users.edit');
+        return $this->user() && $this->user()->can('mengelola users');
     }
 
     /**

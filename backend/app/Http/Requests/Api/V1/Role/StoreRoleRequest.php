@@ -12,7 +12,7 @@ class StoreRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->can('roles.create');
+        return $this->user() && $this->user()->can('mengelola roles');
     }
 
     /**

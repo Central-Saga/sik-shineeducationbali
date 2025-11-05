@@ -15,5 +15,6 @@ export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export interface RequestConfig extends RequestInit {
   method?: RequestMethod;
   body?: any;
+  params?: Record<string, any>;
 }
 

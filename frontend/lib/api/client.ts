@@ -49,7 +49,21 @@ class ApiClient {
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
     const token = getAuthToken();
-    const url = `${this.baseURL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    let url = `${this.baseURL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
+    // Handle query params
+    if (config.params && typeof config.params === 'object') {
+      const searchParams = new URLSearchParams();
+      Object.entries(config.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',

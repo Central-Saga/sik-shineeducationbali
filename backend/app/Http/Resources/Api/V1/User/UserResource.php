@@ -21,7 +21,7 @@ class UserResource extends JsonResource
             'roles' => $this->whenLoaded('roles', function () {
                 return $this->roles->pluck('name');
             }),
-            'permissions' => $this->when($request->user() && $request->user()->can('permissions.view'), function () {
+            'permissions' => $this->when($request->user() && $request->user()->can('mengelola permissions'), function () {
                 return $this->getAllPermissions()->pluck('name');
             }),
             'created_at' => $this->created_at?->toDateTimeString(),

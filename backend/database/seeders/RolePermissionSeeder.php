@@ -22,45 +22,31 @@ class RolePermissionSeeder extends Seeder
         // Define permissions
         $permissions = [
             // User Management
-            'users.view',
-            'users.create',
-            'users.edit',
-            'users.delete',
+            'mengelola users',
 
             // Role Management
-            'roles.view',
-            'roles.create',
-            'roles.edit',
-            'roles.delete',
+            'mengelola roles',
 
             // Permission Management
-            'permissions.view',
-            'permissions.create',
-            'permissions.edit',
-            'permissions.delete',
+            'mengelola permissions',
 
-            // Student Management (untuk pendidikan)
-            'students.view',
-            'students.create',
-            'students.edit',
-            'students.delete',
+            // Karyawan Management
+            'mengelola karyawan',
 
-            // Course Management (untuk pendidikan)
-            'courses.view',
-            'courses.create',
-            'courses.edit',
-            'courses.delete',
+            // Absensi Management
+            'mengelola absensi',
+            'melakukan absensi',
 
-            // Dashboard
-            'dashboard.view',
+            // Gaji Management
+            'mengelola gaji',
+            'melihat gaji',
+
+            // Cuti Management
+            'mengelola cuti',
+            'melakukan cuti',
 
             // Reports
-            'reports.view',
-            'reports.export',
-
-            // Settings
-            'settings.view',
-            'settings.edit',
+            'mencetak laporan',
         ];
 
         // Create permissions
@@ -73,65 +59,42 @@ class RolePermissionSeeder extends Seeder
 
         $this->command->info('🔄 Creating roles...');
 
-        // Create Super Admin Role
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin']);
-        $superAdmin->givePermissionTo(Permission::all());
-        $this->command->info('✅ Created Super Admin role with all permissions');
+        // Create Owner Role
+        $owner = Role::firstOrCreate(['name' => 'Owner']);
+        $ownerPermissions = [
+            'mengelola users',
+            'mengelola gaji',
+            'mengelola cuti',
+            'mengelola absensi',
+            'mencetak laporan',
+        ];
+        $owner->givePermissionTo($ownerPermissions);
+        $this->command->info('✅ Created Owner role with ' . count($ownerPermissions) . ' permissions');
 
         // Create Admin Role
         $admin = Role::firstOrCreate(['name' => 'Admin']);
         $adminPermissions = [
-            'users.view',
-            'users.create',
-            'users.edit',
-            'users.delete',
-            'students.view',
-            'students.create',
-            'students.edit',
-            'students.delete',
-            'courses.view',
-            'courses.create',
-            'courses.edit',
-            'courses.delete',
-            'dashboard.view',
-            'reports.view',
-            'reports.export',
-            'settings.view',
+            'mengelola users',
+            'mengelola roles',
+            'mengelola permissions',
+            'mengelola karyawan',
+            'mengelola absensi',
+            'mengelola gaji',
+            'mengelola cuti',
+            'mencetak laporan',
         ];
         $admin->givePermissionTo($adminPermissions);
         $this->command->info('✅ Created Admin role with ' . count($adminPermissions) . ' permissions');
 
-        // Create Teacher Role
-        $teacher = Role::firstOrCreate(['name' => 'Teacher']);
-        $teacherPermissions = [
-            'students.view',
-            'students.create',
-            'students.edit',
-            'courses.view',
-            'courses.edit',
-            'dashboard.view',
-            'reports.view',
+        // Create Karyawan Role
+        $karyawan = Role::firstOrCreate(['name' => 'Karyawan']);
+        $karyawanPermissions = [
+            'melakukan absensi',
+            'melihat gaji',
+            'melakukan cuti',
         ];
-        $teacher->givePermissionTo($teacherPermissions);
-        $this->command->info('✅ Created Teacher role with ' . count($teacherPermissions) . ' permissions');
-
-        // Create Staff Role
-        $staff = Role::firstOrCreate(['name' => 'Staff']);
-        $staffPermissions = [
-            'students.view',
-            'courses.view',
-            'dashboard.view',
-        ];
-        $staff->givePermissionTo($staffPermissions);
-        $this->command->info('✅ Created Staff role with ' . count($staffPermissions) . ' permissions');
-
-        // Create Student Role (untuk siswa)
-        $student = Role::firstOrCreate(['name' => 'Student']);
-        $studentPermissions = [
-            'dashboard.view',
-        ];
-        $student->givePermissionTo($studentPermissions);
-        $this->command->info('✅ Created Student role with ' . count($studentPermissions) . ' permissions');
+        $karyawan->givePermissionTo($karyawanPermissions);
+        $this->command->info('✅ Created Karyawan role with ' . count($karyawanPermissions) . ' permissions');
 
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
