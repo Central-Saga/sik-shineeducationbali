@@ -190,9 +190,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               const Icon = item.icon || Home
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="font-medium transition-all duration-200 hover:translate-x-1 group">
-                    <a href={item.url} className="flex items-center gap-2">
-                      <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-secondary" />
+                  <SidebarMenuButton asChild className="font-medium transition-all duration-200">
+                    <a href={item.url} className="group flex items-center gap-2">
+                      <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-sidebar-accent-foreground" />
                       <span className="transition-colors duration-200 group-hover:text-sidebar-primary">{item.title}</span>
                     </a>
                   </SidebarMenuButton>

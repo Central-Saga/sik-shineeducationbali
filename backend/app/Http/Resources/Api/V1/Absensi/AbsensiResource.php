@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Absensi;
 
+use App\Http\Resources\Api\V1\LogAbsensi\LogAbsensiResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -86,6 +87,9 @@ class AbsensiResource extends JsonResource
                 null
             ),
             'catatan' => $this->catatan,
+            'log_absensi' => $this->whenLoaded('logAbsensi', function () {
+                return LogAbsensiResource::collection($this->logAbsensi);
+            }),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
             'deleted_at' => $this->when(

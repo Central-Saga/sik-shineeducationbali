@@ -30,8 +30,6 @@ export function AbsensiTable({
     const labels: Record<string, string> = {
       hadir: 'Hadir',
       izin: 'Izin',
-      sakit: 'Sakit',
-      alpa: 'Alpa',
     };
     return labels[status] || status;
   };
@@ -40,8 +38,6 @@ export function AbsensiTable({
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       hadir: 'default',
       izin: 'secondary',
-      sakit: 'outline',
-      alpa: 'destructive',
     };
     return variants[status] || 'outline';
   };
@@ -77,7 +73,6 @@ export function AbsensiTable({
                   <TableHead className="min-w-[100px]">Jam Masuk</TableHead>
                   <TableHead className="min-w-[100px]">Jam Pulang</TableHead>
                   <TableHead className="min-w-[150px]">Durasi Kerja</TableHead>
-                  <TableHead className="min-w-[100px]">Sumber</TableHead>
                   <TableHead className="min-w-[200px]">Catatan</TableHead>
                 </TableRow>
               </TableHeader>
@@ -145,7 +140,6 @@ export function AbsensiTable({
                 <TableHead className="min-w-[100px]">Jam Masuk</TableHead>
                 <TableHead className="min-w-[100px]">Jam Pulang</TableHead>
                 <TableHead className="min-w-[150px]">Durasi Kerja</TableHead>
-                <TableHead className="min-w-[100px]">Sumber</TableHead>
                 <TableHead className="min-w-[200px]">Catatan</TableHead>
               </TableRow>
             </TableHeader>
@@ -173,9 +167,6 @@ export function AbsensiTable({
                     {item.durasi_kerja_formatted || '-'}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {item.sumber_absen || '-'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
                     {item.catatan || '-'}
                   </TableCell>
                 </TableRow>
@@ -187,6 +178,9 @@ export function AbsensiTable({
     </div>
   );
 }
+
+
+
 
 
 

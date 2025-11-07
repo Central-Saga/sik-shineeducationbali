@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Absensi extends Model
@@ -97,6 +98,16 @@ class Absensi extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'karyawan_id');
+    }
+
+    /**
+     * Get the attendance logs for the attendance.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function logAbsensi(): HasMany
+    {
+        return $this->hasMany(LogAbsensi::class);
     }
 
     /**

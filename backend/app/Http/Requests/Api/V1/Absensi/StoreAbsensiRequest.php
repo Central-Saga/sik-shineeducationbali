@@ -45,7 +45,13 @@ class StoreAbsensiRequest extends FormRequest
                 }),
             ],
             'sumber_absen' => ['nullable', 'string', Rule::in(['mobile', 'kiosk', 'web'])],
-            'catatan' => ['nullable', 'string'],
+            'catatan' => [
+                'nullable',
+                'string',
+                Rule::requiredIf(function () {
+                    return $this->input('status_kehadiran') === 'izin';
+                }),
+            ],
         ];
     }
 
@@ -71,6 +77,7 @@ class StoreAbsensiRequest extends FormRequest
             'jam_pulang.date_format' => 'Format jam pulang harus HH:MM:SS (contoh: 17:00:00).',
             'jam_pulang.after' => 'Jam pulang harus lebih besar dari jam masuk.',
             'sumber_absen.in' => 'Sumber absen harus salah satu dari: mobile, kiosk, web.',
+            'catatan.required_if' => 'Catatan wajib diisi untuk status izin.',
             'catatan.string' => 'Catatan harus berupa teks.',
         ];
     }
@@ -98,6 +105,12 @@ class StoreAbsensiRequest extends FormRequest
                 if ($jamPulangCarbon->lessThanOrEqualTo($jamMasukCarbon)) {
                     $validator->errors()->add('jam_pulang', 'Jam pulang harus lebih besar dari jam masuk.');
                 }
+            }
+
+            // Jika status izin, pastikan catatan diisi
+            $catatan = $this->input('catatan');
+            if ($statusKehadiran === 'izin' && empty($catatan)) {
+                $validator->errors()->add('catatan', 'Catatan wajib diisi untuk status izin. Silakan sertakan alasan izin.');
             }
         });
     }

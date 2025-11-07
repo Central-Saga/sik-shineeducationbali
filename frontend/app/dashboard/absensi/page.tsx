@@ -69,14 +69,8 @@ export default function AbsensiPage() {
     const totalIzin = absensi.filter(
       (item) => item.status_kehadiran === "izin"
     ).length;
-    const totalSakit = absensi.filter(
-      (item) => item.status_kehadiran === "sakit"
-    ).length;
-    const totalAlpa = absensi.filter(
-      (item) => item.status_kehadiran === "alpa"
-    ).length;
 
-    return { total, totalHadir, totalIzin, totalSakit, totalAlpa };
+    return { total, totalHadir, totalIzin };
   }, [absensi]);
 
   return (
@@ -125,8 +119,6 @@ export default function AbsensiPage() {
                   <SelectItem value="semua">Semua Status</SelectItem>
                   <SelectItem value="hadir">Hadir</SelectItem>
                   <SelectItem value="izin">Izin</SelectItem>
-                  <SelectItem value="sakit">Sakit</SelectItem>
-                  <SelectItem value="alpa">Alpa</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -151,7 +143,7 @@ export default function AbsensiPage() {
           )}
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg border p-4">
               <div className="text-sm font-medium text-muted-foreground">
                 Total Absensi
@@ -176,22 +168,6 @@ export default function AbsensiPage() {
                 {loading ? "..." : stats.totalIzin}
               </div>
             </div>
-            <div className="rounded-lg border p-4">
-              <div className="text-sm font-medium text-muted-foreground">
-                Sakit
-              </div>
-              <div className="text-2xl font-bold mt-1 text-yellow-600">
-                {loading ? "..." : stats.totalSakit}
-              </div>
-            </div>
-            <div className="rounded-lg border p-4">
-              <div className="text-sm font-medium text-muted-foreground">
-                Alpa
-              </div>
-              <div className="text-2xl font-bold mt-1 text-red-600">
-                {loading ? "..." : stats.totalAlpa}
-              </div>
-            </div>
           </div>
 
           {/* Absensi Table */}
@@ -201,6 +177,9 @@ export default function AbsensiPage() {
     </SidebarProvider>
   );
 }
+
+
+
 
 
 

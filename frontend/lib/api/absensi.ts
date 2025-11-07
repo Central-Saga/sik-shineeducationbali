@@ -6,7 +6,7 @@ export interface GetAbsensiParams {
   tanggal?: string;
   start_date?: string;
   end_date?: string;
-  status_kehadiran?: 'hadir' | 'izin' | 'sakit' | 'alpa';
+  status_kehadiran?: 'hadir' | 'izin' 
 }
 
 /**
@@ -71,6 +71,9 @@ export async function getAbsensiHadir(tanggal?: string): Promise<Absensi[]> {
   const response = await apiClient.get<Absensi[]>('/v1/absensi/hadir', { params: { tanggal } });
   return response.data;
 }
+
+
+
 
 
 

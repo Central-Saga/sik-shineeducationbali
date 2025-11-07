@@ -48,6 +48,13 @@ class DatabaseSeeder extends Seeder
             AbsensiSeeder::class,
         ]);
 
+        $this->command->newLine();
+
+        // Seed Log Absensi
+        $this->call([
+            LogAbsensiSeeder::class,
+        ]);
+
         // Reset cached roles and permissions setelah seeding
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 

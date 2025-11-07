@@ -11,7 +11,7 @@ export interface Absensi {
     };
   };
   tanggal: string;
-  status_kehadiran: 'hadir' | 'izin' | 'sakit' | 'alpa';
+  status_kehadiran: 'hadir' | 'izin' 
   jam_masuk?: string | null;
   jam_pulang?: string | null;
   durasi_kerja?: number | null;
@@ -26,12 +26,15 @@ export interface Absensi {
 export interface AbsensiFormData {
   karyawan_id: number;
   tanggal: string;
-  status_kehadiran: 'hadir' | 'izin' | 'sakit' | 'alpa';
+  status_kehadiran: 'hadir' | 'izin' 
   jam_masuk?: string | null;
   jam_pulang?: string | null;
   sumber_absen?: string | null;
   catatan?: string | null;
 }
+
+
+
 
 
 

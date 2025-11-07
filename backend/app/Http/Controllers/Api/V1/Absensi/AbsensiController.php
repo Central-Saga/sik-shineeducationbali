@@ -78,8 +78,12 @@ class AbsensiController extends BaseApiController
             $query = $this->absensiService->getAll();
         }
 
-        // Load relationship
-        $query = $query->load('employee.user');
+        // Load relationship - include log_absensi if requested
+        $loadRelations = ['employee.user'];
+        if ($request->has('include') && str_contains($request->include, 'log_absensi')) {
+            $loadRelations[] = 'logAbsensi';
+        }
+        $query = $query->load($loadRelations);
 
         return $this->success(
             AbsensiResource::collection($query),
@@ -116,7 +120,7 @@ class AbsensiController extends BaseApiController
     public function show($id): JsonResponse
     {
         $absensi = $this->absensiService->getById($id);
-        $absensi->load('employee.user');
+        $absensi->load(['employee.user', 'logAbsensi']);
 
         return $this->success(
             new AbsensiResource($absensi),

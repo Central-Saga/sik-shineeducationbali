@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Absensi\AbsensiController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Employee\EmployeeController;
+use App\Http\Controllers\Api\V1\LogAbsensi\LogAbsensiController;
 use App\Http\Controllers\Api\V1\Permission\PermissionController;
 use App\Http\Controllers\Api\V1\Role\RoleController;
 use App\Http\Controllers\Api\V1\User\UserController;
@@ -77,6 +78,39 @@ Route::prefix('v1')->group(function () {
         Route::put('/absensi/{id}', [AbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
         Route::patch('/absensi/{id}', [AbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
         Route::delete('/absensi/{id}', [AbsensiController::class, 'destroy'])->middleware('permission:mengelola absensi');
+    });
+
+    // Log Absensi API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Additional routes for log absensi (must be before standard CRUD routes to avoid route conflicts)
+        // Get log by absensi ID
+        Route::get('/log-absensi/absensi/{absensiId}', [LogAbsensiController::class, 'byAbsensi'])->middleware('permission:melakukan absensi|mengelola absensi');
+        
+        // Get check-in log for specific absensi
+        Route::get('/log-absensi/absensi/{absensiId}/check-in', [LogAbsensiController::class, 'checkInByAbsensi'])->middleware('permission:melakukan absensi|mengelola absensi');
+        
+        // Get check-out log for specific absensi
+        Route::get('/log-absensi/absensi/{absensiId}/check-out', [LogAbsensiController::class, 'checkOutByAbsensi'])->middleware('permission:melakukan absensi|mengelola absensi');
+        
+        // Get check-in log records
+        Route::get('/log-absensi/check-in', [LogAbsensiController::class, 'checkIn'])->middleware('permission:mengelola absensi');
+        
+        // Get check-out log records
+        Route::get('/log-absensi/check-out', [LogAbsensiController::class, 'checkOut'])->middleware('permission:mengelola absensi');
+        
+        // Get validated GPS log records
+        Route::get('/log-absensi/validated', [LogAbsensiController::class, 'validated'])->middleware('permission:mengelola absensi');
+        
+        // Get unvalidated GPS log records
+        Route::get('/log-absensi/unvalidated', [LogAbsensiController::class, 'unvalidated'])->middleware('permission:mengelola absensi');
+
+        // Standard CRUD routes
+        Route::get('/log-absensi', [LogAbsensiController::class, 'index'])->middleware('permission:mengelola absensi|melakukan absensi');
+        Route::post('/log-absensi', [LogAbsensiController::class, 'store'])->middleware('permission:melakukan absensi|mengelola absensi');
+        Route::get('/log-absensi/{id}', [LogAbsensiController::class, 'show'])->middleware('permission:mengelola absensi|melakukan absensi');
+        Route::put('/log-absensi/{id}', [LogAbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
+        Route::patch('/log-absensi/{id}', [LogAbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
+        Route::delete('/log-absensi/{id}', [LogAbsensiController::class, 'destroy'])->middleware('permission:mengelola absensi');
     });
 
     // Auth routes (protected - requires authentication)
