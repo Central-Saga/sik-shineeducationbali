@@ -49,14 +49,20 @@ class StoreAbsensiRequest extends FormRequest
                 'nullable',
                 'date_format:H:i:s',
                 Rule::requiredIf(function () {
-                    return $this->input('status_kehadiran') === 'hadir';
+                    // Required if status hadir AND (jenis is check_in OR jenis is not provided)
+                    $statusKehadiran = $this->input('status_kehadiran');
+                    $jenis = $this->input('jenis');
+                    return $statusKehadiran === 'hadir' && ($jenis === 'check_in' || $jenis === null);
                 }),
             ],
             'jam_pulang' => [
                 'nullable',
                 'date_format:H:i:s',
                 Rule::requiredIf(function () {
-                    return $this->input('status_kehadiran') === 'hadir';
+                    // Required if status hadir AND jenis is check_out
+                    $statusKehadiran = $this->input('status_kehadiran');
+                    $jenis = $this->input('jenis');
+                    return $statusKehadiran === 'hadir' && $jenis === 'check_out';
                 }),
             ],
             'sumber_absen' => ['nullable', 'string', Rule::in(['mobile', 'kiosk', 'web'])],
@@ -128,9 +134,9 @@ class StoreAbsensiRequest extends FormRequest
             'tanggal.date_format' => 'Format tanggal absensi harus YYYY-MM-DD (contoh: 2025-11-04).',
             'status_kehadiran.required' => 'Status kehadiran wajib diisi.',
             'status_kehadiran.in' => 'Status kehadiran harus salah satu dari: hadir, izin.',
-            'jam_masuk.required_if' => 'Jam masuk wajib diisi untuk status hadir.',
+            'jam_masuk.required_if' => 'Jam masuk wajib diisi untuk check-in.',
             'jam_masuk.date_format' => 'Format jam masuk harus HH:MM:SS (contoh: 08:00:00).',
-            'jam_pulang.required_if' => 'Jam pulang wajib diisi untuk status hadir.',
+            'jam_pulang.required_if' => 'Jam pulang wajib diisi untuk check-out.',
             'jam_pulang.date_format' => 'Format jam pulang harus HH:MM:SS (contoh: 17:00:00).',
             'jam_pulang.after' => 'Jam pulang harus lebih besar dari jam masuk.',
             'sumber_absen.in' => 'Sumber absen harus salah satu dari: mobile, kiosk, web.',
@@ -174,11 +180,13 @@ class StoreAbsensiRequest extends FormRequest
             }
 
             $statusKehadiran = $this->input('status_kehadiran');
+            $jenis = $this->input('jenis');
             $jamMasuk = $this->input('jam_masuk');
             $jamPulang = $this->input('jam_pulang');
 
-            // Jika status hadir, pastikan jam_pulang lebih besar dari jam_masuk
-            if ($statusKehadiran === 'hadir' && !empty($jamMasuk) && !empty($jamPulang)) {
+            // Jika status hadir dan jenis check_out, pastikan jam_pulang lebih besar dari jam_masuk
+            // (hanya validasi jika kedua jam ada)
+            if ($statusKehadiran === 'hadir' && $jenis === 'check_out' && !empty($jamMasuk) && !empty($jamPulang)) {
                 $jamMasukCarbon = \Carbon\Carbon::createFromTimeString($jamMasuk);
                 $jamPulangCarbon = \Carbon\Carbon::createFromTimeString($jamPulang);
                 
