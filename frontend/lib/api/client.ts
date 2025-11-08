@@ -102,12 +102,10 @@ class ApiClient {
         };
 
         // Handle 401 Unauthorized - clear token
+        // Don't redirect automatically to avoid refresh loops
+        // Let components handle redirect based on their context
         if (response.status === 401) {
           removeAuthToken();
-          // Optionally redirect to login
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
         }
 
         throw error;
