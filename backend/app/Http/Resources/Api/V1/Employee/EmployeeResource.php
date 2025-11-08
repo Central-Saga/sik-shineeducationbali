@@ -23,6 +23,9 @@ class EmployeeResource extends JsonResource
                     'id' => $this->user->id,
                     'name' => $this->user->name,
                     'email' => $this->user->email,
+                    'roles' => $this->whenLoaded('user.roles', function () {
+                        return $this->user->roles->pluck('name')->toArray();
+                    }, []),
                 ];
             }),
             'kategori_karyawan' => $this->kategori_karyawan,

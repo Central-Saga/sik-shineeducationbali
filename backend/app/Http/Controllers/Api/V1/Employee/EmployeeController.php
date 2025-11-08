@@ -35,7 +35,7 @@ class EmployeeController extends BaseApiController
      */
     public function index(): JsonResponse
     {
-        $employees = $this->employeeService->getAll()->load('user');
+        $employees = $this->employeeService->getAll()->load('user.roles');
         return $this->success(
             EmployeeResource::collection($employees),
             'Employees retrieved successfully'
@@ -54,7 +54,7 @@ class EmployeeController extends BaseApiController
         $validated = $request->validated();
 
         $employee = $this->employeeService->create($validated);
-        $employee->load('user');
+        $employee->load('user.roles');
 
         return $this->created(
             new EmployeeResource($employee),
@@ -71,7 +71,7 @@ class EmployeeController extends BaseApiController
     public function show($id): JsonResponse
     {
         $employee = $this->employeeService->getById($id);
-        $employee->load('user');
+        $employee->load('user.roles');
 
         return $this->success(
             new EmployeeResource($employee),
@@ -92,7 +92,7 @@ class EmployeeController extends BaseApiController
         $validated = $request->validated();
 
         $employee = $this->employeeService->update($id, $validated);
-        $employee->load('user');
+        $employee->load('user.roles');
 
         return $this->success(
             new EmployeeResource($employee),

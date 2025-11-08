@@ -14,18 +14,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Employee } from "@/lib/types/employee";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Eye, Pencil, Trash2 } from "lucide-react";
 
 interface EmployeeTableProps {
   employees: Employee[];
   loading?: boolean;
   className?: string;
+  onView?: (employee: Employee) => void;
+  onEdit?: (employee: Employee) => void;
+  onDelete?: (employee: Employee) => void;
 }
 
 export function EmployeeTable({
   employees,
   loading = false,
   className,
+  onView,
+  onEdit,
+  onDelete,
 }: EmployeeTableProps) {
   const getKategoriLabel = (kategori: string) => {
     const labels: Record<string, string> = {
@@ -143,15 +149,65 @@ export function EmployeeTable({
                     {employee.nomor_hp || '-'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      asChild
-                    >
-                      <Link href={`/dashboard/employees/${employee.id}`}>
-                        Detail
-                      </Link>
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {onView ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onView(employee)}
+                          className="h-8 w-8"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">Lihat Detail</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          className="h-8 w-8"
+                        >
+                          <Link href={`/dashboard/employees/${employee.id}`}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">Lihat Detail</span>
+                          </Link>
+                        </Button>
+                      )}
+                      {onEdit ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(employee)}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          className="h-8 w-8"
+                        >
+                          <Link href={`/dashboard/employees/${employee.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Link>
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(employee)}
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Hapus</span>
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

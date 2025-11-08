@@ -19,27 +19,85 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { EmployeeForm } from "@/components/employees/employee-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useEmployee } from "@/hooks/use-employee";
+import { deleteEmployee } from "@/lib/api/employees";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import type { EmployeeFormData } from "@/lib/types/employee";
+import { ArrowLeft, Loader2, Pencil, Trash2, User, Mail, Phone, MapPin, Calendar, Building2, CreditCard, DollarSign } from "lucide-react";
 
 export default function EmployeeDetailPage() {
   const router = useRouter();
   const params = useParams();
   const employeeId = params.id as string;
-  const { employee, loading, error, update } = useEmployee(employeeId);
+  const { employee, loading, error } = useEmployee(employeeId);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const handleSubmit = async (data: EmployeeFormData) => {
+  const handleDelete = async () => {
+    if (!employee) return;
+
     try {
-      await update(data);
-      toast.success("Karyawan berhasil diperbarui");
+      setIsDeleting(true);
+      await deleteEmployee(employee.id);
+      toast.success("Karyawan berhasil dihapus");
       router.push("/dashboard/employees");
-    } catch (error: any) {
-      // Error will be handled by EmployeeForm component
-      throw error;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus karyawan";
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
     }
+  };
+
+  const getKategoriLabel = (kategori: string) => {
+    const labels: Record<string, string> = {
+      tetap: 'Tetap',
+      kontrak: 'Kontrak',
+      freelance: 'Freelance',
+    };
+    return labels[kategori] || kategori;
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    return status === 'aktif' ? 'default' : 'secondary';
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status === 'aktif' ? 'Aktif' : 'Nonaktif';
+  };
+
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '-';
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (date: string | null | undefined) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   if (loading) {
@@ -128,53 +186,219 @@ export default function EmployeeDetailPage() {
           </Breadcrumb>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/dashboard/employees">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Kembali</span>
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Detail Karyawan: {employee?.user?.name || `ID: ${employee?.id || 'N/A'}`}
-              </h1>
-              <p className="text-muted-foreground">
-                Perbarui informasi karyawan
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/dashboard/employees">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="sr-only">Kembali</span>
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Detail Karyawan: {employee?.user?.name || `ID: ${employee?.id || 'N/A'}`}
+                </h1>
+                <p className="text-muted-foreground">
+                  Informasi lengkap karyawan
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" asChild>
+                <Link href={`/dashboard/employees/${employee.id}/edit`}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Hapus
+              </Button>
             </div>
           </div>
 
-          <EmployeeForm
-            initialData={{
-              id: employee?.id || 0,
-              kode_karyawan: employee?.kode_karyawan || "",
-              user_id: employee?.user_id || null,
-              user: employee?.user
-                ? {
-                    id: employee.user?.id || 0,
-                    name: employee.user?.name || "",
-                    email: employee.user?.email || "",
-                  }
-                : undefined,
-              kategori_karyawan: employee?.kategori_karyawan || "",
-              subtipe_kontrak: employee?.subtipe_kontrak || null,
-              tipe_gaji: employee?.tipe_gaji || "",
-              gaji_pokok: employee?.gaji_pokok || null,
-              bank_nama: employee?.bank_nama || "",
-              bank_no_rekening: employee?.bank_no_rekening || "",
-              nomor_hp: employee?.nomor_hp || "",
-              alamat: employee?.alamat || "",
-              tanggal_lahir: employee?.tanggal_lahir || "",
-              status: employee?.status || "aktif",
-            }}
-            onSubmit={handleSubmit}
-            onCancel={() => router.push("/dashboard/employees")}
-            submitLabel="Perbarui Karyawan"
-            isLoading={loading}
-            isEditing={true}
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Informasi Personal */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informasi Personal</CardTitle>
+                <CardDescription>Data pribadi karyawan</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Nama</p>
+                    <p className="text-sm text-muted-foreground">
+                      {employee?.user?.name || '-'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Email</p>
+                    <p className="text-sm text-muted-foreground">
+                      {employee?.user?.email || '-'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">No. Handphone</p>
+                    <p className="text-sm text-muted-foreground">
+                      {employee?.nomor_hp || '-'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Alamat</p>
+                    <p className="text-sm text-muted-foreground">
+                      {employee?.alamat || '-'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Tanggal Lahir</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(employee?.tanggal_lahir)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Informasi Karyawan */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informasi Karyawan</CardTitle>
+                <CardDescription>Data pekerjaan dan status</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Kode Karyawan</p>
+                    <p className="text-sm font-mono text-muted-foreground">
+                      {employee?.kode_karyawan || '-'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Kategori</p>
+                    <Badge variant="outline" className="mt-1">
+                      {getKategoriLabel(employee?.kategori_karyawan || '')}
+                    </Badge>
+                    {employee?.kategori_karyawan === 'kontrak' && employee?.subtipe_kontrak && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {employee.subtipe_kontrak === 'full_time' ? 'Full Time' : 'Part Time'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Status</p>
+                    <Badge variant={getStatusBadgeVariant(employee?.status || '')} className="mt-1">
+                      {getStatusLabel(employee?.status || '')}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Tipe Gaji</p>
+                    <p className="text-sm text-muted-foreground">
+                      {employee?.tipe_gaji === 'bulanan' ? 'Bulanan' : 'Per Sesi'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Gaji Pokok</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatCurrency(employee?.gaji_pokok)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Informasi Bank */}
+            {(employee?.bank_nama || employee?.bank_no_rekening) && (
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>Informasi Bank</CardTitle>
+                  <CardDescription>Data rekening bank</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="flex items-start gap-3">
+                      <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Nama Bank</p>
+                        <p className="text-sm text-muted-foreground">
+                          {employee?.bank_nama || '-'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CreditCard className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">No. Rekening</p>
+                        <p className="text-sm font-mono text-muted-foreground">
+                          {employee?.bank_no_rekening || '-'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Hapus Karyawan</DialogTitle>
+              <DialogDescription>
+                Apakah Anda yakin ingin menghapus karyawan &quot;
+                {employee?.user?.name || employee?.kode_karyawan || `ID: ${employee?.id}`}
+                &quot;? Tindakan ini tidak dapat dibatalkan.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={isDeleting}
+              >
+                Batal
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Menghapus..." : "Hapus"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
     </SidebarProvider>
   );
