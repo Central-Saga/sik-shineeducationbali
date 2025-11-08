@@ -79,6 +79,9 @@ export function AbsensiForm({
   });
   const [locationFetched, setLocationFetched] = React.useState(false);
   const [fetchingLocation, setFetchingLocation] = React.useState(false);
+  const [showManualInput, setShowManualInput] = React.useState(false);
+  const [manualLat, setManualLat] = React.useState<string>('');
+  const [manualLon, setManualLon] = React.useState<string>('');
   const [photoFile, setPhotoFile] = React.useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
 
@@ -283,6 +286,52 @@ export function AbsensiForm({
     });
   };
 
+  // Handle manual location input
+  const handleManualLocationSubmit = () => {
+    const lat = parseFloat(manualLat);
+    const lon = parseFloat(manualLon);
+
+    if (isNaN(lat) || isNaN(lon)) {
+      setErrors(prev => ({ ...prev, location: "Latitude dan Longitude harus berupa angka." }));
+      return;
+    }
+
+    if (lat < -90 || lat > 90) {
+      setErrors(prev => ({ ...prev, location: "Latitude harus antara -90 dan 90." }));
+      return;
+    }
+
+    if (lon < -180 || lon > 180) {
+      setErrors(prev => ({ ...prev, location: "Longitude harus antara -180 dan 180." }));
+      return;
+    }
+
+    // Hitung jarak dari PT. CENTRAL SAGA MANDALA
+    const distance = calculateDistance(CENTRAL_SAGA_MANDALA_LAT, CENTRAL_SAGA_MANDALA_LON, lat, lon);
+
+    setLocation({
+      latitude: lat,
+      longitude: lon,
+      accuracy: null,
+      distance: distance,
+    });
+    setLocationFetched(true);
+    setShowManualInput(false);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.location;
+      return newErrors;
+    });
+
+    // Validasi radius
+    if (distance > MAX_RADIUS_METERS) {
+      setErrors(prev => ({ 
+        ...prev, 
+        location: `Jarak Anda ${distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.` 
+      }));
+    }
+  };
+
   // Handle photo upload
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -478,7 +527,7 @@ export function AbsensiForm({
                 className="bg-muted"
               />
               <p className="text-xs text-muted-foreground">
-                Status kehadiran otomatis diatur ke "Hadir" untuk check-in/check-out
+                Status kehadiran otomatis diatur ke &quot;Hadir&quot; untuk check-in/check-out
               </p>
             </div>
 
@@ -516,7 +565,7 @@ export function AbsensiForm({
               <Label>
                 Lokasi <span className="text-destructive">*</span> {mode === 'check_in' && '(Wajib untuk Check In)'}
               </Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   type="button"
                   variant="outline"
@@ -536,7 +585,70 @@ export function AbsensiForm({
                     </>
                   )}
                 </Button>
+                {!locationFetched && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowManualInput(!showManualInput);
+                      setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.location;
+                        return newErrors;
+                      });
+                    }}
+                    disabled={isSubmitting || isLoading}
+                  >
+                    {showManualInput ? 'Sembunyikan Input Manual' : 'Input Koordinat Manual'}
+                  </Button>
+                )}
               </div>
+              
+              {/* Manual Input */}
+              {showManualInput && !locationFetched && (
+                <div className="mt-2 p-4 border rounded-md bg-muted/50 space-y-3">
+                  <p className="text-sm font-medium">Input Koordinat Manual</p>
+                  <p className="text-xs text-muted-foreground">
+                    Jika GPS tidak berfungsi, Anda dapat memasukkan koordinat secara manual. 
+                    Dapatkan koordinat dari Google Maps dengan klik kanan pada lokasi.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="manual_lat">Latitude</Label>
+                      <Input
+                        id="manual_lat"
+                        type="number"
+                        step="any"
+                        placeholder="-8.549553"
+                        value={manualLat}
+                        onChange={(e) => setManualLat(e.target.value)}
+                        disabled={isSubmitting || isLoading}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="manual_lon">Longitude</Label>
+                      <Input
+                        id="manual_lon"
+                        type="number"
+                        step="any"
+                        placeholder="115.124725"
+                        value={manualLon}
+                        onChange={(e) => setManualLon(e.target.value)}
+                        disabled={isSubmitting || isLoading}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleManualLocationSubmit}
+                    disabled={isSubmitting || isLoading || !manualLat || !manualLon}
+                    className="w-full"
+                  >
+                    Gunakan Koordinat Ini
+                  </Button>
+                </div>
+              )}
               {locationFetched && location.latitude && location.longitude && (
                 <div className="mt-2 space-y-2">
                   <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm">

@@ -50,11 +50,10 @@ Route::prefix('v1')->group(function () {
     });
 
     // Employees API - Resource routes with permission middleware
-    Route::middleware(['auth:sanctum'])->group(function () {
-        // Get current user's employee data (accessible by karyawan)
-        // Must be before /employees/{id} route to avoid route conflict
-        Route::get('/employees/me', [EmployeeController::class, 'me']);
+    // Get current user's employee data (accessible by karyawan) - must be outside group to avoid route conflicts
+    Route::middleware(['auth:sanctum'])->get('/employees/me', [EmployeeController::class, 'me']);
 
+    Route::middleware(['auth:sanctum'])->group(function () {
         // Standard CRUD routes - requires 'mengelola karyawan' permission
         Route::get('/employees', [EmployeeController::class, 'index'])->middleware('permission:mengelola karyawan');
         Route::post('/employees', [EmployeeController::class, 'store'])->middleware('permission:mengelola karyawan');
