@@ -137,7 +137,7 @@ export default function EmployeeDetailPage() {
             </Button>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                Detail Karyawan: {employee.user?.name || `ID: ${employee.id}`}
+                Detail Karyawan: {employee?.user?.name || `ID: ${employee?.id || 'N/A'}`}
               </h1>
               <p className="text-muted-foreground">
                 Perbarui informasi karyawan
@@ -147,26 +147,26 @@ export default function EmployeeDetailPage() {
 
           <EmployeeForm
             initialData={{
-              id: employee.id,
-              kode_karyawan: employee.kode_karyawan,
-              user_id: employee.user_id,
-              user: employee.user
+              id: employee?.id || 0,
+              kode_karyawan: employee?.kode_karyawan || "",
+              user_id: employee?.user_id || null,
+              user: employee?.user
                 ? {
-                    id: employee.user.id,
-                    name: employee.user.name,
-                    email: employee.user.email,
+                    id: employee.user?.id || 0,
+                    name: employee.user?.name || "",
+                    email: employee.user?.email || "",
                   }
                 : undefined,
-              kategori_karyawan: employee.kategori_karyawan,
-              subtipe_kontrak: employee.subtipe_kontrak,
-              tipe_gaji: employee.tipe_gaji,
-              gaji_pokok: employee.gaji_pokok,
-              bank_nama: employee.bank_nama || "",
-              bank_no_rekening: employee.bank_no_rekening || "",
-              nomor_hp: employee.nomor_hp || "",
-              alamat: employee.alamat || "",
-              tanggal_lahir: employee.tanggal_lahir || "",
-              status: employee.status,
+              kategori_karyawan: employee?.kategori_karyawan || "",
+              subtipe_kontrak: employee?.subtipe_kontrak || null,
+              tipe_gaji: employee?.tipe_gaji || "",
+              gaji_pokok: employee?.gaji_pokok || null,
+              bank_nama: employee?.bank_nama || "",
+              bank_no_rekening: employee?.bank_no_rekening || "",
+              nomor_hp: employee?.nomor_hp || "",
+              alamat: employee?.alamat || "",
+              tanggal_lahir: employee?.tanggal_lahir || "",
+              status: employee?.status || "aktif",
             }}
             onSubmit={handleSubmit}
             onCancel={() => router.push("/dashboard/employees")}

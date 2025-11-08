@@ -264,15 +264,15 @@ export function EmployeeForm({
           )}
 
           {/* Informasi Akun User - Only shown when editing */}
-          {isEditing && initialData?.user_id && initialData.user && (
+          {isEditing && initialData?.user_id && initialData?.user && (
             <div className="space-y-2">
               <Label>Informasi Akun User</Label>
               <div className="rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
                 <p className="font-medium">
-                  {initialData.user.name || "N/A"}
+                  {initialData.user?.name || "N/A"}
                 </p>
                 <p className="text-muted-foreground">
-                  {initialData.user.email || "N/A"}
+                  {initialData.user?.email || "N/A"}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">

@@ -147,8 +147,8 @@ export function UserTable({
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
+                <TableCell className="font-medium">{user?.name || "N/A"}</TableCell>
+                <TableCell>{user?.email || "N/A"}</TableCell>
                 <TableCell>
                   {user.roles && user.roles.length > 0 ? (
                     <div className="flex flex-wrap gap-1">

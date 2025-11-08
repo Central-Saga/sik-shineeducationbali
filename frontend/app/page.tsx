@@ -129,10 +129,10 @@ export default function Home() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-black dark:text-zinc-50">
-                          {user.name}
+                          {user?.name || "N/A"}
                         </h3>
                         <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-                          {user.email}
+                          {user?.email || "N/A"}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2">
                           ID: {user.id} • Created: {new Date(user.created_at).toLocaleDateString()}

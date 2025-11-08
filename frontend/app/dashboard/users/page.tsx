@@ -37,9 +37,9 @@ export default function UsersPage() {
     const query = searchQuery.toLowerCase();
     return users.filter(
       (user) =>
-        user.name.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query) ||
-        user.roles?.some((r) => r.toLowerCase().includes(query))
+        user?.name?.toLowerCase().includes(query) ||
+        user?.email?.toLowerCase().includes(query) ||
+        user?.roles?.some((r) => r.toLowerCase().includes(query))
     );
   }, [users, searchQuery]);
 
