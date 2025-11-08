@@ -28,15 +28,48 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function CreateAbsensiPage() {
   const router = useRouter();
-  const { hasRole } = useAuth();
+  const { hasRole, loading } = useAuth();
+
+  // Validasi role karyawan - redirect jika bukan karyawan
+  React.useEffect(() => {
+    if (!loading && !hasRole('Karyawan')) {
+      toast.error("Hanya karyawan yang dapat melakukan absensi");
+      router.push("/dashboard/absensi");
+    }
+  }, [hasRole, loading, router]);
+
+  // Tampilkan loading atau tidak ada akses jika bukan karyawan
+  if (loading) {
+    return (
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "19rem",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex items-center justify-center h-screen">
+            <p>Memuat...</p>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  if (!hasRole('Karyawan')) {
+    return null; // Akan di-redirect oleh useEffect
+  }
 
   const handleSubmit = async (data: AbsensiFormData) => {
     try {
       await createAbsensi(data);
       toast.success("Absensi berhasil ditambahkan");
       router.push("/dashboard/absensi");
-    } catch (error: any) {
-      toast.error(error?.message || "Gagal menambahkan absensi");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menambahkan absensi";
+      toast.error(errorMessage);
       throw error;
     }
   };
@@ -95,8 +128,8 @@ export default function CreateAbsensiPage() {
           <AbsensiForm
             onSubmit={handleSubmit}
             onCancel={() => router.push("/dashboard/absensi")}
-            submitLabel="Tambah Absensi"
-            enableCheckInOut={hasRole('Karyawan')}
+            submitLabel="Simpan Absensi"
+            enableCheckInOut={true}
           />
         </div>
       </SidebarInset>

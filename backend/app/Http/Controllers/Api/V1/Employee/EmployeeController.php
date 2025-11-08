@@ -115,6 +115,36 @@ class EmployeeController extends BaseApiController
             'Employee deleted successfully'
         );
     }
+
+    /**
+     * Get employee data for the currently authenticated user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function me(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return $this->unauthorized('User not authenticated.');
+        }
+
+        // Load employee relationship
+        if (!$user->relationLoaded('employee')) {
+            $user->load('employee');
+        }
+
+        if (!$user->employee) {
+            return $this->notFound('Employee data not found for this user.');
+        }
+
+        $employee = $user->employee;
+        $employee->load('user.roles');
+
+        return $this->success(
+            new EmployeeResource($employee),
+            'Employee retrieved successfully'
+        );
+    }
 }
-
-

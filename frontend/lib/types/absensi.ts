@@ -31,6 +31,12 @@ export interface AbsensiFormData {
   jam_pulang?: string | null;
   sumber_absen?: string | null;
   catatan?: string | null;
+  // Optional fields for check-in/check-out with photo and geo location
+  foto_selfie?: File | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  akurasi?: number | null;
+  jenis?: 'check_in' | 'check_out' | null;
 }
 
 

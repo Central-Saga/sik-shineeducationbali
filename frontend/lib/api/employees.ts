@@ -14,6 +14,14 @@ export async function getEmployees(): Promise<Employee[]> {
 }
 
 /**
+ * Get current user's employee data
+ */
+export async function getMyEmployee(): Promise<Employee> {
+  const response = await apiClient.get<Employee>('/v1/employees/me');
+  return response.data;
+}
+
+/**
  * Get a single employee by ID with user relation
  */
 export async function getEmployee(id: number | string): Promise<Employee> {

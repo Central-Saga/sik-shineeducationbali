@@ -150,8 +150,56 @@ class AbsensiController extends BaseApiController
         // Request sudah handle validation dan prepareForValidation
         $validated = $request->validated();
 
+        // Handle foto upload if provided
+        $fotoPath = null;
+        $latitude = $validated['latitude'] ?? null;
+        $longitude = $validated['longitude'] ?? null;
+        $akurasi = $validated['akurasi'] ?? null;
+        $jenis = $validated['jenis'] ?? null;
+
+        if ($request->hasFile('foto_selfie')) {
+            $file = $request->file('foto_selfie');
+            $year = date('Y');
+            $month = date('m');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = "selfies/{$year}/{$month}";
+            $fotoPath = $file->storeAs($path, $filename, 'public');
+        }
+
+        // Remove foto_selfie, latitude, longitude, akurasi, jenis from validated data
+        // (these are not part of absensi table, but used for log_absensi)
+        unset($validated['foto_selfie'], $validated['latitude'], $validated['longitude'], $validated['akurasi'], $validated['jenis']);
+
+        // Create absensi
         $absensi = $this->absensiService->create($validated);
         $absensi->load('employee.user');
+
+        // If foto and geo location are provided, create log absensi
+        if ($fotoPath && $latitude !== null && $longitude !== null && $jenis) {
+            $logAbsensiService = app(\App\Services\Contracts\LogAbsensiServiceInterface::class);
+            
+            // Use current time for check-in/check-out
+            $currentTime = now()->format('Y-m-d H:i:s');
+            
+            // Koordinat PT. CENTRAL SAGA MANDALA: -8.549553, 115.124725
+            // Radius maksimal: 50 meter
+            $logData = [
+                'absensi_id' => $absensi->id,
+                'jenis' => $jenis,
+                'waktu' => $currentTime,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'akurasi' => $akurasi ?? 0,
+                'foto_selfie' => $fotoPath,
+                'sumber' => $absensi->sumber_absen ?? 'web',
+                'latitude_referensi' => -8.549553,
+                'longitude_referensi' => 115.124725,
+                'radius_max' => 50,
+            ];
+
+            $logAbsensiService->create($logData);
+            $absensi->load('logAbsensi');
+        }
 
         return $this->created(
             new AbsensiResource($absensi),

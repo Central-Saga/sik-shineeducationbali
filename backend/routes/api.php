@@ -51,12 +51,18 @@ Route::prefix('v1')->group(function () {
 
     // Employees API - Resource routes with permission middleware
     Route::middleware(['auth:sanctum'])->group(function () {
+        // Get current user's employee data (accessible by karyawan)
+        // Must be before /employees/{id} route to avoid route conflict
+        Route::get('/employees/me', [EmployeeController::class, 'me']);
+
+        // Standard CRUD routes - requires 'mengelola karyawan' permission
         Route::get('/employees', [EmployeeController::class, 'index'])->middleware('permission:mengelola karyawan');
         Route::post('/employees', [EmployeeController::class, 'store'])->middleware('permission:mengelola karyawan');
-        Route::get('/employees/{id}', [EmployeeController::class, 'show'])->middleware('permission:mengelola karyawan');
-        Route::put('/employees/{id}', [EmployeeController::class, 'update'])->middleware('permission:mengelola karyawan');
-        Route::patch('/employees/{id}', [EmployeeController::class, 'update'])->middleware('permission:mengelola karyawan');
-        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->middleware('permission:mengelola karyawan');
+        // Use where constraint to ensure {id} is numeric, preventing 'me' from matching
+        Route::get('/employees/{id}', [EmployeeController::class, 'show'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
+        Route::put('/employees/{id}', [EmployeeController::class, 'update'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
+        Route::patch('/employees/{id}', [EmployeeController::class, 'update'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
+        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
     });
 
     // Absensi API - Resource routes with permission middleware
@@ -64,10 +70,10 @@ Route::prefix('v1')->group(function () {
         // Additional routes for absensi (must be before standard CRUD routes to avoid route conflicts)
         // Get attendance by employee ID
         Route::get('/absensi/karyawan/{karyawanId}', [AbsensiController::class, 'byKaryawan'])->middleware('permission:mengelola absensi|melihat gaji');
-        
+
         // Get attendance by employee ID and date
         Route::get('/absensi/karyawan/{karyawanId}/tanggal/{tanggal}', [AbsensiController::class, 'byKaryawanAndTanggal'])->middleware('permission:melakukan absensi|mengelola absensi');
-        
+
         // Get present attendance records (hadir)
         Route::get('/absensi/hadir', [AbsensiController::class, 'hadir'])->middleware('permission:mengelola absensi');
 
@@ -85,22 +91,22 @@ Route::prefix('v1')->group(function () {
         // Additional routes for log absensi (must be before standard CRUD routes to avoid route conflicts)
         // Get log by absensi ID
         Route::get('/log-absensi/absensi/{absensiId}', [LogAbsensiController::class, 'byAbsensi'])->middleware('permission:melakukan absensi|mengelola absensi');
-        
+
         // Get check-in log for specific absensi
         Route::get('/log-absensi/absensi/{absensiId}/check-in', [LogAbsensiController::class, 'checkInByAbsensi'])->middleware('permission:melakukan absensi|mengelola absensi');
-        
+
         // Get check-out log for specific absensi
         Route::get('/log-absensi/absensi/{absensiId}/check-out', [LogAbsensiController::class, 'checkOutByAbsensi'])->middleware('permission:melakukan absensi|mengelola absensi');
-        
+
         // Get check-in log records
         Route::get('/log-absensi/check-in', [LogAbsensiController::class, 'checkIn'])->middleware('permission:mengelola absensi');
-        
+
         // Get check-out log records
         Route::get('/log-absensi/check-out', [LogAbsensiController::class, 'checkOut'])->middleware('permission:mengelola absensi');
-        
+
         // Get validated GPS log records
         Route::get('/log-absensi/validated', [LogAbsensiController::class, 'validated'])->middleware('permission:mengelola absensi');
-        
+
         // Get unvalidated GPS log records
         Route::get('/log-absensi/unvalidated', [LogAbsensiController::class, 'unvalidated'])->middleware('permission:mengelola absensi');
 
@@ -120,4 +126,3 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     });
 });
-

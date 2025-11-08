@@ -140,6 +140,10 @@ const allNavItems: NavItem[] = [
         title: "Semua Absensi",
         url: "/dashboard/absensi",
       },
+      {
+        title: "Tambah Absensi",
+        url: "/dashboard/absensi/create",
+      },
     ],
   },
   {

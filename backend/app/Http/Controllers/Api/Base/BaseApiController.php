@@ -81,4 +81,15 @@ abstract class BaseApiController extends Controller
     {
         return $this->forbiddenResponse($message);
     }
+
+    /**
+     * Return an unauthorized JSON response.
+     *
+     * @param  string  $message
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function unauthorized(string $message = 'Unauthorized'): JsonResponse
+    {
+        return $this->unauthorizedResponse($message);
+    }
 }

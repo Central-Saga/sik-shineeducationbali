@@ -10,21 +10,21 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AbsensiFormData } from "@/lib/types/absensi";
 import type { Employee } from "@/lib/types/employee";
-import { getEmployees } from "@/lib/api/employees";
+import { getMyEmployee } from "@/lib/api/employees";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { MapPin, Camera, Loader2 } from "lucide-react";
+import { MapPin, Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+// Koordinat PT. CENTRAL SAGA MANDALA
+// Updated based on actual location: -8.549553, 115.124725
+const CENTRAL_SAGA_MANDALA_LAT = -8.549553;
+const CENTRAL_SAGA_MANDALA_LON = 115.124725;
+const MAX_RADIUS_METERS = 50;
 
 interface AbsensiFormProps {
   initialData?: Partial<AbsensiFormData> & {
@@ -39,6 +39,19 @@ interface AbsensiFormProps {
   enableCheckInOut?: boolean; // Enable check-in/check-out mode for karyawan
 }
 
+// Fungsi untuk menghitung jarak menggunakan Haversine formula
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000; // Radius bumi dalam meter
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Jarak dalam meter
+}
+
 export function AbsensiForm({
   initialData,
   onSubmit,
@@ -50,80 +63,75 @@ export function AbsensiForm({
   enableCheckInOut = false,
 }: AbsensiFormProps) {
   const { user, hasRole } = useAuth();
-  const [mode, setMode] = React.useState<'absensi' | 'check_in' | 'check_out'>('absensi');
-  const [formData, setFormData] = React.useState<AbsensiFormData>({
-    karyawan_id: initialData?.karyawan_id || 0,
-    tanggal: initialData?.tanggal || new Date().toISOString().split('T')[0],
-    status_kehadiran: initialData?.status_kehadiran || "hadir",
-    jam_masuk: initialData?.jam_masuk || null,
-    jam_pulang: initialData?.jam_pulang || null,
-    sumber_absen: initialData?.sumber_absen || null,
-    catatan: initialData?.catatan || null,
-  });
-
-  // Check-in/Check-out specific state
+  const [mode, setMode] = React.useState<'check_in' | 'check_out'>('check_in');
+  
+  // State untuk lokasi dan jarak
   const [location, setLocation] = React.useState<{
     latitude: number | null;
     longitude: number | null;
     accuracy: number | null;
+    distance?: number | null;
   }>({
     latitude: null,
     longitude: null,
     accuracy: null,
+    distance: null,
   });
   const [locationFetched, setLocationFetched] = React.useState(false);
   const [fetchingLocation, setFetchingLocation] = React.useState(false);
   const [photoFile, setPhotoFile] = React.useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
 
-  const [employees, setEmployees] = React.useState<Employee[]>([]);
-  const [loadingEmployees, setLoadingEmployees] = React.useState(false);
+  const [employee, setEmployee] = React.useState<Employee | null>(null);
+  const [loadingEmployee, setLoadingEmployee] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Auto-fill karyawan_id if user is karyawan - memoize to prevent unnecessary calls
+  // Auto-fill karyawan_id dari user yang login
   React.useEffect(() => {
-    if (enableCheckInOut && hasRole('Karyawan') && user?.id && formData.karyawan_id === 0) {
-      // Find employee by user_id
+    if (enableCheckInOut && hasRole('Karyawan') && user?.id) {
       const loadEmployee = async () => {
         try {
-          setLoadingEmployees(true);
-          const data = await getEmployees();
-          const employee = data.find(emp => emp.user_id === user.id);
-          if (employee) {
-            setFormData(prev => ({ ...prev, karyawan_id: employee.id }));
+          setLoadingEmployee(true);
+          const employeeData = await getMyEmployee();
+          if (employeeData) {
+            setEmployee(employeeData);
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors.employee;
+              return newErrors;
+            });
+          } else {
+            setErrors(prev => ({ ...prev, employee: "Data karyawan tidak ditemukan untuk user ini." }));
           }
-          setEmployees(data);
-        } catch (error) {
-          console.error("Failed to load employees:", error);
+        } catch (error: unknown) {
+          console.error("Failed to load employee:", error);
+          const errorMessage = error instanceof Error ? error.message : "Gagal memuat data karyawan.";
+          setErrors(prev => ({ ...prev, employee: errorMessage }));
         } finally {
-          setLoadingEmployees(false);
+          setLoadingEmployee(false);
         }
       };
       loadEmployee();
-    } else if (!enableCheckInOut || !hasRole('Karyawan')) {
-      // Load all employees for admin/owner - only if not already loaded
-      if (employees.length === 0) {
-        const loadEmployees = async () => {
-          try {
-            setLoadingEmployees(true);
-            const data = await getEmployees();
-            setEmployees(data);
-          } catch (error) {
-            console.error("Failed to load employees:", error);
-          } finally {
-            setLoadingEmployees(false);
-          }
-        };
-        loadEmployees();
-      }
     }
-  }, [enableCheckInOut, hasRole, user?.id, formData.karyawan_id, employees.length]);
+  }, [enableCheckInOut, hasRole, user?.id]);
+
+  // Auto-update jam saat mode berubah
+  React.useEffect(() => {
+    if (enableCheckInOut && mode) {
+      const now = new Date();
+      const timeString = now.toTimeString().slice(0, 8); // HH:MM:SS format
+      // Mode sudah di-handle di handleSubmit
+    }
+  }, [mode, enableCheckInOut]);
 
   // Handle get location
-  const handleGetLocation = () => {
+  const handleGetLocation = async () => {
     if (!navigator.geolocation) {
-      setErrors(prev => ({ ...prev, location: "Geolocation tidak didukung oleh browser Anda." }));
+      setErrors(prev => ({ 
+        ...prev, 
+        location: "Geolocation tidak didukung oleh browser Anda. Silakan gunakan browser yang lebih baru atau aktifkan fitur geolocation." 
+      }));
       return;
     }
 
@@ -134,29 +142,145 @@ export function AbsensiForm({
       return newErrors;
     });
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: Math.round(position.coords.accuracy),
-        });
-        setLocationFetched(true);
-        setFetchingLocation(false);
-      },
-      (error) => {
-        setErrors(prev => ({ 
-          ...prev, 
-          location: `Gagal mengambil lokasi: ${error.message}` 
-        }));
-        setFetchingLocation(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+    // Check if we're on HTTPS or localhost (required for geolocation)
+    const isSecureContext = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (!isSecureContext) {
+      setErrors(prev => ({ 
+        ...prev, 
+        location: "Geolocation memerlukan koneksi HTTPS. Pastikan website diakses melalui HTTPS." 
+      }));
+      setFetchingLocation(false);
+      return;
+    }
+
+    // Check permissions if available
+    if ('permissions' in navigator) {
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+        
+        if (permissionStatus.state === 'denied') {
+          setErrors(prev => ({ 
+            ...prev, 
+            location: "Akses lokasi ditolak. Silakan izinkan akses lokasi di pengaturan browser Anda (ikon gembok di address bar) dan refresh halaman." 
+          }));
+          setFetchingLocation(false);
+          return;
+        }
+      } catch (e) {
+        // Permissions API might not be supported, continue anyway
+        console.log('Permissions API not fully supported, continuing...');
       }
-    );
+    }
+
+    // Try with different accuracy levels - laptops usually don't have GPS hardware
+    // So we'll try network-based location first (lower accuracy but more reliable for laptops)
+    const tryGetLocation = (options: PositionOptions, attempt: number = 1) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const accuracy = Math.round(position.coords.accuracy);
+          
+          // Hitung jarak dari PT. CENTRAL SAGA MANDALA
+          const distance = calculateDistance(CENTRAL_SAGA_MANDALA_LAT, CENTRAL_SAGA_MANDALA_LON, lat, lon);
+          
+          setLocation({
+            latitude: lat,
+            longitude: lon,
+            accuracy: accuracy,
+            distance: distance,
+          });
+          setLocationFetched(true);
+          setFetchingLocation(false);
+
+          // Validasi radius di frontend untuk feedback langsung
+          if (distance > MAX_RADIUS_METERS) {
+            setErrors(prev => ({ 
+              ...prev, 
+              location: `Jarak Anda ${distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.` 
+            }));
+          } else {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors.location;
+              return newErrors;
+            });
+          }
+        },
+        (error) => {
+          // Try different strategies based on attempt number
+          if (attempt === 1) {
+            // First attempt failed, try with network-based location (better for laptops)
+            console.log('First attempt failed, trying with network-based location (better for laptops)...');
+            tryGetLocation({
+              enableHighAccuracy: false, // Use network-based location (WiFi/IP)
+              timeout: 30000, // 30 seconds
+              maximumAge: 300000, // Accept cached position up to 5 minutes old
+            }, 2);
+            return;
+          } else if (attempt === 2) {
+            // Second attempt failed, try with high accuracy (for devices with GPS)
+            console.log('Network-based failed, trying with high accuracy GPS...');
+            tryGetLocation({
+              enableHighAccuracy: true,
+              timeout: 20000,
+              maximumAge: 0,
+            }, 3);
+            return;
+          }
+
+          // All attempts failed
+          let errorMessage = "Gagal mengambil lokasi setelah beberapa percobaan. ";
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "Akses lokasi ditolak. Silakan:\n";
+              errorMessage += "1. Klik ikon gembok/kamera di address bar browser\n";
+              errorMessage += "2. Izinkan akses lokasi\n";
+              errorMessage += "3. Refresh halaman dan coba lagi\n\n";
+              errorMessage += "Catatan: Laptop biasanya menggunakan lokasi berbasis WiFi/IP, bukan GPS hardware.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Informasi lokasi tidak tersedia. Silakan:\n";
+              errorMessage += "1. Pastikan WiFi/internet terhubung (laptop menggunakan lokasi berbasis jaringan)\n";
+              errorMessage += "2. Pastikan browser memiliki izin akses lokasi\n";
+              errorMessage += "3. Coba refresh halaman\n\n";
+              errorMessage += "Catatan: Laptop biasanya tidak memiliki GPS hardware. Lokasi diambil dari WiFi/IP address.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "Waktu tunggu habis. Silakan:\n";
+              errorMessage += "1. Pastikan WiFi/internet terhubung\n";
+              errorMessage += "2. Coba refresh halaman dan coba lagi\n\n";
+              errorMessage += "Catatan: Laptop menggunakan lokasi berbasis jaringan yang mungkin membutuhkan waktu lebih lama.";
+              break;
+            default:
+              errorMessage += "Terjadi kesalahan saat mengambil lokasi. Silakan:\n";
+              errorMessage += "1. Pastikan WiFi/internet terhubung\n";
+              errorMessage += "2. Pastikan browser memiliki izin akses lokasi\n";
+              errorMessage += "3. Coba refresh halaman\n";
+              errorMessage += "4. Jika masih error, coba gunakan browser lain\n\n";
+              errorMessage += "Catatan: Laptop biasanya menggunakan lokasi berbasis WiFi/IP, bukan GPS hardware.";
+              break;
+          }
+          
+          setErrors(prev => ({ 
+            ...prev, 
+            location: errorMessage
+          }));
+          setFetchingLocation(false);
+        },
+        options
+      );
+    };
+
+    // Start with network-based location first (better for laptops without GPS hardware)
+    // Laptops typically use WiFi/IP-based location which is more reliable than GPS
+    tryGetLocation({
+      enableHighAccuracy: false, // Start with network-based (WiFi/IP) - better for laptops
+      timeout: 30000, // 30 seconds
+      maximumAge: 300000, // Accept cached position up to 5 minutes old
+    });
   };
 
   // Handle photo upload
@@ -189,18 +313,6 @@ export function AbsensiForm({
     }
   };
 
-  const handleChange = (field: keyof AbsensiFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -209,31 +321,31 @@ export function AbsensiForm({
     // Client-side validation
     const newErrors: Record<string, string> = {};
 
-    if (!formData.karyawan_id || formData.karyawan_id === 0) {
-      newErrors.karyawan_id = "Karyawan wajib dipilih.";
+    if (!employee) {
+      newErrors.employee = "Data karyawan tidak ditemukan.";
     }
-    if (!formData.tanggal || !formData.tanggal.trim()) {
-      newErrors.tanggal = "Tanggal wajib diisi.";
-    }
-    
-    // For check-in mode, location is required before photo
+
+    // Untuk check-in, lokasi dan foto wajib
     if (mode === 'check_in') {
       if (!locationFetched || !location.latitude || !location.longitude) {
-        newErrors.location = "Lokasi harus diambil terlebih dahulu sebelum upload foto.";
+        newErrors.location = "Lokasi wajib diambil terlebih dahulu sebelum upload foto.";
+      } else if (location.distance !== null && location.distance !== undefined && location.distance > MAX_RADIUS_METERS) {
+        newErrors.location = `Jarak Anda ${location.distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.`;
       }
       if (!photoFile) {
         newErrors.photo = "Foto wajib diupload untuk check-in.";
       }
     }
 
-    // For check-out mode, photo is optional but location is recommended
+    // Untuk check-out, foto wajib, lokasi opsional
     if (mode === 'check_out') {
-      // Location and photo are optional for check-out
-    }
-
-    // For regular absensi mode
-    if (mode === 'absensi' && !formData.status_kehadiran) {
-      newErrors.status_kehadiran = "Status kehadiran wajib dipilih.";
+      if (!photoFile) {
+        newErrors.photo = "Foto wajib diupload untuk check-out.";
+      }
+      // Jika lokasi diambil, validasi radius
+      if (locationFetched && location.distance !== null && location.distance !== undefined && location.distance > MAX_RADIUS_METERS) {
+        newErrors.location = `Jarak Anda ${location.distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.`;
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -243,7 +355,40 @@ export function AbsensiForm({
     }
 
     try {
-      await onSubmit(formData);
+      // Prepare form data
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const timeString = now.toTimeString().slice(0, 8); // HH:MM:SS format
+
+      const submitData: AbsensiFormData = {
+        karyawan_id: employee!.id,
+        tanggal: today,
+        status_kehadiran: 'hadir',
+        sumber_absen: 'web',
+        catatan: null,
+      };
+
+      // Set jam berdasarkan mode
+      if (mode === 'check_in') {
+        submitData.jam_masuk = timeString;
+        submitData.jam_pulang = null;
+      } else {
+        submitData.jam_masuk = null;
+        submitData.jam_pulang = timeString;
+      }
+
+      // Add foto and geo location
+      if (photoFile) {
+        submitData.foto_selfie = photoFile;
+      }
+      if (location.latitude !== null && location.longitude !== null) {
+        submitData.latitude = location.latitude;
+        submitData.longitude = location.longitude;
+        submitData.akurasi = location.accuracy || 0;
+      }
+      submitData.jenis = mode;
+      
+      await onSubmit(submitData);
     } catch (error) {
       console.error("Failed to submit form:", error);
     } finally {
@@ -251,10 +396,11 @@ export function AbsensiForm({
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className={cn("space-y-6", className)}>
-      {/* Mode Selector for Check-in/Check-out */}
-      {enableCheckInOut && hasRole('Karyawan') && (
+  // Jika enableCheckInOut, tampilkan form khusus untuk karyawan
+  if (enableCheckInOut) {
+    return (
+      <form onSubmit={handleSubmit} className={cn("space-y-6", className)}>
+        {/* Mode Selector - hanya Check In dan Check Out */}
         <Card>
           <CardHeader>
             <CardTitle>Mode Absensi</CardTitle>
@@ -263,274 +409,244 @@ export function AbsensiForm({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={mode} onValueChange={(value) => setMode(value as 'absensi' | 'check_in' | 'check_out')}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="absensi">Absensi Manual</TabsTrigger>
+            <Tabs value={mode} onValueChange={(value) => {
+              setMode(value as 'check_in' | 'check_out');
+              // Reset location dan photo saat ganti mode
+              setLocationFetched(false);
+              setLocation({ latitude: null, longitude: null, accuracy: null, distance: null });
+              setPhotoFile(null);
+              setPhotoPreview(null);
+              setErrors({});
+            }}>
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="check_in">Check In</TabsTrigger>
                 <TabsTrigger value="check_out">Check Out</TabsTrigger>
               </TabsList>
             </Tabs>
           </CardContent>
         </Card>
-      )}
 
-      {/* Informasi Absensi */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {mode === 'check_in' ? 'Check In' : mode === 'check_out' ? 'Check Out' : 'Informasi Absensi'}
-          </CardTitle>
-          <CardDescription>
-            {mode === 'check_in' 
-              ? 'Lakukan check-in dengan mengambil lokasi dan upload foto'
-              : mode === 'check_out'
-              ? 'Lakukan check-out dengan upload foto (opsional ambil lokasi)'
-              : 'Masukkan informasi absensi karyawan'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Karyawan */}
-          <div className="space-y-2">
-            <Label htmlFor="karyawan_id">
-              Karyawan <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={formData.karyawan_id?.toString() || ""}
-              onValueChange={(value) => handleChange("karyawan_id", parseInt(value))}
-              disabled={isSubmitting || isLoading || loadingEmployees || (enableCheckInOut && hasRole('Karyawan'))}
-            >
-              <SelectTrigger
-                id="karyawan_id"
-                aria-invalid={!!errors.karyawan_id}
-              >
-                <SelectValue placeholder="Pilih karyawan" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem
-                    key={employee.id}
-                    value={employee.id.toString()}
-                  >
-                    {employee.user?.name || employee.kode_karyawan || `ID: ${employee.id}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.karyawan_id && (
-              <p className="text-sm text-destructive">{errors.karyawan_id}</p>
-            )}
-          </div>
+        {/* Informasi Absensi - Read Only */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {mode === 'check_in' ? 'Check In' : 'Check Out'}
+            </CardTitle>
+            <CardDescription>
+              {mode === 'check_in' 
+                ? 'Lakukan check-in dengan mengambil lokasi dan upload foto'
+                : 'Lakukan check-out dengan upload foto (opsional ambil lokasi)'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Karyawan - Read Only */}
+            <div className="space-y-2">
+              <Label htmlFor="karyawan">Karyawan</Label>
+              <Input
+                id="karyawan"
+                value={employee ? (employee.user?.name || employee.kode_karyawan || `ID: ${employee.id}`) : (loadingEmployee ? "Memuat..." : "Tidak ditemukan")}
+                readOnly
+                disabled
+                className="bg-muted"
+              />
+              {errors.employee && (
+                <p className="text-sm text-destructive">{errors.employee}</p>
+              )}
+            </div>
 
-          {/* Tanggal */}
-          <div className="space-y-2">
-            <Label htmlFor="tanggal">
-              Tanggal <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="tanggal"
-              type="date"
-              value={formData.tanggal}
-              onChange={(e) => handleChange("tanggal", e.target.value)}
-              aria-invalid={!!errors.tanggal}
-              disabled={isSubmitting || isLoading}
-            />
-            {errors.tanggal && (
-              <p className="text-sm text-destructive">{errors.tanggal}</p>
-            )}
-          </div>
+            {/* Tanggal - Read Only (Hari Ini) */}
+            <div className="space-y-2">
+              <Label htmlFor="tanggal">Tanggal</Label>
+              <Input
+                id="tanggal"
+                type="date"
+                value={new Date().toISOString().split('T')[0]}
+                readOnly
+                disabled
+                className="bg-muted"
+              />
+            </div>
 
-          {/* Status Kehadiran */}
-          <div className="space-y-2">
-            <Label htmlFor="status_kehadiran">
-              Status Kehadiran <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={formData.status_kehadiran}
-              onValueChange={(value: 'hadir' | 'izin') => handleChange("status_kehadiran", value)}
-              disabled={isSubmitting || isLoading}
-            >
-              <SelectTrigger
+            {/* Status Kehadiran - Read Only */}
+            <div className="space-y-2">
+              <Label htmlFor="status_kehadiran">Status Kehadiran</Label>
+              <Input
                 id="status_kehadiran"
-                aria-invalid={!!errors.status_kehadiran}
-              >
-                <SelectValue placeholder="Pilih status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hadir">Hadir</SelectItem>
-                <SelectItem value="izin">Izin</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.status_kehadiran && (
-              <p className="text-sm text-destructive">{errors.status_kehadiran}</p>
-            )}
-          </div>
+                value="Hadir"
+                readOnly
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                Status kehadiran otomatis diatur ke "Hadir" untuk check-in/check-out
+              </p>
+            </div>
 
-          {/* Jam Masuk */}
-          <div className="space-y-2">
-            <Label htmlFor="jam_masuk">Jam Masuk</Label>
-            <Input
-              id="jam_masuk"
-              type="time"
-              value={formData.jam_masuk || ""}
-              onChange={(e) => handleChange("jam_masuk", e.target.value || null)}
-              disabled={isSubmitting || isLoading}
-            />
-          </div>
+            {/* Jam - Read Only (akan diisi saat submit) */}
+            <div className="space-y-2">
+              <Label htmlFor="jam">
+                {mode === 'check_in' ? 'Jam Masuk' : 'Jam Pulang'}
+              </Label>
+              <Input
+                id="jam"
+                value={new Date().toTimeString().slice(0, 8)}
+                readOnly
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                Jam akan diisi otomatis saat Anda menyimpan absensi
+              </p>
+            </div>
 
-          {/* Jam Pulang */}
-          <div className="space-y-2">
-            <Label htmlFor="jam_pulang">Jam Pulang</Label>
-            <Input
-              id="jam_pulang"
-              type="time"
-              value={formData.jam_pulang || ""}
-              onChange={(e) => handleChange("jam_pulang", e.target.value || null)}
-              disabled={isSubmitting || isLoading}
-            />
-          </div>
+            {/* Sumber Absen - Read Only */}
+            <div className="space-y-2">
+              <Label htmlFor="sumber_absen">Sumber Absen</Label>
+              <Input
+                id="sumber_absen"
+                value="Web"
+                readOnly
+                disabled
+                className="bg-muted"
+              />
+            </div>
 
-          {/* Sumber Absen */}
-          <div className="space-y-2">
-            <Label htmlFor="sumber_absen">Sumber Absen</Label>
-            <Select
-              value={formData.sumber_absen || ""}
-              onValueChange={(value: 'mobile' | 'web' | null) => handleChange("sumber_absen", value || null)}
+            {/* Lokasi */}
+            <div className="space-y-2">
+              <Label>
+                Lokasi <span className="text-destructive">*</span> {mode === 'check_in' && '(Wajib untuk Check In)'}
+              </Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGetLocation}
+                  disabled={fetchingLocation || isSubmitting || isLoading}
+                  className="flex items-center gap-2"
+                >
+                  {fetchingLocation ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Mengambil...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4" />
+                      Ambil Lokasi Saya
+                    </>
+                  )}
+                </Button>
+              </div>
+              {locationFetched && location.latitude && location.longitude && (
+                <div className="mt-2 space-y-2">
+                  <div className="rounded-md border border-input bg-muted px-3 py-2 text-sm">
+                    <div className="font-medium">Lokasi berhasil diambil</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      <div>Latitude: {location.latitude.toFixed(6)}</div>
+                      <div>Longitude: {location.longitude.toFixed(6)}</div>
+                      {location.accuracy && (
+                        <div>Akurasi GPS: ±{location.accuracy} meter</div>
+                      )}
+                      {location.distance !== null && location.distance !== undefined && (
+                        <div className={cn(
+                          "mt-1 font-medium",
+                          location.distance > MAX_RADIUS_METERS ? "text-destructive" : "text-green-600"
+                        )}>
+                          Jarak dari PT. CENTRAL SAGA MANDALA: {location.distance.toFixed(0)} meter
+                          {location.distance > MAX_RADIUS_METERS && (
+                            <span className="ml-1">(Melebihi maksimal {MAX_RADIUS_METERS} meter)</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {location.distance !== null && location.distance !== undefined && location.distance > MAX_RADIUS_METERS && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Lokasi Anda terlalu jauh dari PT. CENTRAL SAGA MANDALA. Maksimal {MAX_RADIUS_METERS} meter.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+              {errors.location && (
+                <p className="text-sm text-destructive">{errors.location}</p>
+              )}
+            </div>
+
+            {/* Foto */}
+            <div className="space-y-2">
+              <Label htmlFor="photo">
+                Foto Selfie <span className="text-destructive">*</span> (Wajib)
+              </Label>
+              <div className="space-y-2">
+                <Input
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoChange}
+                  disabled={isSubmitting || isLoading || (mode === 'check_in' && !locationFetched)}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Foto harus diambil langsung dari kamera (bukan dari galeri)
+                </p>
+                {mode === 'check_in' && !locationFetched && (
+                  <p className="text-xs text-destructive">
+                    Silakan ambil lokasi terlebih dahulu sebelum upload foto
+                  </p>
+                )}
+                {photoPreview && (
+                  <div className="relative w-full max-w-xs">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="rounded-md border border-input"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPhotoFile(null);
+                        setPhotoPreview(null);
+                      }}
+                      className="absolute top-2 right-2"
+                    >
+                      Hapus
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {errors.photo && (
+                <p className="text-sm text-destructive">{errors.photo}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
               disabled={isSubmitting || isLoading}
             >
-              <SelectTrigger id="sumber_absen">
-                <SelectValue placeholder="Pilih sumber" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mobile">Mobile</SelectItem>
-                <SelectItem value="web">Web</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Catatan */}
-          <div className="space-y-2">
-            <Label htmlFor="catatan">Catatan</Label>
-            <textarea
-              id="catatan"
-              value={formData.catatan || ""}
-              onChange={(e) => handleChange("catatan", e.target.value || null)}
-              placeholder="Masukkan catatan (opsional)"
-              rows={3}
-              disabled={isSubmitting || isLoading}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-
-          {/* Location and Photo for Check-in/Check-out */}
-          {(mode === 'check_in' || mode === 'check_out') && (
-            <>
-              {/* Lokasi */}
-              <div className="space-y-2">
-                <Label>
-                  Lokasi <span className="text-destructive">*</span> {mode === 'check_in' && '(Wajib untuk Check In)'}
-                </Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleGetLocation}
-                    disabled={fetchingLocation || isSubmitting || isLoading}
-                    className="flex items-center gap-2"
-                  >
-                    {fetchingLocation ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Mengambil...
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="h-4 w-4" />
-                        Ambil Lokasi Saya
-                      </>
-                    )}
-                  </Button>
-                  {locationFetched && location.latitude && location.longitude && (
-                    <div className="flex-1 rounded-md border border-input bg-muted px-3 py-2 text-sm">
-                      <div className="font-medium">Lokasi berhasil diambil</div>
-                      <div className="text-xs text-muted-foreground">
-                        Lat: {location.latitude.toFixed(6)}, Long: {location.longitude.toFixed(6)}
-                        {location.accuracy && ` (Akurasi: ±${location.accuracy}m)`}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {errors.location && (
-                  <p className="text-sm text-destructive">{errors.location}</p>
-                )}
-              </div>
-
-              {/* Foto */}
-              <div className="space-y-2">
-                <Label htmlFor="photo">
-                  Foto Selfie <span className="text-destructive">*</span> {mode === 'check_in' && '(Wajib untuk Check In)'}
-                </Label>
-                <div className="space-y-2">
-                  <Input
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    disabled={isSubmitting || isLoading || (mode === 'check_in' && !locationFetched)}
-                    className="cursor-pointer"
-                  />
-                  {mode === 'check_in' && !locationFetched && (
-                    <p className="text-xs text-muted-foreground">
-                      Silakan ambil lokasi terlebih dahulu sebelum upload foto
-                    </p>
-                  )}
-                  {photoPreview && (
-                    <div className="relative w-full max-w-xs">
-                      <img
-                        src={photoPreview}
-                        alt="Preview"
-                        className="rounded-md border border-input"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setPhotoFile(null);
-                          setPhotoPreview(null);
-                        }}
-                        className="absolute top-2 right-2"
-                      >
-                        Hapus
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                {errors.photo && (
-                  <p className="text-sm text-destructive">{errors.photo}</p>
-                )}
-              </div>
-            </>
+              Batal
+            </Button>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-3">
-        {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting || isLoading}
-          >
-            Batal
+          <Button type="submit" disabled={isSubmitting || isLoading || !employee}>
+            {isSubmitting ? "Menyimpan..." : submitLabel}
           </Button>
-        )}
-        <Button type="submit" disabled={isSubmitting || isLoading}>
-          {isSubmitting ? "Menyimpan..." : submitLabel}
-        </Button>
-      </div>
-    </form>
-  );
-}
+        </div>
+      </form>
+    );
+  }
 
+  // Fallback untuk mode lama (jika enableCheckInOut false) - tidak digunakan lagi
+  return null;
+}
