@@ -183,7 +183,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar variant="floating" {...props}>
-      <SidebarHeader className="bg-red-600 rounded-t-lg">
+      <SidebarHeader className="bg-red-600 rounded-t-lg overflow-hidden">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="gap-3 hover:bg-red-700/50 transition-colors duration-200">
