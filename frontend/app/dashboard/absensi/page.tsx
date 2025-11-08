@@ -23,17 +23,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { AbsensiTable } from "@/components/absensi/absensi-table";
+import { AbsensiDetailDialog } from "@/components/absensi/absensi-detail-dialog";
 import { useAbsensi } from "@/hooks/use-absensi";
-import { Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type { Absensi } from "@/lib/types/absensi";
+import { Clock, Plus } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { HasCan } from "@/components/has-can";
+import { getEmployees } from "@/lib/api/employees";
 
 export default function AbsensiPage() {
+  const router = useRouter();
+  const { user, hasRole } = useAuth();
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [dateFilter, setDateFilter] = React.useState<string>("semua");
+  const [selectedAbsensi, setSelectedAbsensi] = React.useState<Absensi | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [deletingAbsensi, setDeletingAbsensi] = React.useState<Absensi | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [employeeId, setEmployeeId] = React.useState<number | null>(null);
+
+  // Get employee ID for karyawan - memoize to prevent unnecessary calls
+  React.useEffect(() => {
+    if (hasRole('Karyawan') && user?.id && !employeeId) {
+      const loadEmployee = async () => {
+        try {
+          const employees = await getEmployees();
+          const employee = employees.find(emp => emp.user_id === user.id);
+          if (employee) {
+            setEmployeeId(employee.id);
+          }
+        } catch (error) {
+          console.error("Failed to load employee:", error);
+        }
+      };
+      loadEmployee();
+    }
+  }, [hasRole, user?.id, employeeId]);
 
   // Build params based on filters
   const params = React.useMemo(() => {
     const filters: any = {};
+    
+    // For karyawan, filter by their employee_id
+    if (hasRole('Karyawan') && employeeId) {
+      filters.karyawan_id = employeeId;
+    }
     
     if (statusFilter !== "semua") {
       filters.status_kehadiran = statusFilter;
@@ -56,9 +103,9 @@ export default function AbsensiPage() {
     }
 
     return Object.keys(filters).length > 0 ? filters : undefined;
-  }, [statusFilter, dateFilter]);
+  }, [statusFilter, dateFilter, hasRole, employeeId]);
 
-  const { absensi, loading, error } = useAbsensi(params);
+  const { absensi, loading, error, refetch, removeAbsensi } = useAbsensi(params);
 
   // Calculate statistics
   const stats = React.useMemo(() => {
@@ -72,6 +119,36 @@ export default function AbsensiPage() {
 
     return { total, totalHadir, totalIzin };
   }, [absensi]);
+
+  const handleViewDetail = (absensi: Absensi) => {
+    setSelectedAbsensi(absensi);
+    setDetailDialogOpen(true);
+  };
+
+  const handleEdit = (absensi: Absensi) => {
+    router.push(`/dashboard/absensi/${absensi.id}/edit`);
+  };
+
+  const handleDeleteClick = (absensi: Absensi) => {
+    setDeletingAbsensi(absensi);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingAbsensi) return;
+
+    try {
+      setIsDeleting(true);
+      await removeAbsensi(deletingAbsensi.id);
+      toast.success("Absensi berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setDeletingAbsensi(null);
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal menghapus absensi");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <SidebarProvider
@@ -111,6 +188,22 @@ export default function AbsensiPage() {
               </h1>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
+              <HasCan role={["Admin", "Owner"]}>
+                <Button asChild>
+                  <a href="/dashboard/absensi/create">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Tambah Absensi
+                  </a>
+                </Button>
+              </HasCan>
+              <HasCan role="Karyawan">
+                <Button asChild>
+                  <a href="/dashboard/absensi/create">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Check In / Check Out
+                  </a>
+                </Button>
+              </HasCan>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter Status" />
@@ -171,9 +264,56 @@ export default function AbsensiPage() {
           </div>
 
           {/* Absensi Table */}
-          <AbsensiTable absensi={absensi} loading={loading} />
+          <AbsensiTable
+            absensi={absensi}
+            loading={loading}
+            onViewDetail={handleViewDetail}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+          />
         </div>
       </SidebarInset>
+
+      {/* Detail Dialog */}
+      <AbsensiDetailDialog
+        absensi={selectedAbsensi}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hapus Absensi</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus absensi untuk &quot;
+              {deletingAbsensi?.employee?.user?.name || deletingAbsensi?.employee?.kode_karyawan || `ID: ${deletingAbsensi?.id}`}
+              &quot; pada tanggal {deletingAbsensi?.tanggal ? new Date(deletingAbsensi.tanggal).toLocaleDateString('id-ID') : ''}? 
+              Tindakan ini tidak dapat dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setDeletingAbsensi(null);
+              }}
+              disabled={isDeleting}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Menghapus..." : "Hapus"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }

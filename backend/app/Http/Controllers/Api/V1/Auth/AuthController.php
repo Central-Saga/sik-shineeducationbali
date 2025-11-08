@@ -97,6 +97,11 @@ class AuthController extends BaseApiController
     {
         $user = auth()->user();
         $user->load('roles');
+        
+        // Load employee relationship if exists
+        if ($user->employee) {
+            $user->load('employee');
+        }
 
         return $this->success(
             new UserResource($user),

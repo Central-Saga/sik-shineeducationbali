@@ -19,11 +19,11 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'roles' => $this->whenLoaded('roles', function () {
-                return $this->roles->pluck('name');
-            }),
+                return $this->roles->pluck('name')->toArray();
+            }, []),
             'permissions' => $this->when($request->user() && $request->user()->can('mengelola permissions'), function () {
-                return $this->getAllPermissions()->pluck('name');
-            }),
+                return $this->getAllPermissions()->pluck('name')->toArray();
+            }, []),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];

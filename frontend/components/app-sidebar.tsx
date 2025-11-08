@@ -25,6 +25,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/hooks/use-auth"
 
 // Navigation data untuk aplikasi SIK - Shine Education Bali
 type NavItem = {
@@ -36,132 +37,151 @@ type NavItem = {
     url: string
     isActive?: boolean
   }>
+  roles?: string[] // Roles yang bisa akses menu ini
 }
 
-const data: { navMain: NavItem[] } = {
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      title: "Pengguna",
-      url: "/dashboard/users",
-      icon: Users,
-      items: [
-        {
-          title: "Semua Pengguna",
-          url: "/dashboard/users",
-        },
-        {
-          title: "Tambah Pengguna",
-          url: "/dashboard/users/create",
-        },
-      ],
-    },
-    {
-      title: "Peran & Izin",
-      url: "/dashboard/roles",
-      icon: Shield,
-      items: [
-        {
-          title: "Semua Peran",
-          url: "/dashboard/roles",
-        },
-        {
-          title: "Buat Peran",
-          url: "/dashboard/roles/create",
-        },
-        {
-          title: "Izin",
-          url: "/dashboard/permissions",
-        },
-      ],
-    },
-    {
-      title: "Karyawan",
-      url: "/dashboard/employees",
-      icon: Briefcase,
-      items: [
-        {
-          title: "Semua Karyawan",
-          url: "/dashboard/employees",
-        },
-        {
-          title: "Tambah Karyawan",
-          url: "/dashboard/employees/create",
-        },
-        // {
-        //   title: "Kelas",
-        //   url: "/dashboard/students/classes",
-        // },
-      ],
-    },
-    {
-      title: "Gaji",
-      url: "/dashboard/salaries",
-      icon: DollarSign,
-      items: [
-        {
-          title: "Semua Gaji",
-          url: "/dashboard/salaries",
-        },
-        {
-          title: "Buat Gaji",
-          url: "/dashboard/salaries/create",
-        },
-        {
-          title: "Kategori",
-          url: "/dashboard/salaries/categories",
-        },
-      ],
-    },
-    {
-      title: "Cuti",
-      url: "/dashboard/leaves",
-      icon: CalendarDays,
-      items: [
-        {
-          title: "Semua Cuti",
-          url: "/dashboard/leaves",
-        },
-      ],
-    },
-    {
-      title: "Absensi",
-      url: "/dashboard/absensi",
-      icon: Clock,
-      items: [
-        {
-          title: "Semua Absensi",
-          url: "/dashboard/absensi",
-        },
-      ],
-    },
-    {
-      title: "Pengaturan",
-      url: "/dashboard/settings",
-      icon: Settings,
-      items: [
-        {
-          title: "Umum",
-          url: "/dashboard/settings/general",
-        },
-        {
-          title: "Akun",
-          url: "/dashboard/settings/account",
-        },
-        {
-          title: "Keamanan",
-          url: "/dashboard/settings/security",
-        },
-      ],
-    },
-  ],
-}
+const allNavItems: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+    roles: ["Admin"], // Dashboard hanya untuk Admin
+  },
+  {
+    title: "Pengguna",
+    url: "/dashboard/users",
+    icon: Users,
+    roles: ["Admin"],
+    items: [
+      {
+        title: "Semua Pengguna",
+        url: "/dashboard/users",
+      },
+      {
+        title: "Tambah Pengguna",
+        url: "/dashboard/users/create",
+      },
+    ],
+  },
+  {
+    title: "Peran & Izin",
+    url: "/dashboard/roles",
+    icon: Shield,
+    roles: ["Admin"],
+    items: [
+      {
+        title: "Semua Peran",
+        url: "/dashboard/roles",
+      },
+      {
+        title: "Buat Peran",
+        url: "/dashboard/roles/create",
+      },
+      {
+        title: "Izin",
+        url: "/dashboard/permissions",
+      },
+    ],
+  },
+  {
+    title: "Karyawan",
+    url: "/dashboard/employees",
+    icon: Briefcase,
+    roles: ["Admin"],
+    items: [
+      {
+        title: "Semua Karyawan",
+        url: "/dashboard/employees",
+      },
+      {
+        title: "Tambah Karyawan",
+        url: "/dashboard/employees/create",
+      },
+    ],
+  },
+  {
+    title: "Gaji",
+    url: "/dashboard/salaries",
+    icon: DollarSign,
+    roles: ["Owner", "Admin", "Karyawan"], // Semua role bisa akses
+    items: [
+      {
+        title: "Semua Gaji",
+        url: "/dashboard/salaries",
+      },
+      {
+        title: "Buat Gaji",
+        url: "/dashboard/salaries/create",
+      },
+      {
+        title: "Kategori",
+        url: "/dashboard/salaries/categories",
+      },
+    ],
+  },
+  {
+    title: "Cuti",
+    url: "/dashboard/leaves",
+    icon: CalendarDays,
+    roles: ["Admin", "Karyawan"],
+    items: [
+      {
+        title: "Semua Cuti",
+        url: "/dashboard/leaves",
+      },
+    ],
+  },
+  {
+    title: "Absensi",
+    url: "/dashboard/absensi",
+    icon: Clock,
+    roles: ["Owner", "Admin", "Karyawan"], // Semua role bisa akses
+    items: [
+      {
+        title: "Semua Absensi",
+        url: "/dashboard/absensi",
+      },
+    ],
+  },
+  {
+    title: "Pengaturan",
+    url: "/dashboard/settings",
+    icon: Settings,
+    roles: ["Admin"],
+    items: [
+      {
+        title: "Umum",
+        url: "/dashboard/settings/general",
+      },
+      {
+        title: "Akun",
+        url: "/dashboard/settings/account",
+      },
+      {
+        title: "Keamanan",
+        url: "/dashboard/settings/security",
+      },
+    ],
+  },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { hasRole, loading } = useAuth();
+
+  // Filter menu berdasarkan role user
+  const filteredNavItems = React.useMemo(() => {
+    // Show all items while loading to prevent layout shift
+    if (loading) return allNavItems;
+    
+    return allNavItems.filter((item) => {
+      // Jika tidak ada roles yang didefinisikan, tampilkan untuk semua
+      if (!item.roles || item.roles.length === 0) return true;
+      
+      // Check apakah user memiliki salah satu role yang diizinkan
+      return item.roles.some(role => hasRole(role));
+    });
+  }, [hasRole, loading]);
+
   return (
     <Sidebar variant="floating" {...props}>
       <SidebarHeader className="bg-gradient-sidebar">
@@ -186,7 +206,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu className="gap-2">
-            {data.navMain.map((item) => {
+            {filteredNavItems.map((item) => {
               const Icon = item.icon || Home
               return (
                 <SidebarMenuItem key={item.title}>

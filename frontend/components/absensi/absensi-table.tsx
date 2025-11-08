@@ -13,18 +13,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Absensi } from "@/lib/types/absensi";
-import { Clock } from "lucide-react";
+import { Clock, Eye, Pencil, Trash2 } from "lucide-react";
 
 interface AbsensiTableProps {
   absensi: Absensi[];
   loading?: boolean;
   className?: string;
+  onViewDetail?: (absensi: Absensi) => void;
+  onEdit?: (absensi: Absensi) => void;
+  onDelete?: (absensi: Absensi) => void;
 }
 
 export function AbsensiTable({
   absensi,
   loading = false,
   className,
+  onViewDetail,
+  onEdit,
+  onDelete,
 }: AbsensiTableProps) {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -74,6 +80,7 @@ export function AbsensiTable({
                   <TableHead className="min-w-[100px]">Jam Pulang</TableHead>
                   <TableHead className="min-w-[150px]">Durasi Kerja</TableHead>
                   <TableHead className="min-w-[200px]">Catatan</TableHead>
+                  <TableHead className="min-w-[120px] text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -102,6 +109,9 @@ export function AbsensiTable({
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-8 w-24 ml-auto" />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -141,6 +151,7 @@ export function AbsensiTable({
                 <TableHead className="min-w-[100px]">Jam Pulang</TableHead>
                 <TableHead className="min-w-[150px]">Durasi Kerja</TableHead>
                 <TableHead className="min-w-[200px]">Catatan</TableHead>
+                <TableHead className="min-w-[120px] text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -168,6 +179,43 @@ export function AbsensiTable({
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {item.catatan || '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      {onViewDetail && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onViewDetail(item)}
+                          title="Lihat Detail"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">Lihat Detail</span>
+                        </Button>
+                      )}
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(item)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(item)}
+                          title="Hapus"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <span className="sr-only">Hapus</span>
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
