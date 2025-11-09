@@ -40,3 +40,5 @@ export interface LogAbsensi {
   deleted_at?: string | null;
 }
 
+
+

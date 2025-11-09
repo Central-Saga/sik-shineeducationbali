@@ -39,6 +39,11 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\LogAbsensi\LogAbsensiRepository::class
         );
 
+        $this->app->bind(
+            \App\Repositories\Contracts\CutiRepositoryInterface::class,
+            \App\Repositories\Cuti\CutiRepository::class
+        );
+
         // Service bindings
         $this->app->bind(
             \App\Services\Contracts\UserServiceInterface::class,
@@ -63,6 +68,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             \App\Services\Contracts\LogAbsensiServiceInterface::class,
             \App\Services\LogAbsensi\LogAbsensiService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\CutiServiceInterface::class,
+            \App\Services\Cuti\CutiService::class
         );
     }
 

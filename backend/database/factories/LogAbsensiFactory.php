@@ -132,3 +132,5 @@ class LogAbsensiFactory extends Factory
 
 
 
+
+

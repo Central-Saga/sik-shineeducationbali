@@ -34,12 +34,26 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
         ]);
 
+        $this->command->newLine();
+
+        // Seed Cuti
+        $this->call([
+            CutiSeeder::class,
+        ]);
+
+        $this->command->newLine();
+
+        // Seed Sesi Kerja
+        $this->call([
+            SesiKerjaSeeder::class,
+        ]);
+
         // Reset cached roles and permissions setelah seeding
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->command->newLine();
         $this->command->info('✅ Database seeding completed successfully!');
-        
+
         // Note: EmployeeSeeder, AbsensiSeeder, dan LogAbsensiSeeder tidak dijalankan
         // karena hanya seeder penting (Roles, Permissions, Users) yang diperlukan
     }

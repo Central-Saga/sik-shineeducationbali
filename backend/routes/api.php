@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Absensi\AbsensiController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Cuti\CutiController;
 use App\Http\Controllers\Api\V1\Employee\EmployeeController;
 use App\Http\Controllers\Api\V1\LogAbsensi\LogAbsensiController;
 use App\Http\Controllers\Api\V1\Permission\PermissionController;
@@ -116,6 +117,30 @@ Route::prefix('v1')->group(function () {
         Route::put('/log-absensi/{id}', [LogAbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
         Route::patch('/log-absensi/{id}', [LogAbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
         Route::delete('/log-absensi/{id}', [LogAbsensiController::class, 'destroy'])->middleware('permission:mengelola absensi');
+    });
+
+    // Cuti API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Additional routes for cuti (must be before standard CRUD routes to avoid route conflicts)
+        // Get leave requests by employee ID
+        Route::get('/cuti/karyawan/{karyawanId}', [CutiController::class, 'byKaryawan'])->middleware('permission:mengelola cuti|melakukan cuti');
+        
+        // Get leave request by employee ID and date
+        Route::get('/cuti/karyawan/{karyawanId}/tanggal/{tanggal}', [CutiController::class, 'byKaryawanAndTanggal'])->middleware('permission:melakukan cuti|mengelola cuti');
+        
+        // Get leave requests by jenis
+        Route::get('/cuti/jenis/{jenis}', [CutiController::class, 'byJenis'])->middleware('permission:mengelola cuti');
+        
+        // Get leave requests by status
+        Route::get('/cuti/status/{status}', [CutiController::class, 'byStatus'])->middleware('permission:mengelola cuti');
+
+        // Standard CRUD routes
+        Route::get('/cuti', [CutiController::class, 'index'])->middleware('permission:mengelola cuti|melakukan cuti');
+        Route::post('/cuti', [CutiController::class, 'store'])->middleware('permission:melakukan cuti|mengelola cuti');
+        Route::get('/cuti/{id}', [CutiController::class, 'show'])->middleware('permission:mengelola cuti|melakukan cuti');
+        Route::put('/cuti/{id}', [CutiController::class, 'update'])->middleware('permission:mengelola cuti');
+        Route::patch('/cuti/{id}', [CutiController::class, 'update'])->middleware('permission:mengelola cuti');
+        Route::delete('/cuti/{id}', [CutiController::class, 'destroy'])->middleware('permission:mengelola cuti');
     });
 
     // Auth routes (protected - requires authentication)
