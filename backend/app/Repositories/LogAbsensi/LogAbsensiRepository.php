@@ -218,3 +218,5 @@ class LogAbsensiRepository extends BaseRepository implements LogAbsensiRepositor
 
 
 
+
+

@@ -55,6 +55,20 @@ class DatabaseSeeder extends Seeder
             LogAbsensiSeeder::class,
         ]);
 
+        $this->command->newLine();
+
+        // Seed Cuti
+        $this->call([
+            CutiSeeder::class,
+        ]);
+
+        $this->command->newLine();
+
+        // Seed Sesi Kerja
+        $this->call([
+            SesiKerjaSeeder::class,
+        ]);
+
         // Reset cached roles and permissions setelah seeding
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 

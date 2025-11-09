@@ -1,0 +1,317 @@
+<?php
+
+namespace App\Services\Cuti;
+
+use App\Models\Cuti;
+use App\Repositories\Contracts\CutiRepositoryInterface;
+use App\Services\Base\BaseService;
+use App\Services\Contracts\CutiServiceInterface;
+use Illuminate\Database\Eloquent\Collection;
+
+class CutiService extends BaseService implements CutiServiceInterface
+{
+    /**
+     * Create a new cuti service instance.
+     *
+     * @param  \App\Repositories\Contracts\CutiRepositoryInterface  $repository
+     */
+    public function __construct(CutiRepositoryInterface $repository)
+    {
+        parent::__construct($repository);
+    }
+
+    /**
+     * Get repository instance with proper type hint.
+     *
+     * @return \App\Repositories\Contracts\CutiRepositoryInterface
+     */
+    protected function getRepository(): CutiRepositoryInterface
+    {
+        return $this->repository;
+    }
+
+    /**
+     * Get all leave requests.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function getAll(): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return parent::getAll();
+    }
+
+    /**
+     * Get a leave request by ID.
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function getById($id): Cuti
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti') && !$this->hasPermission('melakukan cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return parent::getById($id);
+    }
+
+    /**
+     * Create a new leave request.
+     *
+     * @param  array<string, mixed>  $data
+     * @return \App\Models\Cuti
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function create(array $data): Cuti
+    {
+        // Check permission - bisa melakukan cuti atau mengelola cuti
+        if (!$this->hasPermission('melakukan cuti') && !$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to create leave requests.');
+        }
+
+        // Set default status jika tidak ada
+        if (!isset($data['status'])) {
+            $data['status'] = 'diajukan';
+        }
+
+        // Jika status diajukan, pastikan disetujui_oleh null
+        if ($data['status'] === 'diajukan') {
+            $data['disetujui_oleh'] = null;
+        }
+
+        // Check if leave request already exists for this employee and date
+        $existingCuti = $this->getRepository()->findByKaryawanIdAndTanggal(
+            $data['karyawan_id'],
+            $data['tanggal']
+        );
+
+        if ($existingCuti) {
+            abort(422, 'Leave request already exists for this employee on this date.');
+        }
+
+        return parent::create($data);
+    }
+
+    /**
+     * Update a leave request by ID.
+     *
+     * @param  int|string  $id
+     * @param  array<string, mixed>  $data
+     * @return \App\Models\Cuti
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function update($id, array $data): Cuti
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to edit leave requests.');
+        }
+
+        // Jika status diajukan, pastikan disetujui_oleh null
+        if (isset($data['status']) && $data['status'] === 'diajukan') {
+            $data['disetujui_oleh'] = null;
+        }
+
+        // Jika status disetujui atau ditolak, pastikan disetujui_oleh diisi
+        if (isset($data['status']) && in_array($data['status'], ['disetujui', 'ditolak'])) {
+            if (!isset($data['disetujui_oleh'])) {
+                // Ambil user yang sedang login sebagai admin yang menyetujui
+                $data['disetujui_oleh'] = auth()->id();
+            }
+        }
+
+        // If tanggal or karyawan_id is being updated, check for duplicate
+        $cuti = $this->getById($id);
+        $checkKaryawanId = $data['karyawan_id'] ?? $cuti->karyawan_id;
+        $checkTanggal = $data['tanggal'] ?? $cuti->tanggal;
+
+        $existingCuti = $this->getRepository()->findByKaryawanIdAndTanggal(
+            $checkKaryawanId,
+            $checkTanggal
+        );
+
+        if ($existingCuti && $existingCuti->id != $id) {
+            abort(422, 'Leave request already exists for this employee on this date.');
+        }
+
+        return parent::update($id, $data);
+    }
+
+    /**
+     * Delete a leave request by ID.
+     *
+     * @param  int|string  $id
+     * @return bool
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function delete($id): bool
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to delete leave requests.');
+        }
+
+        return parent::delete($id);
+    }
+
+    /**
+     * Find leave requests by employee ID.
+     *
+     * @param  int|string  $karyawanId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByKaryawanId($karyawanId): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti') && !$this->hasPermission('melakukan cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByKaryawanId($karyawanId);
+    }
+
+    /**
+     * Find leave request by employee ID and date.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $tanggal
+     * @return \App\Models\Cuti|null
+     */
+    public function findByKaryawanIdAndTanggal($karyawanId, string $tanggal): ?Cuti
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti') && !$this->hasPermission('melakukan cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByKaryawanIdAndTanggal($karyawanId, $tanggal);
+    }
+
+    /**
+     * Find leave requests by date.
+     *
+     * @param  string  $tanggal
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByTanggal(string $tanggal): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByTanggal($tanggal);
+    }
+
+    /**
+     * Find leave requests by date range.
+     *
+     * @param  string  $startDate
+     * @param  string  $endDate
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByDateRange(string $startDate, string $endDate): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByDateRange($startDate, $endDate);
+    }
+
+    /**
+     * Find leave requests by employee ID and date range.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $startDate
+     * @param  string  $endDate
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByKaryawanIdAndDateRange($karyawanId, string $startDate, string $endDate): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti') && !$this->hasPermission('melakukan cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByKaryawanIdAndDateRange($karyawanId, $startDate, $endDate);
+    }
+
+    /**
+     * Find leave requests by jenis.
+     *
+     * @param  string  $jenis
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByJenis(string $jenis): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByJenis($jenis);
+    }
+
+    /**
+     * Find leave requests by status.
+     *
+     * @param  string  $status
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByStatus(string $status): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByStatus($status);
+    }
+
+    /**
+     * Find leave requests by employee ID and jenis.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $jenis
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByKaryawanIdAndJenis($karyawanId, string $jenis): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti') && !$this->hasPermission('melakukan cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByKaryawanIdAndJenis($karyawanId, $jenis);
+    }
+
+    /**
+     * Find leave requests by employee ID and status.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $status
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function findByKaryawanIdAndStatus($karyawanId, string $status): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola cuti') && !$this->hasPermission('melakukan cuti')) {
+            abort(403, 'You do not have permission to view leave requests.');
+        }
+
+        return $this->getRepository()->findByKaryawanIdAndStatus($karyawanId, $status);
+    }
+}
+
