@@ -60,7 +60,7 @@ class RolePermissionSeeder extends Seeder
         $this->command->info('🔄 Creating roles...');
 
         // Create Owner Role
-        $owner = Role::firstOrCreate(['name' => 'Owner']);
+        $owner = Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web']);
         $ownerPermissions = [
             'mengelola users',
             'mengelola gaji',
@@ -72,7 +72,7 @@ class RolePermissionSeeder extends Seeder
         $this->command->info('✅ Created Owner role with ' . count($ownerPermissions) . ' permissions');
 
         // Create Admin Role
-        $admin = Role::firstOrCreate(['name' => 'Admin']);
+        $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
         $adminPermissions = [
             'mengelola users',
             'mengelola roles',
@@ -87,7 +87,7 @@ class RolePermissionSeeder extends Seeder
         $this->command->info('✅ Created Admin role with ' . count($adminPermissions) . ' permissions');
 
         // Create Karyawan Role
-        $karyawan = Role::firstOrCreate(['name' => 'Karyawan']);
+        $karyawan = Role::firstOrCreate(['name' => 'Karyawan', 'guard_name' => 'web']);
         $karyawanPermissions = [
             'melakukan absensi',
             'melihat gaji',
