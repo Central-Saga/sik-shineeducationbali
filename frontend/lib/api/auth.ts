@@ -1,5 +1,6 @@
 import { apiClient, setAuthToken } from './client';
 import type { ApiResponse } from '@/lib/types/api';
+import type { User } from '@/lib/types/user';
 
 export interface LoginCredentials {
   email: string;
@@ -52,8 +53,8 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
 /**
  * Get current authenticated user
  */
-export async function getCurrentUser(): Promise<AuthResponse['user']> {
-  const response = await apiClient.get<AuthResponse['user']>('/v1/me');
+export async function getCurrentUser(): Promise<User> {
+  const response = await apiClient.get<User>('/v1/me');
   return response.data;
 }
 

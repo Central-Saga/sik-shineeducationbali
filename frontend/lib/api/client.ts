@@ -77,8 +77,12 @@ class ApiClient {
     }
 
     // Handle request body
-    let body: string | undefined;
-    if (config.body && typeof config.body === 'object') {
+    let body: string | FormData | undefined;
+    if (config.body instanceof FormData) {
+      // If body is FormData, don't set Content-Type header (browser will set it with boundary)
+      body = config.body;
+      delete headers['Content-Type'];
+    } else if (config.body && typeof config.body === 'object') {
       body = JSON.stringify(config.body);
     } else if (config.body) {
       body = config.body as string;
@@ -102,12 +106,10 @@ class ApiClient {
         };
 
         // Handle 401 Unauthorized - clear token
+        // Don't redirect automatically to avoid refresh loops
+        // Let components handle redirect based on their context
         if (response.status === 401) {
           removeAuthToken();
-          // Optionally redirect to login
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
         }
 
         throw error;

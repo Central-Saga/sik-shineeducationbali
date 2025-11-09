@@ -5,11 +5,15 @@ namespace App\Services\Employee;
 use App\Models\Employee;
 use App\Models\User;
 use App\Repositories\Contracts\EmployeeRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\Base\BaseService;
 use App\Services\Contracts\EmployeeServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class EmployeeService extends BaseService implements EmployeeServiceInterface
 {
@@ -97,6 +101,26 @@ class EmployeeService extends BaseService implements EmployeeServiceInterface
             // Create user first
             $user = User::create($userData);
 
+            // Clear user cache setelah create user
+            // Karena User::create() tidak melalui repository, kita perlu clear cache manual
+            try {
+                if (method_exists(Cache::getStore(), 'tags')) {
+                    Cache::tags(['user'])->flush();
+                }
+            } catch (\Exception $e) {
+                // Fallback jika tags tidak tersedia
+                Cache::flush();
+            }
+
+            // Ensure "Karyawan" role exists, if not create it
+            $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
+
+            // Assign role "Karyawan" to the user
+            $user->assignRole('Karyawan');
+
+            // Clear permission cache after assigning role
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
             // Set user_id in employee data
             $employeeData['user_id'] = $user->id;
 
@@ -105,8 +129,23 @@ class EmployeeService extends BaseService implements EmployeeServiceInterface
                 $employeeData['kode_karyawan'] = $this->generateKodeKaryawan();
             }
 
-            // Create employee
-            return parent::create($employeeData);
+            // Create employee (ini akan clear employee cache via parent::create())
+            $employee = parent::create($employeeData);
+
+            // Clear employee cache lagi untuk memastikan (karena mungkin ada cache findAll)
+            try {
+                if (method_exists(Cache::getStore(), 'tags')) {
+                    Cache::tags(['employee'])->flush();
+                }
+            } catch (\Exception $e) {
+                // Fallback jika tags tidak tersedia
+            }
+
+            // Load user.roles untuk response (fresh dari database, tidak dari cache)
+            $employee->refresh();
+            $employee->load('user.roles');
+
+            return $employee;
         });
     }
 
@@ -236,7 +275,6 @@ class EmployeeService extends BaseService implements EmployeeServiceInterface
             if (!$exists) {
                 return $kodeKaryawan;
             }
-
         } while ($attempts < $maxAttempts);
 
         // If somehow all attempts failed (very unlikely with 9000 possible combinations)
@@ -244,4 +282,3 @@ class EmployeeService extends BaseService implements EmployeeServiceInterface
         return 'SEB' . substr(time(), -4);
     }
 }
-

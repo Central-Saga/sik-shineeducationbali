@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,12 +16,13 @@ import { toast } from "sonner";
 import type { LoginCredentials } from "@/lib/api/auth";
 import { GraduationCap } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "@/hooks/use-auth";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
+  const { refetch } = useAuth();
   const [credentials, setCredentials] = React.useState<LoginCredentials>({
     email: "",
     password: "",
@@ -55,24 +55,42 @@ export function LoginForm({
 
     try {
       await login(credentials);
+      
+      // Fetch user data first before redirecting
+      await refetch();
+      
       toast.success("Login berhasil! Selamat datang kembali.");
       
-      // Redirect to dashboard
-      router.push("/dashboard");
-      router.refresh();
+      // Use window.location for hard redirect to ensure all state is refreshed
+      window.location.href = "/dashboard";
     } catch (error: unknown) {
       // Handle API validation errors
       if (error && typeof error === 'object' && 'errors' in error) {
-        setErrors((error as { errors: Record<string, string> }).errors);
+        const errorData = error as { errors?: Record<string, string> | Record<string, string[]> };
+        const errorErrors = errorData.errors;
+        // Handle both string and array error formats
+        if (errorErrors) {
+          const normalizedErrors: Record<string, string> = {};
+          Object.keys(errorErrors).forEach((key) => {
+            const value = errorErrors[key];
+            normalizedErrors[key] = Array.isArray(value) ? value[0] : value;
+          });
+          setErrors(normalizedErrors);
+        } else {
+          setErrors({});
+        }
         toast.error("Validasi gagal. Silakan periksa input Anda.");
       } else if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = (error as { message?: string }).message || "Login gagal. Silakan coba lagi.";
         toast.error(errorMessage);
         if (errorMessage.includes("credentials")) {
           setErrors({ email: "Email atau password salah." });
+        } else {
+          setErrors({});
         }
       } else {
         toast.error("Terjadi kesalahan. Silakan coba lagi.");
+        setErrors({});
       }
     } finally {
       setIsLoading(false);
@@ -82,9 +100,9 @@ export function LoginForm({
   const handleChange = (field: keyof LoginCredentials, value: string) => {
     setCredentials((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
-    if (errors[field]) {
+    if (errors?.[field]) {
       setErrors((prev) => {
-        const newErrors = { ...prev };
+        const newErrors = { ...(prev || {}) };
         delete newErrors[field];
         return newErrors;
       });
@@ -114,11 +132,11 @@ export function LoginForm({
                   placeholder="nama@example.com"
                   value={credentials.email}
                   onChange={(e) => handleChange("email", e.target.value)}
-                  aria-invalid={!!errors.email}
+                  aria-invalid={!!errors?.email}
                   disabled={isLoading}
                   required
                 />
-                {errors.email && (
+                {errors?.email && (
                   <p className="text-sm text-destructive mt-1">{errors.email}</p>
                 )}
               </Field>
@@ -138,11 +156,11 @@ export function LoginForm({
                   placeholder="Masukkan kata sandi Anda"
                   value={credentials.password}
                   onChange={(e) => handleChange("password", e.target.value)}
-                  aria-invalid={!!errors.password}
+                  aria-invalid={!!errors?.password}
                   disabled={isLoading}
                   required
                 />
-                {errors.password && (
+                {errors?.password && (
                   <p className="text-sm text-destructive mt-1">{errors.password}</p>
                 )}
               </Field>

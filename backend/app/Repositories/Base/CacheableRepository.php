@@ -45,21 +45,21 @@ trait CacheableRepository
     public function clearCache(): void
     {
         $prefix = $this->getCachePrefix();
-        
+
         // Jika menggunakan cache driver yang support tags (Redis, Memcached)
         try {
             if (method_exists(Cache::getStore(), 'tags')) {
+                // Clear cache dengan tag prefix
                 Cache::tags([$prefix])->flush();
                 return;
             }
         } catch (\Exception $e) {
-            // Fallback jika tags tidak tersedia
+            // Fallback jika tags tidak tersedia atau error
         }
 
-        // Fallback: clear berdasarkan pattern (untuk database/file cache)
-        // Note: Ini akan clear semua cache yang dimulai dengan prefix
-        // Untuk production, disarankan menggunakan Redis dengan tags
-        $this->clearCacheByPattern($prefix);
+        // Fallback: clear semua cache jika tags tidak tersedia
+        // Note: Ini akan clear semua cache, gunakan dengan hati-hati
+        Cache::flush();
     }
 
     /**
@@ -74,7 +74,7 @@ trait CacheableRepository
         // Untuk database/file cache, kita perlu manual clear
         // Cara terbaik: gunakan Redis/Memcached dengan tags
         // Atau implementasikan cache key tracking di database
-        
+
         // Untuk sementara, kita akan handle di method forget() per key
         // Production: gunakan Redis dengan tags untuk performa optimal
     }
@@ -91,7 +91,7 @@ trait CacheableRepository
     {
         $cacheKey = $this->getCacheKey($key);
         $ttl = $ttl ?? $this->getCacheTTL();
-        
+
         // Gunakan tags jika tersedia
         try {
             if (method_exists(Cache::getStore(), 'tags')) {
@@ -101,7 +101,7 @@ trait CacheableRepository
         } catch (\Exception $e) {
             // Fallback ke remember biasa jika tags tidak tersedia
         }
-        
+
         return Cache::remember($cacheKey, $ttl, $callback);
     }
 
@@ -142,4 +142,3 @@ trait CacheableRepository
         return Cache::has($cacheKey);
     }
 }
-

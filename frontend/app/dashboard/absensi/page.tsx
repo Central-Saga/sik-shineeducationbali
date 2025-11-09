@@ -35,16 +35,14 @@ import { Button } from "@/components/ui/button";
 import { AbsensiTable } from "@/components/absensi/absensi-table";
 import { AbsensiDetailDialog } from "@/components/absensi/absensi-detail-dialog";
 import { useAbsensi } from "@/hooks/use-absensi";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { Absensi } from "@/lib/types/absensi";
 import { Clock, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
-import { getEmployees } from "@/lib/api/employees";
+import { getMyEmployee } from "@/lib/api/employees";
 
 export default function AbsensiPage() {
-  const router = useRouter();
   const { user, hasRole } = useAuth();
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [dateFilter, setDateFilter] = React.useState<string>("semua");
@@ -60,8 +58,7 @@ export default function AbsensiPage() {
     if (hasRole('Karyawan') && user?.id && !employeeId) {
       const loadEmployee = async () => {
         try {
-          const employees = await getEmployees();
-          const employee = employees.find(emp => emp.user_id === user.id);
+          const employee = await getMyEmployee();
           if (employee) {
             setEmployeeId(employee.id);
           }
@@ -75,7 +72,7 @@ export default function AbsensiPage() {
 
   // Build params based on filters
   const params = React.useMemo(() => {
-    const filters: any = {};
+    const filters: Record<string, string | number> = {};
     
     // For karyawan, filter by their employee_id
     if (hasRole('Karyawan') && employeeId) {
@@ -125,10 +122,6 @@ export default function AbsensiPage() {
     setDetailDialogOpen(true);
   };
 
-  const handleEdit = (absensi: Absensi) => {
-    router.push(`/dashboard/absensi/${absensi.id}/edit`);
-  };
-
   const handleDeleteClick = (absensi: Absensi) => {
     setDeletingAbsensi(absensi);
     setDeleteDialogOpen(true);
@@ -143,8 +136,9 @@ export default function AbsensiPage() {
       toast.success("Absensi berhasil dihapus");
       setDeleteDialogOpen(false);
       setDeletingAbsensi(null);
-    } catch (error: any) {
-      toast.error(error?.message || "Gagal menghapus absensi");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus absensi";
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -268,7 +262,6 @@ export default function AbsensiPage() {
             absensi={absensi}
             loading={loading}
             onViewDetail={handleViewDetail}
-            onEdit={handleEdit}
             onDelete={handleDeleteClick}
           />
         </div>

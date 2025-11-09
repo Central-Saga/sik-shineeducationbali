@@ -75,6 +75,14 @@ interface AbsensiServiceInterface extends BaseServiceInterface
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function findByKaryawanIdAndStatus($karyawanId, string $statusKehadiran): Collection;
+
+    /**
+     * Check-in or check-out attendance (upsert logic).
+     * For check-in: creates new record if not exists.
+     * For check-out: updates existing record if exists and has jam_masuk.
+     *
+     * @param  array<string, mixed>  $data
+     * @return \App\Models\Absensi
+     */
+    public function checkInOut(array $data): Absensi;
 }
-
-
