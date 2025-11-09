@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { getCurrentUser } from '@/lib/api/auth';
+import { getCurrentUser, logout as logoutApi } from '@/lib/api/auth';
 import type { User } from '@/lib/types/user';
 
 interface AuthContextType {
@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  logout: () => Promise<void>;
   hasRole: (role: string | string[]) => boolean;
   hasPermission: (permission: string | string[]) => boolean;
   hasAnyRole: (roles: string[]) => boolean;
@@ -94,6 +95,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return hasPermission(permissions);
   }, [hasPermission]);
 
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi();
+    } catch (error) {
+      // Ignore logout API errors, still clear local state
+      console.error('Logout API error:', error);
+    } finally {
+      // Clear user state regardless of API response
+      setUser(null);
+      setError(null);
+      // Redirect to login page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -101,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         error,
         refetch: fetchUser,
+        logout,
         hasRole,
         hasPermission,
         hasAnyRole,

@@ -69,6 +69,12 @@ RUN sed -i 's/listen = .*/listen = 9000/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/user = www-data/user = www-data/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/group = www-data/group = www-data/' /usr/local/etc/php-fpm.d/www.conf
 
+# PHP configuration for file uploads
+RUN echo "upload_max_filesize = 10M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 12M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_file_uploads = 20" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/uploads.ini
+
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 

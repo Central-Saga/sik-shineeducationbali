@@ -158,12 +158,35 @@ class AbsensiController extends BaseApiController
         $jenis = $validated['jenis'] ?? null;
 
         if ($request->hasFile('foto_selfie')) {
-            $file = $request->file('foto_selfie');
-            $year = date('Y');
-            $month = date('m');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = "selfies/{$year}/{$month}";
-            $fotoPath = $file->storeAs($path, $filename, 'public');
+            try {
+                $file = $request->file('foto_selfie');
+                
+                // Validate file is valid
+                if (!$file->isValid()) {
+                    return $this->error('File foto selfie tidak valid.', 422);
+                }
+                
+                $year = date('Y');
+                $month = date('m');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $path = "selfies/{$year}/{$month}";
+                
+                // Ensure directory exists
+                $fullPath = storage_path("app/public/{$path}");
+                if (!file_exists($fullPath)) {
+                    \Illuminate\Support\Facades\File::makeDirectory($fullPath, 0755, true);
+                }
+                
+                $fotoPath = $file->storeAs($path, $filename, 'public');
+                
+                // Verify file was stored
+                if (!$fotoPath) {
+                    return $this->error('Gagal menyimpan file foto selfie.', 500);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Foto upload error: ' . $e->getMessage());
+                return $this->error('Gagal mengupload foto selfie: ' . $e->getMessage(), 500);
+            }
         }
 
         // Remove foto_selfie, latitude, longitude, akurasi, jenis from validated data

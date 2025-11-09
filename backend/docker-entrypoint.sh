@@ -3,6 +3,21 @@ set -e
 
 echo "Starting Laravel application setup..."
 
+# Configure PHP for file uploads (for both CLI and FPM)
+echo "Configuring PHP for file uploads..."
+# Create uploads.ini for all PHP SAPIs
+cat > /usr/local/etc/php/conf.d/uploads.ini <<EOF
+upload_max_filesize = 10M
+post_max_size = 12M
+max_file_uploads = 20
+memory_limit = 256M
+EOF
+# Also modify php.ini directly for CLI
+sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 10M/' /usr/local/etc/php/php.ini-development 2>/dev/null || true
+sed -i 's/^post_max_size = .*/post_max_size = 12M/' /usr/local/etc/php/php.ini-development 2>/dev/null || true
+sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 10M/' /usr/local/etc/php/php.ini-production 2>/dev/null || true
+sed -i 's/^post_max_size = .*/post_max_size = 12M/' /usr/local/etc/php/php.ini-production 2>/dev/null || true
+
 # Change to working directory
 cd /var/www/html || exit
 
@@ -46,7 +61,7 @@ echo "Final cache clear..."
 php artisan config:clear 2>/dev/null || true
 php artisan cache:clear 2>/dev/null || true
 
-# Start the server
+# Start the server with PHP configuration for file uploads
 echo "Starting Laravel server..."
-exec php artisan serve --host=0.0.0.0 --port=8000
+exec php -d upload_max_filesize=10M -d post_max_size=12M -d max_file_uploads=20 -d memory_limit=256M artisan serve --host=0.0.0.0 --port=8000
 

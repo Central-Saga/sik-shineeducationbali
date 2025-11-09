@@ -76,10 +76,10 @@ Route::prefix('v1')->group(function () {
         // Get present attendance records (hadir)
         Route::get('/absensi/hadir', [AbsensiController::class, 'hadir'])->middleware('permission:mengelola absensi');
 
-        // Standard CRUD routes - requires 'mengelola absensi' permission
-        Route::get('/absensi', [AbsensiController::class, 'index'])->middleware('permission:mengelola absensi');
+        // Standard CRUD routes - allows karyawan to view their own attendance
+        Route::get('/absensi', [AbsensiController::class, 'index'])->middleware('permission:melakukan absensi|mengelola absensi');
         Route::post('/absensi', [AbsensiController::class, 'store'])->middleware('permission:melakukan absensi|mengelola absensi');
-        Route::get('/absensi/{id}', [AbsensiController::class, 'show'])->middleware('permission:mengelola absensi');
+        Route::get('/absensi/{id}', [AbsensiController::class, 'show'])->middleware('permission:melakukan absensi|mengelola absensi');
         Route::put('/absensi/{id}', [AbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
         Route::patch('/absensi/{id}', [AbsensiController::class, 'update'])->middleware('permission:mengelola absensi');
         Route::delete('/absensi/{id}', [AbsensiController::class, 'destroy'])->middleware('permission:mengelola absensi');

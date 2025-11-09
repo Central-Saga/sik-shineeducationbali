@@ -155,6 +155,7 @@ class StoreAbsensiRequest extends FormRequest
             'foto_selfie.image' => 'File foto selfie harus berupa gambar.',
             'foto_selfie.mimes' => 'File foto selfie harus berformat JPEG, JPG, atau PNG.',
             'foto_selfie.max' => 'Ukuran file foto selfie maksimal 5MB.',
+            'foto_selfie.uploaded' => 'Gagal mengupload foto selfie. Pastikan file valid dan tidak melebihi 5MB.',
             'jenis.required_if' => 'Jenis check-in/check-out wajib diisi jika foto selfie diupload.',
             'jenis.in' => 'Jenis harus salah satu dari: check_in, check_out.',
         ];

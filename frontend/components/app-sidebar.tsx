@@ -15,6 +15,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -25,6 +26,8 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/use-auth"
+import { LogOut } from "lucide-react"
+import { toast } from "sonner"
 
 // Navigation data untuk aplikasi SIK - Shine Education Bali
 type NavItem = {
@@ -169,7 +172,7 @@ const allNavItems: NavItem[] = [
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { hasRole, loading } = useAuth();
+  const { hasRole, loading, logout, user } = useAuth();
 
   // Filter menu berdasarkan role user
   const filteredNavItems = React.useMemo(() => {
@@ -236,6 +239,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={async () => {
+                try {
+                  await logout();
+                  toast.success("Logout berhasil");
+                } catch {
+                  toast.error("Gagal logout");
+                }
+              }}
+              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="size-4" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          {user && (
+            <SidebarMenuItem>
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                <div className="font-medium text-foreground">{user.name}</div>
+                <div className="truncate">{user.email}</div>
+              </div>
+            </SidebarMenuItem>
+          )}
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   )
 }

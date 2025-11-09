@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,12 +16,13 @@ import { toast } from "sonner";
 import type { LoginCredentials } from "@/lib/api/auth";
 import { GraduationCap } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "@/hooks/use-auth";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
+  const { refetch } = useAuth();
   const [credentials, setCredentials] = React.useState<LoginCredentials>({
     email: "",
     password: "",
@@ -55,10 +55,14 @@ export function LoginForm({
 
     try {
       await login(credentials);
+      
+      // Fetch user data first before redirecting
+      await refetch();
+      
       toast.success("Login berhasil! Selamat datang kembali.");
       
-      // Redirect to dashboard using replace to avoid back button issues
-      router.replace("/dashboard");
+      // Use window.location for hard redirect to ensure all state is refreshed
+      window.location.href = "/dashboard";
     } catch (error: unknown) {
       // Handle API validation errors
       if (error && typeof error === 'object' && 'errors' in error) {
