@@ -193,8 +193,14 @@ class AbsensiController extends BaseApiController
         // (these are not part of absensi table, but used for log_absensi)
         unset($validated['foto_selfie'], $validated['latitude'], $validated['longitude'], $validated['akurasi'], $validated['jenis']);
 
-        // Create absensi
-        $absensi = $this->absensiService->create($validated);
+        // Use checkInOut method if jenis is provided (check-in/check-out mode)
+        // Otherwise use normal create method
+        if ($jenis) {
+            $absensi = $this->absensiService->checkInOut(array_merge($validated, ['jenis' => $jenis]));
+        } else {
+            $absensi = $this->absensiService->create($validated);
+        }
+        
         $absensi->load('employee.user');
 
         // If foto and geo location are provided, create log absensi
@@ -222,6 +228,14 @@ class AbsensiController extends BaseApiController
 
             $logAbsensiService->create($logData);
             $absensi->load('logAbsensi');
+        }
+
+        // Return success (not created) if it was an update (check-out)
+        if ($jenis === 'check_out') {
+            return $this->success(
+                new AbsensiResource($absensi),
+                'Check-out berhasil dilakukan'
+            );
         }
 
         return $this->created(

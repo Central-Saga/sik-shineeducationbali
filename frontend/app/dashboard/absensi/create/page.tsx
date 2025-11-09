@@ -65,7 +65,12 @@ export default function CreateAbsensiPage() {
   const handleSubmit = async (data: AbsensiFormData) => {
     try {
       await createAbsensi(data);
-      toast.success("Absensi berhasil ditambahkan");
+      const message = data.jenis === 'check_out' 
+        ? "Check-out berhasil dilakukan" 
+        : data.jenis === 'check_in'
+        ? "Check-in berhasil dilakukan"
+        : "Absensi berhasil ditambahkan";
+      toast.success(message);
       router.push("/dashboard/absensi");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Gagal menambahkan absensi";
