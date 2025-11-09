@@ -79,27 +79,25 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         }
 
         // Auto-fill nilai default untuk koordinat referensi dan radius jika tidak diisi
+        // Koordinat PT. CENTRAL SAGA MANDALA: -8.549553, 115.124725
         if (!isset($data['latitude_referensi'])) {
-            $data['latitude_referensi'] = -8.5209686;
+            $data['latitude_referensi'] = -8.549553;
         }
         if (!isset($data['longitude_referensi'])) {
-            $data['longitude_referensi'] = 115.1378956;
+            $data['longitude_referensi'] = 115.124725;
         }
-        if (!isset($data['radius_min'])) {
-            $data['radius_min'] = 20;
-        }
+        // Radius maksimal: 50 meter (tidak perlu radius_min lagi)
         if (!isset($data['radius_max'])) {
             $data['radius_max'] = 50;
         }
 
-        // Validasi GPS berdasarkan radius dan koordinat referensi
+        // Validasi GPS berdasarkan radius maksimal dan koordinat referensi
         if (isset($data['latitude']) && isset($data['longitude'])) {
             $data['validasi_gps'] = $this->validateGPSLocation(
                 $data['latitude'],
                 $data['longitude'],
                 $data['latitude_referensi'],
                 $data['longitude_referensi'],
-                $data['radius_min'],
                 $data['radius_max']
             );
         }
@@ -108,13 +106,12 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
     }
 
     /**
-     * Validate GPS location based on reference coordinates and radius.
+     * Validate GPS location based on reference coordinates and maximum radius.
      *
      * @param  float  $latitude
      * @param  float  $longitude
      * @param  float  $latitudeReferensi
      * @param  float  $longitudeReferensi
-     * @param  int  $radiusMin
      * @param  int  $radiusMax
      * @return bool
      */
@@ -123,7 +120,6 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         float $longitude,
         float $latitudeReferensi,
         float $longitudeReferensi,
-        int $radiusMin,
         int $radiusMax
     ): bool {
         // Calculate distance using Haversine formula
@@ -134,9 +130,9 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
             $longitude
         );
 
-        // Valid jika jarak berada dalam range radius (min <= distance <= max) dalam meter
-        // Lokasi absensi harus berada dalam radius 20-50 meter dari koordinat referensi
-        return $distance >= $radiusMin && $distance <= $radiusMax;
+        // Valid jika jarak tidak melebihi radius maksimal (distance <= radiusMax) dalam meter
+        // Lokasi absensi harus berada dalam radius maksimal 50 meter dari koordinat referensi PT. CENTRAL SAGA MANDALA
+        return $distance <= $radiusMax;
     }
 
     /**
@@ -181,26 +177,22 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
 
         // Get existing record to get default values if not provided
         $existingRecord = $this->getRepository()->find($id);
-        
+
         // Auto-fill nilai default jika tidak diisi
+        // Koordinat PT. CENTRAL SAGA MANDALA: -8.549553, 115.124725
         if (!isset($data['latitude_referensi']) && $existingRecord) {
-            $data['latitude_referensi'] = $existingRecord->latitude_referensi ?? -8.5209686;
+            $data['latitude_referensi'] = $existingRecord->latitude_referensi ?? -8.549553;
         } elseif (!isset($data['latitude_referensi'])) {
-            $data['latitude_referensi'] = -8.5209686;
+            $data['latitude_referensi'] = -8.549553;
         }
-        
+
         if (!isset($data['longitude_referensi']) && $existingRecord) {
-            $data['longitude_referensi'] = $existingRecord->longitude_referensi ?? 115.1378956;
+            $data['longitude_referensi'] = $existingRecord->longitude_referensi ?? 115.124725;
         } elseif (!isset($data['longitude_referensi'])) {
-            $data['longitude_referensi'] = 115.1378956;
+            $data['longitude_referensi'] = 115.124725;
         }
-        
-        if (!isset($data['radius_min']) && $existingRecord) {
-            $data['radius_min'] = $existingRecord->radius_min ?? 20;
-        } elseif (!isset($data['radius_min'])) {
-            $data['radius_min'] = 20;
-        }
-        
+
+        // Radius maksimal: 50 meter
         if (!isset($data['radius_max']) && $existingRecord) {
             $data['radius_max'] = $existingRecord->radius_max ?? 50;
         } elseif (!isset($data['radius_max'])) {
@@ -210,14 +202,13 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         // Validasi GPS jika latitude/longitude diubah atau koordinat referensi/radius diubah
         $latitude = $data['latitude'] ?? ($existingRecord ? $existingRecord->latitude : null);
         $longitude = $data['longitude'] ?? ($existingRecord ? $existingRecord->longitude : null);
-        
+
         if ($latitude !== null && $longitude !== null) {
             $data['validasi_gps'] = $this->validateGPSLocation(
                 $latitude,
                 $longitude,
                 $data['latitude_referensi'],
                 $data['longitude_referensi'],
-                $data['radius_min'],
                 $data['radius_max']
             );
         }
@@ -419,4 +410,3 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         return $this->getRepository()->findCheckOutByAbsensiId($absensiId);
     }
 }
-

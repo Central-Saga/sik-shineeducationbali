@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { getCurrentUser } from '@/lib/api/auth';
+import { getCurrentUser, logout as logoutApi } from '@/lib/api/auth';
 import type { User } from '@/lib/types/user';
 
 interface AuthContextType {
@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  logout: () => Promise<void>;
   hasRole: (role: string | string[]) => boolean;
   hasPermission: (permission: string | string[]) => boolean;
   hasAnyRole: (roles: string[]) => boolean;
@@ -23,10 +24,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchUser = useCallback(async () => {
+    // Check if token exists before fetching user
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       setError(null);
       const userData = await getCurrentUser();
-      setUser(userData);
+      // Validate user data before setting
+      if (userData && typeof userData === 'object' && userData.id) {
+        setUser({
+          id: userData.id,
+          name: userData?.name || '',
+          email: userData?.email || '',
+          roles: userData?.roles || [],
+          permissions: userData?.permissions || [],
+          created_at: userData?.created_at || new Date().toISOString(),
+          updated_at: userData?.updated_at || new Date().toISOString(),
+        });
+      } else {
+        setUser(null);
+        setError('Invalid user data received');
+      }
     } catch (err: any) {
       setError(err?.message || 'Failed to fetch user');
       setUser(null);
@@ -70,6 +95,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return hasPermission(permissions);
   }, [hasPermission]);
 
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi();
+    } catch (error) {
+      // Ignore logout API errors, still clear local state
+      console.error('Logout API error:', error);
+    } finally {
+      // Clear user state regardless of API response
+      setUser(null);
+      setError(null);
+      // Redirect to login page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -77,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         error,
         refetch: fetchUser,
+        logout,
         hasRole,
         hasPermission,
         hasAnyRole,

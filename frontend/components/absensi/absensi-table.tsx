@@ -13,14 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Absensi } from "@/lib/types/absensi";
-import { Clock, Eye, Pencil, Trash2 } from "lucide-react";
+import { Clock, Eye, Trash2 } from "lucide-react";
 
 interface AbsensiTableProps {
   absensi: Absensi[];
   loading?: boolean;
   className?: string;
   onViewDetail?: (absensi: Absensi) => void;
-  onEdit?: (absensi: Absensi) => void;
   onDelete?: (absensi: Absensi) => void;
 }
 
@@ -29,7 +28,6 @@ export function AbsensiTable({
   loading = false,
   className,
   onViewDetail,
-  onEdit,
   onDelete,
 }: AbsensiTableProps) {
   const getStatusLabel = (status: string) => {
@@ -191,17 +189,6 @@ export function AbsensiTable({
                         >
                           <Eye className="h-4 w-4" />
                           <span className="sr-only">Lihat Detail</span>
-                        </Button>
-                      )}
-                      {onEdit && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(item)}
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
                         </Button>
                       )}
                       {onDelete && (

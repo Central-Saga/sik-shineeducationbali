@@ -92,6 +92,81 @@ class AbsensiService extends BaseService implements AbsensiServiceInterface
     }
 
     /**
+     * Check-in or check-out attendance (upsert logic).
+     * For check-in: creates new record if not exists.
+     * For check-out: updates existing record if exists and has jam_masuk.
+     *
+     * @param  array<string, mixed>  $data
+     * @return \App\Models\Absensi
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function checkInOut(array $data): Absensi
+    {
+        // Check permission - bisa melakukan absensi atau mengelola absensi
+        if (!$this->hasPermission('melakukan absensi') && !$this->hasPermission('mengelola absensi')) {
+            abort(403, 'You do not have permission to create attendance records.');
+        }
+
+        $jenis = $data['jenis'] ?? null;
+        $karyawanId = $data['karyawan_id'];
+        $tanggal = $data['tanggal'];
+
+        // Check if attendance already exists for this employee and date
+        $existingAbsensi = $this->getRepository()->findByKaryawanIdAndTanggal(
+            $karyawanId,
+            $tanggal
+        );
+
+        if ($jenis === 'check_in') {
+            // Check-in: must not exist
+            if ($existingAbsensi) {
+                abort(422, 'Anda sudah melakukan check-in hari ini. Silakan lakukan check-out terlebih dahulu.');
+            }
+            // Create new record
+            return parent::create($data);
+        } elseif ($jenis === 'check_out') {
+            // Check-out: must exist and have jam_masuk
+            if (!$existingAbsensi) {
+                abort(422, 'Anda belum melakukan check-in hari ini. Silakan lakukan check-in terlebih dahulu.');
+            }
+            if (!$existingAbsensi->jam_masuk) {
+                abort(422, 'Data absensi tidak valid. Jam masuk tidak ditemukan.');
+            }
+            if ($existingAbsensi->jam_pulang) {
+                abort(422, 'Anda sudah melakukan check-out hari ini.');
+            }
+            
+            // Validate that jam_pulang is greater than jam_masuk
+            $jamMasukCarbon = \Carbon\Carbon::createFromTimeString($existingAbsensi->jam_masuk);
+            $jamPulangCarbon = \Carbon\Carbon::createFromTimeString($data['jam_pulang']);
+            
+            if ($jamPulangCarbon->lessThanOrEqualTo($jamMasukCarbon)) {
+                abort(422, 'Jam pulang harus lebih besar dari jam masuk.');
+            }
+            
+            // Update existing record with jam_pulang
+            // Use repository directly to bypass permission check (karyawan can checkout their own attendance)
+            $updateData = [
+                'jam_pulang' => $data['jam_pulang'],
+            ];
+            // Update sumber_absen if provided
+            if (isset($data['sumber_absen'])) {
+                $updateData['sumber_absen'] = $data['sumber_absen'];
+            }
+            // Use repository directly to bypass permission check in update() method
+            return \Illuminate\Support\Facades\DB::transaction(function () use ($existingAbsensi, $updateData) {
+                return $this->getRepository()->update($existingAbsensi->id, $updateData);
+            });
+        } else {
+            // Fallback to normal create
+            if ($existingAbsensi) {
+                abort(422, 'Attendance record already exists for this employee on this date.');
+            }
+            return parent::create($data);
+        }
+    }
+
+    /**
      * Update an attendance record by ID.
      *
      * @param  int|string  $id

@@ -19,6 +19,12 @@ RUN apt-get update && apt-get install -y \
     libxpm-dev \
     libicu-dev \
     pkg-config \
+    build-essential \
+    autoconf \
+    gcc \
+    make \
+    zlib1g-dev \
+    libz-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
@@ -35,11 +41,17 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-x
     intl
 
 # Install Redis PHP extension via PECL
-RUN pecl install redis \
+RUN pecl channel-update pecl.php.net \
+    && pecl install -o -f redis \
+    && rm -rf /tmp/pear \
     && docker-php-ext-enable redis
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copy entrypoint script first
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Copy existing application directory contents
 COPY . /var/www/html
@@ -49,13 +61,19 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Install PHP dependencies
-RUN if [ -f "composer.json" ]; then composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist; fi
+# Install PHP dependencies (including dev for development)
+RUN if [ -f "composer.json" ]; then composer install --optimize-autoloader --no-interaction --prefer-dist --no-scripts; fi
 
 # PHP-FPM configuration for Docker
 RUN sed -i 's/listen = .*/listen = 9000/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/user = www-data/user = www-data/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/group = www-data/group = www-data/' /usr/local/etc/php-fpm.d/www.conf
+
+# PHP configuration for file uploads
+RUN echo "upload_max_filesize = 10M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 12M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_file_uploads = 20" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/uploads.ini
 
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
@@ -63,5 +81,5 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # Expose port 8000 for HTTP server
 EXPOSE 8000
 
-# Start Laravel HTTP server (can be overridden in docker-compose.yml)
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Use entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

@@ -19,44 +19,25 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { AbsensiForm } from "@/components/absensi/absensi-form";
-import { getAbsensiById, updateAbsensi } from "@/lib/api/absensi";
-import type { AbsensiFormData } from "@/lib/types/absensi";
-import type { Absensi } from "@/lib/types/absensi";
+import { EmployeeForm } from "@/components/employees/employee-form";
+import { useEmployee } from "@/hooks/use-employee";
 import { toast } from "sonner";
-import { ArrowLeft, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import type { EmployeeFormData } from "@/lib/types/employee";
 
-export default function EditAbsensiPage() {
+export default function EditEmployeePage() {
   const router = useRouter();
   const params = useParams();
-  const absensiId = params.id as string;
-  const [absensi, setAbsensi] = React.useState<Absensi | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const employeeId = params.id as string;
+  const { employee, loading, error, update } = useEmployee(employeeId);
 
-  React.useEffect(() => {
-    const loadAbsensi = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getAbsensiById(absensiId);
-        setAbsensi(data);
-      } catch (err: any) {
-        setError(err?.message || "Gagal memuat data absensi");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAbsensi();
-  }, [absensiId]);
-
-  const handleSubmit = async (data: AbsensiFormData) => {
+  const handleSubmit = async (data: EmployeeFormData) => {
     try {
-      await updateAbsensi(absensiId, data);
-      toast.success("Absensi berhasil diperbarui");
-      router.push("/dashboard/absensi");
-    } catch (error: any) {
-      toast.error(error?.message || "Gagal memperbarui absensi");
+      await update(data);
+      toast.success("Karyawan berhasil diperbarui");
+      router.push("/dashboard/employees");
+    } catch (error: unknown) {
+      // Error will be handled by EmployeeForm component
       throw error;
     }
   };
@@ -77,14 +58,14 @@ export default function EditAbsensiPage() {
           </header>
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 md:p-6">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Memuat data absensi...</p>
+            <p className="text-sm text-muted-foreground">Memuat data karyawan...</p>
           </div>
         </SidebarInset>
       </SidebarProvider>
     );
   }
 
-  if (error || !absensi) {
+  if (error || !employee) {
     return (
       <SidebarProvider
         style={
@@ -100,12 +81,12 @@ export default function EditAbsensiPage() {
           </header>
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 md:p-6">
             <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Absensi tidak ditemukan</h2>
+              <h2 className="text-xl font-semibold mb-2">Karyawan tidak ditemukan</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                {error || "Absensi yang Anda cari tidak ada."}
+                {error || "Karyawan yang Anda cari tidak ada."}
               </p>
               <Button asChild>
-                <Link href="/dashboard/absensi">Kembali ke Daftar Absensi</Link>
+                <Link href="/dashboard/employees">Kembali ke Daftar Karyawan</Link>
               </Button>
             </div>
           </div>
@@ -137,7 +118,11 @@ export default function EditAbsensiPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard/absensi">Absensi</BreadcrumbLink>
+                <BreadcrumbLink href="/dashboard/employees">Karyawan</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/dashboard/employees/${employee.id}`}>Detail</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -149,36 +134,47 @@ export default function EditAbsensiPage() {
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
-              <Link href="/dashboard/absensi">
+              <Link href={`/dashboard/employees/${employee.id}`}>
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Kembali</span>
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-                <Clock className="h-6 w-6" />
-                Edit Absensi: {absensi.employee?.user?.name || `ID: ${absensi.id}`}
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Ubah Karyawan: {employee?.user?.name || `ID: ${employee?.id || 'N/A'}`}
               </h1>
               <p className="text-muted-foreground">
-                Perbarui informasi absensi
+                Perbarui informasi karyawan
               </p>
             </div>
           </div>
 
-          <AbsensiForm
+          <EmployeeForm
             initialData={{
-              id: absensi.id,
-              karyawan_id: absensi.karyawan_id,
-              tanggal: absensi.tanggal,
-              status_kehadiran: absensi.status_kehadiran,
-              jam_masuk: absensi.jam_masuk || null,
-              jam_pulang: absensi.jam_pulang || null,
-              sumber_absen: absensi.sumber_absen || null,
-              catatan: absensi.catatan || null,
+              id: employee?.id || 0,
+              kode_karyawan: employee?.kode_karyawan || "",
+              user_id: employee?.user_id || undefined,
+              user: employee?.user
+                ? {
+                    id: employee.user?.id || 0,
+                    name: employee.user?.name || "",
+                    email: employee.user?.email || "",
+                  }
+                : undefined,
+              kategori_karyawan: employee?.kategori_karyawan || "",
+              subtipe_kontrak: employee?.subtipe_kontrak || null,
+              tipe_gaji: employee?.tipe_gaji || "",
+              gaji_pokok: employee?.gaji_pokok || null,
+              bank_nama: employee?.bank_nama || "",
+              bank_no_rekening: employee?.bank_no_rekening || "",
+              nomor_hp: employee?.nomor_hp || "",
+              alamat: employee?.alamat || "",
+              tanggal_lahir: employee?.tanggal_lahir || "",
+              status: employee?.status || "aktif",
             }}
             onSubmit={handleSubmit}
-            onCancel={() => router.push("/dashboard/absensi")}
-            submitLabel="Perbarui Absensi"
+            onCancel={() => router.push(`/dashboard/employees/${employee.id}`)}
+            submitLabel="Perbarui Karyawan"
             isLoading={loading}
             isEditing={true}
           />

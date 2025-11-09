@@ -36,27 +36,6 @@ class DatabaseSeeder extends Seeder
 
         $this->command->newLine();
 
-        // Seed Employees
-        $this->call([
-            EmployeeSeeder::class,
-        ]);
-
-        $this->command->newLine();
-
-        // Seed Absensi
-        $this->call([
-            AbsensiSeeder::class,
-        ]);
-
-        $this->command->newLine();
-
-        // Seed Log Absensi
-        $this->call([
-            LogAbsensiSeeder::class,
-        ]);
-
-        $this->command->newLine();
-
         // Seed Cuti
         $this->call([
             CutiSeeder::class,
@@ -74,5 +53,8 @@ class DatabaseSeeder extends Seeder
 
         $this->command->newLine();
         $this->command->info('✅ Database seeding completed successfully!');
+
+        // Note: EmployeeSeeder, AbsensiSeeder, dan LogAbsensiSeeder tidak dijalankan
+        // karena hanya seeder penting (Roles, Permissions, Users) yang diperlukan
     }
 }

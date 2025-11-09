@@ -2,7 +2,6 @@ import * as React from "react"
 import {
   LayoutDashboard,
   Users,
-  BookOpen,
   GraduationCap,
   Settings,
   Shield,
@@ -16,6 +15,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -26,6 +26,8 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/use-auth"
+import { LogOut } from "lucide-react"
+import { toast } from "sonner"
 
 // Navigation data untuk aplikasi SIK - Shine Education Bali
 type NavItem = {
@@ -141,6 +143,10 @@ const allNavItems: NavItem[] = [
         title: "Semua Absensi",
         url: "/dashboard/absensi",
       },
+      {
+        title: "Tambah Absensi",
+        url: "/dashboard/absensi/create",
+      },
     ],
   },
   {
@@ -166,7 +172,7 @@ const allNavItems: NavItem[] = [
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { hasRole, loading } = useAuth();
+  const { hasRole, loading, logout, user } = useAuth();
 
   // Filter menu berdasarkan role user
   const filteredNavItems = React.useMemo(() => {
@@ -184,13 +190,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar variant="floating" {...props}>
-      <SidebarHeader className="bg-gradient-sidebar">
+      <SidebarHeader className="bg-red-600 rounded-t-lg overflow-hidden">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="gap-3 hover:bg-red-700/50 transition-colors duration-200">
               <a href="/dashboard">
-                <div className="bg-gradient-primary text-white flex aspect-square size-8 items-center justify-center rounded-lg shadow-md">
-                  <GraduationCap className="size-4" />
+                <div className="bg-white/20 backdrop-blur-sm text-white flex aspect-square size-10 items-center justify-center rounded-xl shadow-sm border border-white/10 transition-all duration-200 group-hover:bg-white/30 group-hover:scale-105">
+                  <GraduationCap className="size-5 transition-transform duration-200 group-hover:scale-110" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold text-white">SIK</span>
@@ -233,6 +239,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={async () => {
+                try {
+                  await logout();
+                  toast.success("Logout berhasil");
+                } catch {
+                  toast.error("Gagal logout");
+                }
+              }}
+              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="size-4" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          {user && (
+            <SidebarMenuItem>
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                <div className="font-medium text-foreground">{user.name}</div>
+                <div className="truncate">{user.email}</div>
+              </div>
+            </SidebarMenuItem>
+          )}
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   )
 }

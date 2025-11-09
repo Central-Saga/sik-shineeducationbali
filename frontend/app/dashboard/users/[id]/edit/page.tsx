@@ -146,9 +146,9 @@ export default function EditUserPage() {
 
           <UserForm
             initialData={{
-              name: user.name,
-              email: user.email,
-              roles: user.roles || [],
+              name: user?.name || "",
+              email: user?.email || "",
+              roles: user?.roles || [],
             }}
             onSubmit={handleSubmit}
             onCancel={() => router.push("/dashboard/users")}

@@ -46,6 +46,14 @@ https://shine.local.test {
             header_up X-Forwarded-For {remote_host}
             header_up X-Forwarded-Proto {scheme}
             header_up X-Forwarded-Host {host}
+            # Increase body size limit for file uploads (10MB + buffer)
+            transport http {
+                dial_timeout 30s
+            }
+        }
+        # Set max body size for file uploads
+        request_body {
+            max_size 12MB
         }
     }
     

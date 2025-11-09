@@ -150,8 +150,93 @@ class AbsensiController extends BaseApiController
         // Request sudah handle validation dan prepareForValidation
         $validated = $request->validated();
 
-        $absensi = $this->absensiService->create($validated);
+        // Handle foto upload if provided
+        $fotoPath = null;
+        $latitude = $validated['latitude'] ?? null;
+        $longitude = $validated['longitude'] ?? null;
+        $akurasi = $validated['akurasi'] ?? null;
+        $jenis = $validated['jenis'] ?? null;
+
+        if ($request->hasFile('foto_selfie')) {
+            try {
+                $file = $request->file('foto_selfie');
+                
+                // Validate file is valid
+                if (!$file->isValid()) {
+                    return $this->error('File foto selfie tidak valid.', 422);
+                }
+                
+                $year = date('Y');
+                $month = date('m');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $path = "selfies/{$year}/{$month}";
+                
+                // Ensure directory exists
+                $fullPath = storage_path("app/public/{$path}");
+                if (!file_exists($fullPath)) {
+                    \Illuminate\Support\Facades\File::makeDirectory($fullPath, 0755, true);
+                }
+                
+                $fotoPath = $file->storeAs($path, $filename, 'public');
+                
+                // Verify file was stored
+                if (!$fotoPath) {
+                    return $this->error('Gagal menyimpan file foto selfie.', 500);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Foto upload error: ' . $e->getMessage());
+                return $this->error('Gagal mengupload foto selfie: ' . $e->getMessage(), 500);
+            }
+        }
+
+        // Remove foto_selfie, latitude, longitude, akurasi, jenis from validated data
+        // (these are not part of absensi table, but used for log_absensi)
+        unset($validated['foto_selfie'], $validated['latitude'], $validated['longitude'], $validated['akurasi'], $validated['jenis']);
+
+        // Use checkInOut method if jenis is provided (check-in/check-out mode)
+        // Otherwise use normal create method
+        if ($jenis) {
+            $absensi = $this->absensiService->checkInOut(array_merge($validated, ['jenis' => $jenis]));
+        } else {
+            $absensi = $this->absensiService->create($validated);
+        }
+        
         $absensi->load('employee.user');
+
+        // If foto and geo location are provided, create log absensi
+        if ($fotoPath && $latitude !== null && $longitude !== null && $jenis) {
+            $logAbsensiService = app(\App\Services\Contracts\LogAbsensiServiceInterface::class);
+            
+            // Use current time for check-in/check-out
+            $currentTime = now()->format('Y-m-d H:i:s');
+            
+            // Koordinat PT. CENTRAL SAGA MANDALA: -8.549553, 115.124725
+            // Radius maksimal: 50 meter
+            $logData = [
+                'absensi_id' => $absensi->id,
+                'jenis' => $jenis,
+                'waktu' => $currentTime,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'akurasi' => $akurasi ?? 0,
+                'foto_selfie' => $fotoPath,
+                'sumber' => $absensi->sumber_absen ?? 'web',
+                'latitude_referensi' => -8.549553,
+                'longitude_referensi' => 115.124725,
+                'radius_max' => 50,
+            ];
+
+            $logAbsensiService->create($logData);
+            $absensi->load('logAbsensi');
+        }
+
+        // Return success (not created) if it was an update (check-out)
+        if ($jenis === 'check_out') {
+            return $this->success(
+                new AbsensiResource($absensi),
+                'Check-out berhasil dilakukan'
+            );
+        }
 
         return $this->created(
             new AbsensiResource($absensi),

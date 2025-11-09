@@ -112,6 +112,22 @@ class LogAbsensiResource extends JsonResource
                 fn() => (int) $this->radius_max,
                 null
             ),
+            'distance' => $this->when(
+                $this->latitude !== null && 
+                $this->longitude !== null && 
+                $this->latitude_referensi !== null && 
+                $this->longitude_referensi !== null,
+                function () {
+                    // Calculate distance from reference point using Haversine formula
+                    return $this->calculateDistance(
+                        (float) $this->latitude_referensi,
+                        (float) $this->longitude_referensi,
+                        (float) $this->latitude,
+                        (float) $this->longitude
+                    );
+                },
+                null
+            ),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
             'deleted_at' => $this->when(
@@ -120,6 +136,31 @@ class LogAbsensiResource extends JsonResource
                 null
             ),
         ];
+    }
+
+    /**
+     * Calculate distance between two coordinates using Haversine formula.
+     *
+     * @param  float  $lat1
+     * @param  float  $lon1
+     * @param  float  $lat2
+     * @param  float  $lon2
+     * @return float Distance in meters
+     */
+    protected function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371000; // Earth radius in meters
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 }
 

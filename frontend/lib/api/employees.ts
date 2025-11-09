@@ -5,7 +5,19 @@ import type { Employee, EmployeeFormData } from '@/lib/types/employee';
  * Get all employees with user relation
  */
 export async function getEmployees(): Promise<Employee[]> {
-  const response = await apiClient.get<Employee[]>('/v1/employees');
+  const response = await apiClient.get<Employee[]>('/v1/employees', {
+    params: {
+      _t: Date.now(), // Cache busting
+    },
+  });
+  return response.data;
+}
+
+/**
+ * Get current user's employee data
+ */
+export async function getMyEmployee(): Promise<Employee> {
+  const response = await apiClient.get<Employee>('/v1/employees/me');
   return response.data;
 }
 
