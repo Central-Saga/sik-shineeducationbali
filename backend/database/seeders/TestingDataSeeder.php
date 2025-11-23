@@ -195,7 +195,7 @@ class TestingDataSeeder extends Seeder
     }
 
     /**
-     * Seed absensi untuk 2 bulan terakhir
+     * Seed absensi untuk November 2025
      */
     protected function seedAbsensi(): void
     {
@@ -207,8 +207,9 @@ class TestingDataSeeder extends Seeder
             return;
         }
 
-        $startDate = Carbon::now()->subMonths(2)->startOfMonth();
-        $endDate = Carbon::now()->endOfMonth();
+        // Data khusus untuk November 2025
+        $startDate = Carbon::create(2025, 11, 1)->startOfMonth();
+        $endDate = Carbon::create(2025, 11, 30)->endOfMonth();
         $createdCount = 0;
 
         foreach ($employees as $employee) {
@@ -292,7 +293,7 @@ class TestingDataSeeder extends Seeder
     }
 
     /**
-     * Seed cuti dengan lebih banyak yang disetujui
+     * Seed cuti dengan lebih banyak yang disetujui untuk November 2025
      */
     protected function seedCuti(): void
     {
@@ -313,8 +314,9 @@ class TestingDataSeeder extends Seeder
             return;
         }
 
-        $startDate = Carbon::now()->subMonths(2)->startOfMonth();
-        $endDate = Carbon::now()->endOfMonth();
+        // Data khusus untuk November 2025
+        $startDate = Carbon::create(2025, 11, 1)->startOfMonth();
+        $endDate = Carbon::create(2025, 11, 30)->endOfMonth();
         $createdCount = 0;
 
         foreach ($employees as $employee) {
@@ -416,8 +418,9 @@ class TestingDataSeeder extends Seeder
             return;
         }
 
-        $startDate = Carbon::now()->subMonths(2)->startOfMonth();
-        $endDate = Carbon::now()->endOfMonth();
+        // Data khusus untuk November 2025
+        $startDate = Carbon::create(2025, 11, 1)->startOfMonth();
+        $endDate = Carbon::create(2025, 11, 30)->endOfMonth();
         $createdCount = 0;
 
         foreach ($employees as $employee) {
