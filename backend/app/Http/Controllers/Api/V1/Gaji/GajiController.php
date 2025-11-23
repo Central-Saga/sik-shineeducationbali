@@ -79,7 +79,7 @@ class GajiController extends BaseApiController
     public function show($id): JsonResponse
     {
         $gaji = $this->gajiService->getById($id);
-        $gaji->load('employee.user');
+        $gaji->load(['employee.user', 'komponenGaji', 'pembayaranGaji']);
 
         return $this->success(
             new GajiResource($gaji),

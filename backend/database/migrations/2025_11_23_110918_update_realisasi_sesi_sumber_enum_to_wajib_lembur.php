@@ -14,7 +14,7 @@ return new class extends Migration
     {
         // Step 1: Add new enum values first (temporary: keep old values)
         DB::statement("ALTER TABLE realisasi_sesi MODIFY COLUMN sumber ENUM('jadwal', 'manual', 'wajib', 'lembur') NOT NULL");
-        
+
         // Step 2: Update existing data: 'jadwal' -> 'wajib', 'manual' -> 'lembur'
         DB::table('realisasi_sesi')
             ->where('sumber', 'jadwal')

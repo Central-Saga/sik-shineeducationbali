@@ -13,7 +13,7 @@ class StoreRealisasiSesiRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user() && (
-            $this->user()->can('mengajukan realisasi sesi') || 
+            $this->user()->can('mengajukan realisasi sesi') ||
             $this->user()->can('mengelola realisasi sesi')
         );
     }

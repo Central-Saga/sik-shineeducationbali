@@ -37,8 +37,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function GajiDetailPage({ params }: { params: { id: string } }) {
   const [gaji, setGaji] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
-  const { komponenGaji, loading: loadingKomponen } = useKomponenGaji(params.id);
-  const { pembayaranGaji, loading: loadingPembayaran } = usePembayaranGaji(params.id);
+  const { komponenGaji: komponenGajiFromHook, loading: loadingKomponen } = useKomponenGaji(params.id);
+  const { pembayaranGaji: pembayaranGajiFromHook, loading: loadingPembayaran } = usePembayaranGaji(params.id);
+  
+  // Use komponenGaji from gaji object if available, otherwise use hook
+  const komponenGaji = gaji?.komponen_gaji && gaji.komponen_gaji.length > 0 
+    ? gaji.komponen_gaji 
+    : komponenGajiFromHook;
+  const pembayaranGaji = gaji?.pembayaran_gaji && gaji.pembayaran_gaji.length > 0
+    ? gaji.pembayaran_gaji
+    : pembayaranGajiFromHook;
 
   React.useEffect(() => {
     const loadGaji = async () => {
@@ -226,6 +234,103 @@ export default function GajiDetailPage({ params }: { params: { id: string } }) {
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Rincian Perhitungan</CardTitle>
+              <CardDescription>
+                Detail perhitungan gaji untuk periode {gaji.periode}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingKomponen ? (
+                <p>Memuat rincian...</p>
+              ) : komponenGaji.length === 0 ? (
+                <p className="text-muted-foreground">Tidak ada rincian perhitungan</p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Penghasilan:</h4>
+                    <div className="pl-4 space-y-1">
+                      {komponenGaji
+                        .filter((k) => k.nominal > 0)
+                        .map((komponen) => (
+                          <div key={komponen.id} className="flex justify-between">
+                            <span className="text-sm">{komponen.nama_komponen}</span>
+                            <span className="text-sm font-medium">
+                              {new Intl.NumberFormat("id-ID", {
+                                style: "currency",
+                                currency: "IDR",
+                              }).format(komponen.nominal)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                  
+                  {komponenGaji.some((k) => k.nominal < 0) && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Potongan:</h4>
+                      <div className="pl-4 space-y-1">
+                        {komponenGaji
+                          .filter((k) => k.nominal < 0)
+                          .map((komponen) => (
+                            <div key={komponen.id} className="flex justify-between">
+                              <span className="text-sm">{komponen.nama_komponen}</span>
+                              <span className="text-sm font-medium text-destructive">
+                                {new Intl.NumberFormat("id-ID", {
+                                  style: "currency",
+                                  currency: "IDR",
+                                }).format(komponen.nominal)}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-lg">Total Gaji:</span>
+                      <span className="font-bold text-lg">
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                        }).format(gaji.total_gaji)}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      <p>
+                        = {komponenGaji
+                          .filter((k) => k.nominal > 0)
+                          .map((k) => 
+                            new Intl.NumberFormat("id-ID", {
+                              style: "currency",
+                              currency: "IDR",
+                            }).format(k.nominal)
+                          )
+                          .join(" + ")}
+                        {komponenGaji.some((k) => k.nominal < 0) && (
+                          <>
+                            {" - "}
+                            {komponenGaji
+                              .filter((k) => k.nominal < 0)
+                              .map((k) => 
+                                new Intl.NumberFormat("id-ID", {
+                                  style: "currency",
+                                  currency: "IDR",
+                                }).format(Math.abs(k.nominal))
+                              )
+                              .join(" - ")}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

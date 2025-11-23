@@ -52,7 +52,7 @@ class RealisasiSesiSeeder extends Seeder
 
             // Generate realisasi sesi for each day in the last 30 days
             $currentDate = $startDate->copy();
-            
+
             while ($currentDate->lte($endDate)) {
                 // Skip weekends (Saturday and Sunday) - adjust as needed
                 // Uncomment below if you want to skip weekends:
@@ -107,7 +107,7 @@ class RealisasiSesiSeeder extends Seeder
                     // Determine status based on probability
                     // 40% diajukan, 50% disetujui, 10% ditolak
                     $random = rand(1, 100);
-                    
+
                     if ($random <= 40) {
                         $status = 'diajukan';
                         $disetujuiOleh = null;
@@ -120,7 +120,7 @@ class RealisasiSesiSeeder extends Seeder
                     }
 
                     $sumber = fake()->randomElement(['wajib', 'lembur']);
-                    
+
                     $realisasiData = [
                         'karyawan_id' => $employee->id,
                         'tanggal' => $currentDate->format('Y-m-d'),
@@ -144,7 +144,7 @@ class RealisasiSesiSeeder extends Seeder
                     RealisasiSesi::create($realisasiData);
                     $createdCount++;
                 }
-                
+
                 $currentDate->addDay();
             }
         }

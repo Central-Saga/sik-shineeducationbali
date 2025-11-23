@@ -29,7 +29,7 @@ class RealisasiSesiFactory extends Factory
     {
         $status = fake()->randomElement(['diajukan', 'disetujui', 'ditolak']);
         $sumber = fake()->randomElement(['wajib', 'lembur']);
-        
+
         $data = [
             'karyawan_id' => Employee::factory(),
             'tanggal' => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
