@@ -4,8 +4,12 @@ use App\Http\Controllers\Api\V1\Absensi\AbsensiController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Cuti\CutiController;
 use App\Http\Controllers\Api\V1\Employee\EmployeeController;
+use App\Http\Controllers\Api\V1\Gaji\GajiController;
+use App\Http\Controllers\Api\V1\KomponenGaji\KomponenGajiController;
 use App\Http\Controllers\Api\V1\LogAbsensi\LogAbsensiController;
+use App\Http\Controllers\Api\V1\PembayaranGaji\PembayaranGajiController;
 use App\Http\Controllers\Api\V1\Permission\PermissionController;
+use App\Http\Controllers\Api\V1\RekapBulanan\RekapBulananController;
 use App\Http\Controllers\Api\V1\RealisasiSesi\RealisasiSesiController;
 use App\Http\Controllers\Api\V1\Role\RoleController;
 use App\Http\Controllers\Api\V1\SesiKerja\SesiKerjaController;
@@ -203,6 +207,66 @@ Route::prefix('v1')->group(function () {
         Route::put('/realisasi-sesi/{id}', [RealisasiSesiController::class, 'update'])->middleware('permission:mengelola realisasi sesi');
         Route::patch('/realisasi-sesi/{id}', [RealisasiSesiController::class, 'update'])->middleware('permission:mengelola realisasi sesi');
         Route::delete('/realisasi-sesi/{id}', [RealisasiSesiController::class, 'destroy'])->middleware('permission:mengelola realisasi sesi');
+    });
+
+    // Rekap Bulanan API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Generate rekap bulanan (must be before standard CRUD routes)
+        Route::post('/rekap-bulanan/generate', [RekapBulananController::class, 'generate'])->middleware('permission:mengelola rekap bulanan');
+
+        // Standard CRUD routes
+        Route::get('/rekap-bulanan', [RekapBulananController::class, 'index'])->middleware('permission:mengelola rekap bulanan|melihat gaji');
+        Route::get('/rekap-bulanan/{id}', [RekapBulananController::class, 'show'])->middleware('permission:mengelola rekap bulanan|melihat gaji');
+        Route::delete('/rekap-bulanan/{id}', [RekapBulananController::class, 'destroy'])->middleware('permission:mengelola rekap bulanan');
+    });
+
+    // Gaji API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Additional routes for gaji (must be before standard CRUD routes)
+        // Generate gaji from rekap
+        Route::post('/gaji/generate-from-rekap/{rekapId}', [GajiController::class, 'generateFromRekap'])->middleware('permission:mengelola gaji');
+
+        // Update gaji status
+        Route::patch('/gaji/{id}/status', [GajiController::class, 'updateStatus'])->middleware('permission:mengelola gaji');
+
+        // Standard CRUD routes
+        Route::get('/gaji', [GajiController::class, 'index'])->middleware('permission:mengelola gaji|melihat gaji');
+        Route::post('/gaji', [GajiController::class, 'store'])->middleware('permission:mengelola gaji');
+        Route::get('/gaji/{id}', [GajiController::class, 'show'])->middleware('permission:mengelola gaji|melihat gaji');
+        Route::put('/gaji/{id}', [GajiController::class, 'update'])->middleware('permission:mengelola gaji');
+        Route::patch('/gaji/{id}', [GajiController::class, 'update'])->middleware('permission:mengelola gaji');
+        Route::delete('/gaji/{id}', [GajiController::class, 'destroy'])->middleware('permission:mengelola gaji');
+    });
+
+    // Komponen Gaji API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Get komponen gaji by gaji_id
+        Route::get('/gaji/{gajiId}/komponen', [KomponenGajiController::class, 'index'])->middleware('permission:mengelola gaji|melihat gaji');
+
+        // Create komponen gaji
+        Route::post('/gaji/{gajiId}/komponen', [KomponenGajiController::class, 'store'])->middleware('permission:mengelola gaji');
+
+        // Standard CRUD routes
+        Route::get('/komponen-gaji/{id}', [KomponenGajiController::class, 'show'])->middleware('permission:mengelola gaji|melihat gaji');
+        Route::put('/komponen-gaji/{id}', [KomponenGajiController::class, 'update'])->middleware('permission:mengelola gaji');
+        Route::delete('/komponen-gaji/{id}', [KomponenGajiController::class, 'destroy'])->middleware('permission:mengelola gaji');
+    });
+
+    // Pembayaran Gaji API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Get pembayaran gaji by gaji_id
+        Route::get('/gaji/{gajiId}/pembayaran', [PembayaranGajiController::class, 'index'])->middleware('permission:mengelola pembayaran gaji|mengelola gaji');
+
+        // Create pembayaran gaji
+        Route::post('/gaji/{gajiId}/pembayaran', [PembayaranGajiController::class, 'store'])->middleware('permission:mengelola pembayaran gaji');
+
+        // Update pembayaran gaji status
+        Route::patch('/pembayaran-gaji/{id}/status', [PembayaranGajiController::class, 'updateStatus'])->middleware('permission:mengelola pembayaran gaji');
+
+        // Standard CRUD routes
+        Route::get('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'show'])->middleware('permission:mengelola pembayaran gaji|mengelola gaji');
+        Route::put('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'update'])->middleware('permission:mengelola pembayaran gaji');
+        Route::delete('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'destroy'])->middleware('permission:mengelola pembayaran gaji');
     });
 
     // Auth routes (protected - requires authentication)

@@ -37,9 +37,13 @@ class RolePermissionSeeder extends Seeder
             'mengelola absensi',
             'melakukan absensi',
 
+            // Rekap Bulanan Management
+            'mengelola rekap bulanan',
+
             // Gaji Management
             'mengelola gaji',
             'melihat gaji',
+            'mengelola pembayaran gaji',
 
             // Cuti Management
             'mengelola cuti',
@@ -70,7 +74,9 @@ class RolePermissionSeeder extends Seeder
         $owner = Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web']);
         $ownerPermissions = [
             'mengelola users',
+            'mengelola rekap bulanan',
             'mengelola gaji',
+            'mengelola pembayaran gaji',
             'mengelola cuti',
             'mengelola absensi',
             'mengelola sesi kerja',
@@ -88,7 +94,9 @@ class RolePermissionSeeder extends Seeder
             'mengelola permissions',
             'mengelola karyawan',
             'mengelola absensi',
+            'mengelola rekap bulanan',
             'mengelola gaji',
+            'mengelola pembayaran gaji',
             'mengelola cuti',
             'mengelola sesi kerja',
             'mengelola realisasi sesi',

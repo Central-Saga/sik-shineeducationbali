@@ -92,5 +92,45 @@ class Employee extends Model
     {
         return $this->hasMany(Absensi::class, 'karyawan_id');
     }
+
+    /**
+     * Get the rekap bulanan records for the employee.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function rekapBulanan(): HasMany
+    {
+        return $this->hasMany(RekapBulanan::class, 'karyawan_id');
+    }
+
+    /**
+     * Get the gaji records for the employee.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function gaji(): HasMany
+    {
+        return $this->hasMany(Gaji::class, 'karyawan_id');
+    }
+
+    /**
+     * Get the cuti records for the employee.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function cuti(): HasMany
+    {
+        return $this->hasMany(Cuti::class, 'karyawan_id');
+    }
+
+    /**
+     * Get the realisasi sesi records for the employee.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function realisasiSesi(): HasMany
+    {
+        return $this->hasMany(RealisasiSesi::class, 'karyawan_id');
+    }
 }
 
