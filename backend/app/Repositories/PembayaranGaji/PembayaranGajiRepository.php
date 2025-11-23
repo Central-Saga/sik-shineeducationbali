@@ -53,5 +53,16 @@ class PembayaranGajiRepository extends BaseRepository implements PembayaranGajiR
             return $this->model->byGaji($gajiId)->get();
         });
     }
+
+    /**
+     * Clear cache for findByGajiId.
+     *
+     * @param  int|string  $gajiId
+     * @return void
+     */
+    public function clearCacheForGajiId($gajiId): void
+    {
+        $this->forget("findByGajiId:{$gajiId}");
+    }
 }
 

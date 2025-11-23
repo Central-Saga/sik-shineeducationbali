@@ -47,6 +47,76 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
     }
 
     /**
+     * Create a new pembayaran gaji record.
+     *
+     * @param  array<string, mixed>  $data
+     * @return \App\Models\PembayaranGaji
+     */
+    public function create(array $data): PembayaranGaji
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola pembayaran gaji')) {
+            abort(403, 'You do not have permission to create pembayaran gaji.');
+        }
+
+        $pembayaranGaji = parent::create($data);
+        
+        // Clear cache for this gaji_id
+        if (isset($data['gaji_id'])) {
+            $this->getRepository()->clearCacheForGajiId($data['gaji_id']);
+        }
+
+        return $pembayaranGaji;
+    }
+
+    /**
+     * Update a pembayaran gaji record.
+     *
+     * @param  int|string  $id
+     * @param  array<string, mixed>  $data
+     * @return \App\Models\PembayaranGaji
+     */
+    public function update($id, array $data): PembayaranGaji
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola pembayaran gaji')) {
+            abort(403, 'You do not have permission to update pembayaran gaji.');
+        }
+
+        $pembayaranGaji = parent::update($id, $data);
+        
+        // Clear cache for this gaji_id
+        $this->getRepository()->clearCacheForGajiId($pembayaranGaji->gaji_id);
+
+        return $pembayaranGaji;
+    }
+
+    /**
+     * Delete a pembayaran gaji record.
+     *
+     * @param  int|string  $id
+     * @return bool
+     */
+    public function delete($id): bool
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola pembayaran gaji')) {
+            abort(403, 'You do not have permission to delete pembayaran gaji.');
+        }
+
+        // Get gaji_id before delete
+        $pembayaranGaji = $this->getRepository()->findOrFail($id);
+        $gajiId = $pembayaranGaji->gaji_id;
+
+        $deleted = parent::delete($id);
+        
+        // Clear cache for this gaji_id
+        $this->getRepository()->clearCacheForGajiId($gajiId);
+
+        return $deleted;
+    }
+
+    /**
      * Update pembayaran gaji status.
      *
      * @param  int|string  $id
@@ -72,7 +142,12 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
             $updateData['disetujui_oleh'] = auth()->id();
         }
 
-        return $this->getRepository()->update($id, $updateData);
+        $pembayaranGaji = $this->getRepository()->update($id, $updateData);
+        
+        // Clear cache for this gaji_id to ensure fresh data
+        $gajiId = $pembayaranGaji->gaji_id;
+        $this->getRepository()->clearCacheForGajiId($gajiId);
+
+        return $pembayaranGaji->fresh();
     }
 }
-

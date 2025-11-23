@@ -14,5 +14,13 @@ interface PembayaranGajiRepositoryInterface extends BaseRepositoryInterface
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function findByGajiId($gajiId): Collection;
+
+    /**
+     * Clear cache for findByGajiId.
+     *
+     * @param  int|string  $gajiId
+     * @return void
+     */
+    public function clearCacheForGajiId($gajiId): void;
 }
 
