@@ -141,7 +141,7 @@ export function CutiDetailDialog({
         <DialogHeader>
           <DialogTitle>Detail Pengajuan Cuti</DialogTitle>
           <DialogDescription>
-            Informasi lengkap pengajuan cuti, izin, atau sakit
+            Informasi lengkap pengajuan izin atau sakit
           </DialogDescription>
         </DialogHeader>
 

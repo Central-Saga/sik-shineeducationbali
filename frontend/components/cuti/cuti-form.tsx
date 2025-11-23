@@ -48,6 +48,14 @@ function isValidDate(date: Date | undefined) {
   return !isNaN(date.getTime()) && date instanceof Date;
 }
 
+function isDateBeforeToday(date: Date): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const compareDate = new Date(date);
+  compareDate.setHours(0, 0, 0, 0);
+  return compareDate < today;
+}
+
 interface CutiFormProps {
   initialData?: Partial<CutiFormData> & {
     id?: number;
@@ -74,19 +82,31 @@ export function CutiForm({
   const [date, setDate] = React.useState<Date | undefined>(() => {
     if (initialData?.tanggal) {
       const d = new Date(initialData.tanggal);
-      return isValidDate(d) ? d : new Date();
+      if (isValidDate(d) && !isDateBeforeToday(d)) {
+        return d;
+      }
     }
     return new Date();
   });
   const [month, setMonth] = React.useState<Date | undefined>(date);
   const [value, setValue] = React.useState(() => formatDate(date));
 
-  const [formData, setFormData] = React.useState<CutiFormData>({
-    karyawan_id: initialData?.karyawan_id || 0,
-    tanggal: initialData?.tanggal || new Date().toISOString().split('T')[0],
-    jenis: initialData?.jenis || 'cuti',
-    status: initialData?.status || 'diajukan',
-    catatan: initialData?.catatan || '',
+  const [formData, setFormData] = React.useState<CutiFormData>(() => {
+    const today = new Date().toISOString().split('T')[0];
+    let tanggal = today;
+    if (initialData?.tanggal) {
+      const initialDate = new Date(initialData.tanggal);
+      if (!isDateBeforeToday(initialDate)) {
+        tanggal = initialData.tanggal;
+      }
+    }
+    return {
+      karyawan_id: initialData?.karyawan_id || 0,
+      tanggal: tanggal,
+      jenis: initialData?.jenis || 'izin',
+      status: initialData?.status || 'diajukan',
+      catatan: initialData?.catatan || '',
+    };
   });
 
   // Sync date state with formData
@@ -190,12 +210,17 @@ export function CutiForm({
     }
     if (!formData.tanggal) {
       newErrors.tanggal = "Tanggal cuti wajib diisi.";
+    } else {
+      const selectedDate = new Date(formData.tanggal);
+      if (isDateBeforeToday(selectedDate)) {
+        newErrors.tanggal = "Tanggal tidak boleh sebelum hari ini.";
+      }
     }
     if (!formData.jenis) {
       newErrors.jenis = "Jenis cuti wajib dipilih.";
     }
     if (!formData.catatan || !formData.catatan.trim()) {
-      newErrors.catatan = "Catatan wajib diisi. Silakan sertakan keterangan cuti/izin/sakit.";
+      newErrors.catatan = "Catatan wajib diisi. Silakan sertakan keterangan izin/sakit.";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -308,7 +333,7 @@ export function CutiForm({
         <CardHeader>
           <CardTitle>Informasi Cuti</CardTitle>
           <CardDescription>
-            Isi detail pengajuan cuti, izin, atau sakit
+            Isi detail pengajuan izin atau sakit
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -330,15 +355,22 @@ export function CutiForm({
                   setValue(inputValue);
                   const parsedDate = new Date(inputValue);
                   if (isValidDate(parsedDate)) {
-                    setDate(parsedDate);
-                    setMonth(parsedDate);
-                    const formattedDate = parsedDate.toISOString().split('T')[0];
-                    setFormData(prev => ({ ...prev, tanggal: formattedDate }));
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.tanggal;
-                      return newErrors;
-                    });
+                    if (isDateBeforeToday(parsedDate)) {
+                      setErrors(prev => ({
+                        ...prev,
+                        tanggal: "Tanggal tidak boleh sebelum hari ini."
+                      }));
+                    } else {
+                      setDate(parsedDate);
+                      setMonth(parsedDate);
+                      const formattedDate = parsedDate.toISOString().split('T')[0];
+                      setFormData(prev => ({ ...prev, tanggal: formattedDate }));
+                      setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.tanggal;
+                        return newErrors;
+                      });
+                    }
                   }
                 }}
                 onKeyDown={(e) => {
@@ -375,8 +407,16 @@ export function CutiForm({
                     toYear={2030}
                     month={month}
                     onMonthChange={setMonth}
+                    disabled={(date) => isDateBeforeToday(date)}
                     onSelect={(selectedDate) => {
                       if (selectedDate) {
+                        if (isDateBeforeToday(selectedDate)) {
+                          setErrors(prev => ({
+                            ...prev,
+                            tanggal: "Tanggal tidak boleh sebelum hari ini."
+                          }));
+                          return;
+                        }
                         setDate(selectedDate);
                         setValue(formatDate(selectedDate));
                         setDatePickerOpen(false);
@@ -404,7 +444,7 @@ export function CutiForm({
             </Label>
             <Select
               value={formData.jenis}
-              onValueChange={(value: 'cuti' | 'izin' | 'sakit') => {
+              onValueChange={(value: 'izin' | 'sakit') => {
                 setFormData(prev => ({ ...prev, jenis: value }));
                 setErrors(prev => {
                   const newErrors = { ...prev };
@@ -421,7 +461,6 @@ export function CutiForm({
                 <SelectValue placeholder="Pilih jenis" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cuti">Cuti</SelectItem>
                 <SelectItem value="izin">Izin</SelectItem>
                 <SelectItem value="sakit">Sakit</SelectItem>
               </SelectContent>
@@ -451,7 +490,7 @@ export function CutiForm({
                 "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                 errors.catatan ? "border-destructive" : ""
               )}
-              placeholder="Masukkan alasan atau keterangan cuti/izin/sakit..."
+              placeholder="Masukkan alasan atau keterangan izin/sakit..."
               aria-invalid={!!errors.catatan}
             />
             {errors.catatan && (

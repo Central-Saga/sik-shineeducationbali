@@ -37,7 +37,7 @@ class UpdateCutiRequest extends FormRequest
             'jenis' => [
                 'sometimes',
                 'string',
-                Rule::in(['cuti', 'izin', 'sakit']),
+                Rule::in(['izin', 'sakit']),
             ],
             'status' => [
                 'sometimes',
@@ -65,7 +65,7 @@ class UpdateCutiRequest extends FormRequest
             'karyawan_id.exists' => 'Karyawan tidak ditemukan.',
             'tanggal.date' => 'Tanggal cuti harus berupa tanggal yang valid.',
             'tanggal.date_format' => 'Format tanggal cuti harus YYYY-MM-DD (contoh: 2025-11-06).',
-            'jenis.in' => 'Jenis cuti harus salah satu dari: cuti, izin, sakit.',
+            'jenis.in' => 'Jenis harus salah satu dari: izin, sakit.',
             'status.in' => 'Status cuti harus salah satu dari: diajukan, disetujui, ditolak.',
             'disetujui_oleh.integer' => 'ID user yang menyetujui harus berupa angka.',
             'disetujui_oleh.exists' => 'User yang menyetujui tidak ditemukan.',

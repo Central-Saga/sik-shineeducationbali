@@ -97,8 +97,11 @@ class CutiService extends BaseService implements CutiServiceInterface
         );
 
         if ($existingCuti) {
-            abort(422, 'Leave request already exists for this employee on this date.');
+            abort(422, 'Pengajuan cuti untuk karyawan ini pada tanggal tersebut sudah ada.');
         }
+
+        // Validate employee category and leave type restrictions
+        $this->validateEmployeeCategoryAndLeaveType($data['karyawan_id'], $data['jenis']);
 
         // Validate leave quota based on employee category
         $this->validateLeaveQuota($data['karyawan_id'], $data['jenis'], $data['tanggal']);
@@ -145,6 +148,12 @@ class CutiService extends BaseService implements CutiServiceInterface
         $cuti = $this->getById($id);
         $checkKaryawanId = $data['karyawan_id'] ?? $cuti->karyawan_id;
         $checkTanggal = $data['tanggal'] ?? $cuti->tanggal;
+        $checkJenis = $data['jenis'] ?? $cuti->jenis;
+
+        // Validate employee category and leave type restrictions if jenis or karyawan_id is being updated
+        if (isset($data['jenis']) || isset($data['karyawan_id'])) {
+            $this->validateEmployeeCategoryAndLeaveType($checkKaryawanId, $checkJenis);
+        }
 
         $existingCuti = $this->getRepository()->findByKaryawanIdAndTanggal(
             $checkKaryawanId,
@@ -152,7 +161,7 @@ class CutiService extends BaseService implements CutiServiceInterface
         );
 
         if ($existingCuti && $existingCuti->id != $id) {
-            abort(422, 'Leave request already exists for this employee on this date.');
+            abort(422, 'Pengajuan cuti untuk karyawan ini pada tanggal tersebut sudah ada.');
         }
 
         return parent::update($id, $data);
@@ -327,6 +336,26 @@ class CutiService extends BaseService implements CutiServiceInterface
     }
 
     /**
+     * Validate employee category and leave type restrictions.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $jenis
+     * @return void
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException
+     */
+    protected function validateEmployeeCategoryAndLeaveType($karyawanId, string $jenis): void
+    {
+        $employee = Employee::find($karyawanId);
+        
+        if (!$employee) {
+            abort(404, 'Employee not found.');
+        }
+
+        // Tidak ada validasi khusus untuk kategori karyawan dan jenis
+        // Semua karyawan bisa mengajukan izin dan sakit
+    }
+
+    /**
      * Validate leave quota based on employee category.
      *
      * @param  int|string  $karyawanId
@@ -374,14 +403,14 @@ class CutiService extends BaseService implements CutiServiceInterface
             }
         }
 
-        // Validasi untuk karyawan tetap: maksimal 12x cuti per tahun
-        if ($employee->kategori_karyawan === 'tetap' && $jenis === 'cuti') {
+        // Validasi untuk karyawan tetap: maksimal 12x izin per tahun
+        if ($employee->kategori_karyawan === 'tetap' && $jenis === 'izin') {
             $startOfYear = $tanggalCarbon->copy()->startOfYear()->format('Y-m-d');
             $endOfYear = $tanggalCarbon->copy()->endOfYear()->format('Y-m-d');
             
             $count = $this->getRepository()->countApprovedByKaryawanIdAndJenisAndDateRange(
                 $karyawanId,
-                'cuti',
+                'izin',
                 $startOfYear,
                 $endOfYear
             );
@@ -389,7 +418,7 @@ class CutiService extends BaseService implements CutiServiceInterface
             // Jika ada excludeCutiId, kurangi count jika cuti tersebut sudah disetujui
             if ($excludeCutiId) {
                 $excludeCuti = $this->getRepository()->find($excludeCutiId);
-                if ($excludeCuti && $excludeCuti->status === 'disetujui' && $excludeCuti->jenis === 'cuti') {
+                if ($excludeCuti && $excludeCuti->status === 'disetujui' && $excludeCuti->jenis === 'izin') {
                     $excludeDate = Carbon::parse($excludeCuti->tanggal);
                     if ($excludeDate->format('Y') === $tanggalCarbon->format('Y')) {
                         $count--;
@@ -398,9 +427,11 @@ class CutiService extends BaseService implements CutiServiceInterface
             }
 
             if ($count >= 12) {
-                abort(422, 'Karyawan tetap hanya dapat mengajukan maksimal 12x cuti per tahun. Anda sudah menggunakan ' . $count . 'x cuti di tahun ini.');
+                abort(422, 'Karyawan tetap hanya dapat mengajukan maksimal 12x izin per tahun. Anda sudah menggunakan ' . $count . 'x izin di tahun ini.');
             }
         }
+
+        // Sakit tidak ada batasan quota untuk semua kategori karyawan
     }
 }
 

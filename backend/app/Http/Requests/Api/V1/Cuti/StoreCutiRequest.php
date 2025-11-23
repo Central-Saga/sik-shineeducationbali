@@ -29,7 +29,7 @@ class StoreCutiRequest extends FormRequest
         return [
             'karyawan_id' => ['required', 'integer', 'exists:karyawan,id'],
             'tanggal' => ['required', 'date', 'date_format:Y-m-d'],
-            'jenis' => ['required', 'string', Rule::in(['cuti', 'izin', 'sakit'])],
+            'jenis' => ['required', 'string', Rule::in(['izin', 'sakit'])],
             'status' => [
                 'sometimes',
                 'string',
@@ -59,7 +59,7 @@ class StoreCutiRequest extends FormRequest
             'tanggal.date' => 'Tanggal cuti harus berupa tanggal yang valid.',
             'tanggal.date_format' => 'Format tanggal cuti harus YYYY-MM-DD (contoh: 2025-11-06).',
             'jenis.required' => 'Jenis cuti wajib diisi.',
-            'jenis.in' => 'Jenis cuti harus salah satu dari: cuti, izin, sakit.',
+            'jenis.in' => 'Jenis harus salah satu dari: izin, sakit.',
             'status.in' => 'Status cuti harus salah satu dari: diajukan, disetujui, ditolak.',
             'disetujui_oleh.integer' => 'ID user yang menyetujui harus berupa angka.',
             'disetujui_oleh.exists' => 'User yang menyetujui tidak ditemukan.',
@@ -91,7 +91,7 @@ class StoreCutiRequest extends FormRequest
 
             // Catatan sebaiknya diisi untuk semua jenis
             if (empty($catatan)) {
-                $validator->errors()->add('catatan', 'Catatan wajib diisi. Silakan sertakan keterangan cuti/izin/sakit.');
+                $validator->errors()->add('catatan', 'Catatan wajib diisi. Silakan sertakan keterangan izin/sakit.');
             }
         });
     }

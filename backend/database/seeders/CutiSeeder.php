@@ -44,18 +44,11 @@ class CutiSeeder extends Seeder
             $cutiCount = fake()->numberBetween(5, 10);
 
             for ($i = 0; $i < $cutiCount; $i++) {
-                $jenis = fake()->randomElement(['cuti', 'izin', 'sakit']);
+                $jenis = fake()->randomElement(['izin', 'sakit']);
                 $status = fake()->randomElement(['diajukan', 'disetujui', 'ditolak']);
 
                 // Generate catatan berdasarkan jenis
                 $catatanMap = [
-                    'cuti' => [
-                        'Cuti tahunan',
-                        'Cuti bersama',
-                        'Cuti melahirkan',
-                        'Cuti haji',
-                        'Cuti besar',
-                    ],
                     'izin' => [
                         'Izin pribadi',
                         'Izin keluarga',
