@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useParams } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
@@ -34,11 +35,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function GajiDetailPage({ params }: { params: { id: string } }) {
+export default function GajiDetailPage() {
+  const params = useParams();
+  const gajiId = params.id as string;
   const [gaji, setGaji] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
-  const { komponenGaji: komponenGajiFromHook, loading: loadingKomponen } = useKomponenGaji(params.id);
-  const { pembayaranGaji: pembayaranGajiFromHook, loading: loadingPembayaran } = usePembayaranGaji(params.id);
+  const { komponenGaji: komponenGajiFromHook, loading: loadingKomponen } = useKomponenGaji(gajiId);
+  const { pembayaranGaji: pembayaranGajiFromHook, loading: loadingPembayaran } = usePembayaranGaji(gajiId);
   
   // Use komponenGaji from gaji object if available, otherwise use hook
   const komponenGaji = gaji?.komponen_gaji && gaji.komponen_gaji.length > 0 
@@ -49,19 +52,22 @@ export default function GajiDetailPage({ params }: { params: { id: string } }) {
     : pembayaranGajiFromHook;
 
   React.useEffect(() => {
+    if (!gajiId) return;
+    
     const loadGaji = async () => {
       try {
         setLoading(true);
-        const data = await getGajiById(params.id);
+        const data = await getGajiById(gajiId);
         setGaji(data);
       } catch (err: any) {
         toast.error(err.message || "Gagal memuat data gaji");
+        setGaji(null);
       } finally {
         setLoading(false);
       }
     };
     loadGaji();
-  }, [params.id]);
+  }, [gajiId]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
