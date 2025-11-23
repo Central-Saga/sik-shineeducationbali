@@ -30,22 +30,9 @@ class DatabaseSeeder extends Seeder
         $this->command->newLine();
 
         // Seed Users dengan roles
+        // UserSeeder akan otomatis membuat employee untuk user dengan role Karyawan
         $this->call([
             UserSeeder::class,
-        ]);
-
-        $this->command->newLine();
-
-        // Seed Cuti
-        $this->call([
-            CutiSeeder::class,
-        ]);
-
-        $this->command->newLine();
-
-        // Seed Sesi Kerja
-        $this->call([
-            SesiKerjaSeeder::class,
         ]);
 
         // Reset cached roles and permissions setelah seeding
@@ -53,8 +40,10 @@ class DatabaseSeeder extends Seeder
 
         $this->command->newLine();
         $this->command->info('✅ Database seeding completed successfully!');
-
-        // Note: EmployeeSeeder, AbsensiSeeder, dan LogAbsensiSeeder tidak dijalankan
-        // karena hanya seeder penting (Roles, Permissions, Users) yang diperlukan
+        $this->command->info('📝 Seeded: Roles, Permissions, Users, and Employees (only for Karyawan users)');
+        
+        // Note: Seeder hanya sampai User dan Role saja
+        // Employee hanya dibuat untuk user dengan role Karyawan yang ada di UserSeeder
+        // CutiSeeder, SesiKerjaSeeder, RealisasiSesiSeeder, AbsensiSeeder, dan LogAbsensiSeeder tidak dijalankan
     }
 }

@@ -24,6 +24,12 @@ class SesiKerjaSeeder extends Seeder
             'non_coding' => 25000,
         ];
 
+        // Mata pelajaran sesuai kategori
+        $mataPelajaranMap = [
+            'coding' => ['Python', 'JavaScript', 'Web Development', 'Mobile Development', 'Data Science', 'Game Development'],
+            'non_coding' => ['Matematika', 'Bahasa Inggris', 'IPA', 'IPS', 'Bahasa Indonesia', 'Seni & Budaya'],
+        ];
+
         // Jam mulai dan selesai untuk setiap sesi (contoh jadwal)
         $sesiJadwal = [
             1 => ['mulai' => '08:00:00', 'selesai' => '09:00:00'],
@@ -64,9 +70,11 @@ class SesiKerjaSeeder extends Seeder
 
                     $jamMulai = $sesiJadwal[$nomorSesi]['mulai'];
                     $jamSelesai = $sesiJadwal[$nomorSesi]['selesai'];
+                    $mataPelajaran = fake()->randomElement($mataPelajaranMap[$kategori]);
 
                     SesiKerja::create([
                         'kategori' => $kategori,
+                        'mata_pelajaran' => $mataPelajaran,
                         'hari' => $hari,
                         'nomor_sesi' => $nomorSesi,
                         'jam_mulai' => $jamMulai,

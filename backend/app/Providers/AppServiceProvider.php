@@ -44,6 +44,16 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\Cuti\CutiRepository::class
         );
 
+        $this->app->bind(
+            \App\Repositories\Contracts\SesiKerjaRepositoryInterface::class,
+            \App\Repositories\SesiKerja\SesiKerjaRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\Contracts\RealisasiSesiRepositoryInterface::class,
+            \App\Repositories\RealisasiSesi\RealisasiSesiRepository::class
+        );
+
         // Service bindings
         $this->app->bind(
             \App\Services\Contracts\UserServiceInterface::class,
@@ -73,6 +83,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             \App\Services\Contracts\CutiServiceInterface::class,
             \App\Services\Cuti\CutiService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\SesiKerjaServiceInterface::class,
+            \App\Services\SesiKerja\SesiKerjaService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\RealisasiSesiServiceInterface::class,
+            \App\Services\RealisasiSesi\RealisasiSesiService::class
         );
     }
 
