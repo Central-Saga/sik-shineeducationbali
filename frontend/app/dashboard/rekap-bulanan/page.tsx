@@ -19,6 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRekapBulanan } from "@/hooks/use-rekap-bulanan";
 import { useGaji } from "@/hooks/use-gaji";
+import { useAuth } from "@/hooks/use-auth";
+import { HasCan } from "@/components/has-can";
 import { toast } from "sonner";
 import { Calendar, Plus, DollarSign } from "lucide-react";
 import {
@@ -63,6 +65,7 @@ export default function RekapBulananPage() {
     Object.keys(params).length > 0 ? params : undefined
   );
   const { generateFromRekap: generateGajiFromRekap } = useGaji();
+  const { hasPermission } = useAuth();
 
   const handleGenerate = async () => {
     if (!periodeInput.match(/^\d{4}-\d{2}$/)) {
@@ -161,18 +164,22 @@ export default function RekapBulananPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleGenerateAllGaji}
-                disabled={rekapBulanan.length === 0 || isGeneratingGaji === -1}
-              >
-                <DollarSign className="mr-2 h-4 w-4" />
-                {isGeneratingGaji === -1 ? "Generating..." : "Generate Semua Gaji"}
-              </Button>
-              <Button onClick={() => setGenerateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Generate Rekap
-              </Button>
+              <HasCan permission="mengelola gaji">
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateAllGaji}
+                  disabled={rekapBulanan.length === 0 || isGeneratingGaji === -1}
+                >
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  {isGeneratingGaji === -1 ? "Generating..." : "Generate Semua Gaji"}
+                </Button>
+              </HasCan>
+              <HasCan permission="mengelola rekap bulanan">
+                <Button onClick={() => setGenerateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Generate Rekap
+                </Button>
+              </HasCan>
             </div>
           </div>
 
@@ -213,7 +220,7 @@ export default function RekapBulananPage() {
                     <TableHead>Sesi Coding</TableHead>
                     <TableHead>Sesi Non-Coding</TableHead>
                     <TableHead>Total Pendapatan</TableHead>
-                    <TableHead>Aksi</TableHead>
+                    {hasPermission("mengelola gaji") && <TableHead>Aksi</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -236,17 +243,19 @@ export default function RekapBulananPage() {
                           currency: "IDR",
                         }).format(rekap.total_pendapatan_sesi)}
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleGenerateGaji(rekap.id)}
-                          disabled={isGeneratingGaji === rekap.id || isGeneratingGaji === -1}
-                        >
-                          <DollarSign className="mr-2 h-4 w-4" />
-                          {isGeneratingGaji === rekap.id ? "Generating..." : "Generate Gaji"}
-                        </Button>
-                      </TableCell>
+                      {hasPermission("mengelola gaji") && (
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateGaji(rekap.id)}
+                            disabled={isGeneratingGaji === rekap.id || isGeneratingGaji === -1}
+                          >
+                            <DollarSign className="mr-2 h-4 w-4" />
+                            {isGeneratingGaji === rekap.id ? "Generating..." : "Generate Gaji"}
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

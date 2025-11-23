@@ -96,7 +96,7 @@ class AuthController extends BaseApiController
     public function me(): JsonResponse
     {
         $user = auth()->user();
-        $user->load('roles');
+        $user->load('roles.permissions');
         
         // Load employee relationship if exists
         if ($user->employee) {
