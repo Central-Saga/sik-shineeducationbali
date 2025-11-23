@@ -79,25 +79,40 @@ class RealisasiSesiService extends BaseService implements RealisasiSesiServiceIn
             abort(403, 'You do not have permission to create realisasi sesi records.');
         }
 
-        // Set default status to diajukan if not provided
+        // If admin creates (has permission mengelola realisasi sesi), auto-approve
+        // If karyawan creates (only has permission mengajukan realisasi sesi), set to diajukan
         if (!isset($data['status'])) {
-            $data['status'] = 'diajukan';
+            if ($this->hasPermission('mengelola realisasi sesi')) {
+                // Admin creates - auto approve
+                $data['status'] = 'disetujui';
+                $data['disetujui_oleh'] = Auth::id();
+            } else {
+                // Karyawan creates - needs approval
+                $data['status'] = 'diajukan';
+                $data['disetujui_oleh'] = null;
+            }
+        } else {
+            // Status is provided, validate it
+            if ($data['status'] === 'diajukan') {
+                $data['disetujui_oleh'] = null;
+            } elseif ($data['status'] === 'disetujui') {
+                // If setting to disetujui, ensure user has permission
+                if (!$this->hasPermission('mengelola realisasi sesi')) {
+                    abort(403, 'You do not have permission to create approved realisasi sesi records.');
+                }
+                $data['disetujui_oleh'] = Auth::id();
+            }
         }
 
-        // If status is diajukan, ensure disetujui_oleh is null
-        if ($data['status'] === 'diajukan') {
-            $data['disetujui_oleh'] = null;
-        }
-
-        // Check if realisasi sesi already exists for this karyawan, tanggal, and sesi_kerja_id
+        // Check if realisasi sesi already exists for this tanggal and sesi_kerja_id
+        // 1 sesi kerja per tanggal hanya bisa diisi oleh 1 karyawan
         $existingRealisasi = $this->getRepository()->findOneBy([
-            'karyawan_id' => $data['karyawan_id'],
             'tanggal' => $data['tanggal'],
             'sesi_kerja_id' => $data['sesi_kerja_id'],
         ]);
 
         if ($existingRealisasi) {
-            abort(422, 'Realisasi sesi already exists for this employee, date, and sesi kerja.');
+            abort(422, 'Sesi kerja ini sudah diisi oleh karyawan lain pada tanggal yang sama. Satu sesi kerja per tanggal hanya bisa diisi oleh satu karyawan.');
         }
 
         return parent::create($data);
@@ -119,20 +134,19 @@ class RealisasiSesiService extends BaseService implements RealisasiSesiServiceIn
             abort(403, 'You do not have permission to edit realisasi sesi records.');
         }
 
-        // If karyawan_id, tanggal, or sesi_kerja_id is being updated, check for duplicate
+        // If tanggal or sesi_kerja_id is being updated, check for duplicate
+        // 1 sesi kerja per tanggal hanya bisa diisi oleh 1 karyawan
         $realisasiSesi = $this->getById($id);
-        $checkKaryawanId = $data['karyawan_id'] ?? $realisasiSesi->karyawan_id;
         $checkTanggal = $data['tanggal'] ?? $realisasiSesi->tanggal;
         $checkSesiKerjaId = $data['sesi_kerja_id'] ?? $realisasiSesi->sesi_kerja_id;
 
         $existingRealisasi = $this->getRepository()->findOneBy([
-            'karyawan_id' => $checkKaryawanId,
             'tanggal' => $checkTanggal,
             'sesi_kerja_id' => $checkSesiKerjaId,
         ]);
 
         if ($existingRealisasi && $existingRealisasi->id != $id) {
-            abort(422, 'Realisasi sesi already exists for this employee, date, and sesi kerja.');
+            abort(422, 'Sesi kerja ini sudah diisi oleh karyawan lain pada tanggal yang sama. Satu sesi kerja per tanggal hanya bisa diisi oleh satu karyawan.');
         }
 
         return parent::update($id, $data);

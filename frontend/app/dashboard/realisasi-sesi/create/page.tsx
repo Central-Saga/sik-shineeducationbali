@@ -23,16 +23,19 @@ import { useRouter } from "next/navigation";
 import type { RealisasiSesiFormData } from "@/lib/types/realisasi-sesi";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function CreateRealisasiSesiPage() {
   const router = useRouter();
+  const { hasRole } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const isAdmin = hasRole('Admin') || hasRole('Owner');
 
   const handleSubmit = async (data: RealisasiSesiFormData) => {
     setIsSubmitting(true);
     try {
       await createRealisasiSesi(data);
-      toast.success("Realisasi sesi berhasil diajukan");
+      toast.success(isAdmin ? "Realisasi sesi berhasil ditambahkan" : "Realisasi sesi berhasil diajukan");
       router.push("/dashboard/realisasi-sesi");
     } catch (error: unknown) {
       const apiError = error as { message?: string; errors?: Record<string, string | string[]> };
@@ -79,7 +82,7 @@ export default function CreateRealisasiSesiPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Ajukan</BreadcrumbPage>
+                <BreadcrumbPage>{isAdmin ? 'Tambah' : 'Ajukan'}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -94,14 +97,16 @@ export default function CreateRealisasiSesiPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kembali
             </Button>
-            <h1 className="text-2xl font-bold tracking-tight">Ajukan Realisasi Sesi</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isAdmin ? 'Tambah Realisasi Sesi' : 'Ajukan Realisasi Sesi'}
+            </h1>
           </div>
 
           <RealisasiSesiForm
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isLoading={isSubmitting}
-            submitLabel="Ajukan Realisasi Sesi"
+            submitLabel={isAdmin ? 'Simpan Realisasi Sesi' : 'Ajukan Realisasi Sesi'}
           />
         </div>
       </SidebarInset>

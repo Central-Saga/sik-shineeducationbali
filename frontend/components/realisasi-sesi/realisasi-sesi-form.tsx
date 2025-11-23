@@ -113,10 +113,36 @@ export function RealisasiSesiForm({
   const [employee, setEmployee] = React.useState<Employee | null>(null);
   const [employees, setEmployees] = React.useState<Employee[]>([]);
   const [sesiKerjaList, setSesiKerjaList] = React.useState<SesiKerja[]>([]);
+  const [selectedSesiKerja, setSelectedSesiKerja] = React.useState<SesiKerja | null>(null);
   const [loadingEmployee, setLoadingEmployee] = React.useState(false);
   const [loadingSesiKerja, setLoadingSesiKerja] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Helper function to map hari Indonesia to JavaScript Date day (0 = Sunday, 1 = Monday, etc.)
+  const getHariToDayOfWeek = (hari: string): number => {
+    const mapping: Record<string, number> = {
+      'senin': 1,
+      'selasa': 2,
+      'rabu': 3,
+      'kamis': 4,
+      'jumat': 5,
+      'sabtu': 6,
+    };
+    return mapping[hari.toLowerCase()] ?? -1;
+  };
+
+  // Function to check if a date matches the selected sesi kerja's hari
+  const isDateAllowed = (date: Date): boolean => {
+    if (!selectedSesiKerja) {
+      return true; // If no sesi kerja selected, allow all dates
+    }
+    // Normalize date to local timezone to avoid timezone issues
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayOfWeek = localDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const expectedDay = getHariToDayOfWeek(selectedSesiKerja.hari);
+    return dayOfWeek === expectedDay;
+  };
 
   // Auto-fill karyawan_id dari user yang login untuk karyawan
   React.useEffect(() => {
@@ -169,6 +195,14 @@ export function RealisasiSesiForm({
         setLoadingSesiKerja(true);
         const sesiKerjaData = await getSesiKerjaAktif();
         setSesiKerjaList(sesiKerjaData);
+        
+        // If editing and sesi_kerja_id is set, find and set selectedSesiKerja
+        if (formData.sesi_kerja_id && sesiKerjaData.length > 0) {
+          const foundSesi = sesiKerjaData.find(s => s.id === formData.sesi_kerja_id);
+          if (foundSesi) {
+            setSelectedSesiKerja(foundSesi);
+          }
+        }
       } catch (error: unknown) {
         console.error("Failed to load sesi kerja:", error);
       } finally {
@@ -176,7 +210,7 @@ export function RealisasiSesiForm({
       }
     };
     loadSesiKerja();
-  }, []);
+  }, [formData.sesi_kerja_id]);
 
   // Load employee data if karyawan_id is set (for editing)
   React.useEffect(() => {
@@ -215,11 +249,20 @@ export function RealisasiSesiForm({
     if (!formData.karyawan_id || formData.karyawan_id <= 0) {
       newErrors.karyawan_id = "Karyawan wajib dipilih.";
     }
-    if (!formData.tanggal) {
-      newErrors.tanggal = "Tanggal wajib diisi.";
-    }
     if (!formData.sesi_kerja_id || formData.sesi_kerja_id <= 0) {
       newErrors.sesi_kerja_id = "Sesi kerja wajib dipilih.";
+    }
+    if (!formData.tanggal) {
+      newErrors.tanggal = "Tanggal wajib diisi.";
+    } else if (selectedSesiKerja) {
+      // Validate tanggal matches sesi kerja's hari
+      // Parse date string to avoid timezone issues
+      const [year, month, day] = formData.tanggal.split('-').map(Number);
+      const tanggalDate = new Date(year, month - 1, day);
+      if (!isDateAllowed(tanggalDate)) {
+        const hariLabel = selectedSesiKerja.hari.charAt(0).toUpperCase() + selectedSesiKerja.hari.slice(1);
+        newErrors.tanggal = `Tanggal harus pada hari ${hariLabel} sesuai dengan sesi kerja yang dipilih.`;
+      }
     }
     if (!formData.sumber) {
       newErrors.sumber = "Sumber wajib dipilih.";
@@ -347,55 +390,6 @@ export function RealisasiSesiForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="tanggal">
-              Tanggal <span className="text-destructive">*</span>
-            </Label>
-            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground",
-                    errors.tanggal && "border-destructive"
-                  )}
-                  id="tanggal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {value || "Pilih tanggal"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(selectedDate) => {
-                    setDate(selectedDate);
-                    setMonth(selectedDate);
-                    if (selectedDate) {
-                      const formatted = selectedDate.toISOString().split('T')[0];
-                      setFormData(prev => ({ ...prev, tanggal: formatted }));
-                      setValue(formatDate(selectedDate));
-                      setErrors(prev => {
-                        const newErrors = { ...prev };
-                        delete newErrors.tanggal;
-                        return newErrors;
-                      });
-                    }
-                    setDatePickerOpen(false);
-                  }}
-                  month={month}
-                  onMonthChange={setMonth}
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.tanggal && (
-              <p className="text-sm text-destructive">{errors.tanggal}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="sesi_kerja_id">
               Sesi Kerja <span className="text-destructive">*</span>
             </Label>
@@ -408,12 +402,36 @@ export function RealisasiSesiForm({
               <Select
                 value={formData.sesi_kerja_id?.toString() || ""}
                 onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, sesi_kerja_id: parseInt(value) }));
+                  const sesiId = parseInt(value);
+                  const selectedSesi = sesiKerjaList.find(s => s.id === sesiId);
+                  setSelectedSesiKerja(selectedSesi || null);
+                  setFormData(prev => ({ ...prev, sesi_kerja_id: sesiId }));
                   setErrors(prev => {
                     const newErrors = { ...prev };
                     delete newErrors.sesi_kerja_id;
                     return newErrors;
                   });
+                  // Reset tanggal if current tanggal doesn't match the sesi kerja's hari
+                  if (selectedSesi && date) {
+                    const dayOfWeek = date.getDay();
+                    const expectedDay = getHariToDayOfWeek(selectedSesi.hari);
+                    if (dayOfWeek !== expectedDay) {
+                      // Find next occurrence of the hari
+                      const today = new Date();
+                      const currentDay = today.getDay();
+                      let daysToAdd = expectedDay - currentDay;
+                      if (daysToAdd <= 0) {
+                        daysToAdd += 7; // Next week
+                      }
+                      const nextDate = new Date(today);
+                      nextDate.setDate(today.getDate() + daysToAdd);
+                      setDate(nextDate);
+                      setMonth(nextDate);
+                      const formatted = nextDate.toISOString().split('T')[0];
+                      setFormData(prev => ({ ...prev, tanggal: formatted }));
+                      setValue(formatDate(nextDate));
+                    }
+                  }
                 }}
               >
                 <SelectTrigger
@@ -434,6 +452,100 @@ export function RealisasiSesiForm({
             )}
             {errors.sesi_kerja_id && (
               <p className="text-sm text-destructive">{errors.sesi_kerja_id}</p>
+            )}
+            {selectedSesiKerja && (
+              <p className="text-xs text-muted-foreground">
+                Pilih tanggal pada hari {selectedSesiKerja.hari.charAt(0).toUpperCase() + selectedSesiKerja.hari.slice(1)} sesuai dengan sesi kerja yang dipilih.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tanggal">
+              Tanggal <span className="text-destructive">*</span>
+            </Label>
+            {!selectedSesiKerja && (
+              <p className="text-xs text-muted-foreground mb-2">
+                Pilih sesi kerja terlebih dahulu untuk memilih tanggal.
+              </p>
+            )}
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground",
+                    errors.tanggal && "border-destructive"
+                  )}
+                  id="tanggal"
+                  disabled={!selectedSesiKerja}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {value || "Pilih tanggal"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(selectedDate) => {
+                    if (!selectedDate) return;
+                    
+                    // Normalize date to local timezone to avoid timezone issues
+                    const localDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+                    
+                    // Validate if date matches selected sesi kerja's hari
+                    if (selectedSesiKerja && !isDateAllowed(localDate)) {
+                      const hariLabel = selectedSesiKerja.hari.charAt(0).toUpperCase() + selectedSesiKerja.hari.slice(1);
+                      setErrors(prev => ({ 
+                        ...prev, 
+                        tanggal: `Tanggal harus pada hari ${hariLabel} sesuai dengan sesi kerja yang dipilih.` 
+                      }));
+                      return;
+                    }
+                    
+                    setDate(localDate);
+                    setMonth(localDate);
+                    // Format date as YYYY-MM-DD using local date components
+                    const year = localDate.getFullYear();
+                    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(localDate.getDate()).padStart(2, '0');
+                    const formatted = `${year}-${month}-${day}`;
+                    setFormData(prev => ({ ...prev, tanggal: formatted }));
+                    setValue(formatDate(localDate));
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.tanggal;
+                      return newErrors;
+                    });
+                    setDatePickerOpen(false);
+                  }}
+                  month={month}
+                  onMonthChange={setMonth}
+                  disabled={(date) => {
+                    // Disable past dates
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const dateOnly = new Date(date);
+                    dateOnly.setHours(0, 0, 0, 0);
+                    if (dateOnly < today) {
+                      return true;
+                    }
+                    // Disable dates that don't match selected sesi kerja's hari
+                    if (selectedSesiKerja) {
+                      // Normalize date to local timezone
+                      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                      const allowed = isDateAllowed(localDate);
+                      return !allowed;
+                    }
+                    return false;
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.tanggal && (
+              <p className="text-sm text-destructive">{errors.tanggal}</p>
             )}
           </div>
 

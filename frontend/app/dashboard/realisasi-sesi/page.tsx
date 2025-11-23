@@ -230,13 +230,23 @@ export default function RealisasiSesiPage() {
               </h1>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <HasCan permission="mengajukan realisasi sesi">
+              <HasCan permission="mengelola realisasi sesi">
                 <Button asChild>
                   <a href="/dashboard/realisasi-sesi/create">
                     <Plus className="h-4 w-4 mr-2" />
-                    Ajukan Realisasi Sesi
+                    Tambah Realisasi Sesi
                   </a>
                 </Button>
+              </HasCan>
+              <HasCan permission="mengajukan realisasi sesi">
+                {!hasRole('Admin') && !hasRole('Owner') && (
+                  <Button asChild variant="outline">
+                    <a href="/dashboard/realisasi-sesi/create">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajukan Realisasi Sesi
+                    </a>
+                  </Button>
+                )}
               </HasCan>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
@@ -281,7 +291,7 @@ export default function RealisasiSesiPage() {
           )}
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className={`grid gap-4 ${hasRole('Admin') || hasRole('Owner') ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             <div className="rounded-lg border p-4">
               <div className="text-sm font-medium text-muted-foreground">
                 Total
@@ -290,14 +300,16 @@ export default function RealisasiSesiPage() {
                 {loading ? "..." : stats.total}
               </div>
             </div>
-            <div className="rounded-lg border p-4">
-              <div className="text-sm font-medium text-muted-foreground">
-                Diajukan
+            {(hasRole('Admin') || hasRole('Owner')) && (
+              <div className="rounded-lg border p-4">
+                <div className="text-sm font-medium text-muted-foreground">
+                  Diajukan
+                </div>
+                <div className="text-2xl font-bold mt-1 text-yellow-600">
+                  {loading ? "..." : stats.totalDiajukan}
+                </div>
               </div>
-              <div className="text-2xl font-bold mt-1 text-yellow-600">
-                {loading ? "..." : stats.totalDiajukan}
-              </div>
-            </div>
+            )}
             <div className="rounded-lg border p-4">
               <div className="text-sm font-medium text-muted-foreground">
                 Disetujui
@@ -322,8 +334,8 @@ export default function RealisasiSesiPage() {
             loading={loading}
             onViewDetail={handleViewDetail}
             onDelete={handleDeleteClick}
-            onApprove={handleApproveClick}
-            onReject={handleRejectClick}
+            onApprove={hasRole('Admin') || hasRole('Owner') ? handleApproveClick : undefined}
+            onReject={hasRole('Admin') || hasRole('Owner') ? handleRejectClick : undefined}
             showActions={true}
           />
         </div>
