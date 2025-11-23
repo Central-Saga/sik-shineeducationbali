@@ -41,6 +41,9 @@ class RekapBulananController extends BaseApiController
 
         $rekapBulananList = $this->rekapBulananService->generateRekapBulanan($request->periode);
 
+        // Eager load employee->user relationship
+        $rekapBulananList->load('employee.user');
+
         return $this->success(
             RekapBulananResource::collection($rekapBulananList),
             'Rekap bulanan generated successfully'
@@ -63,6 +66,9 @@ class RekapBulananController extends BaseApiController
             $query = $this->rekapBulananService->getAll();
         }
 
+        // Eager load employee->user relationship
+        $query->load('employee.user');
+
         return $this->success(
             RekapBulananResource::collection($query),
             'Rekap bulanan records retrieved successfully'
@@ -78,6 +84,7 @@ class RekapBulananController extends BaseApiController
     public function show($id): JsonResponse
     {
         $rekapBulanan = $this->rekapBulananService->getById($id);
+        $rekapBulanan->load('employee.user');
 
         return $this->success(
             new RekapBulananResource($rekapBulanan),

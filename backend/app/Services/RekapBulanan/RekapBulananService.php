@@ -69,13 +69,16 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
         }
 
         return DB::transaction(function () use ($periode) {
-            $employees = Employee::active()->get();
+            $employees = Employee::active()->with('user')->get();
             $rekapBulananList = new Collection();
 
             foreach ($employees as $employee) {
                 $rekapBulanan = $this->calculateRekapForEmployee($employee, $periode);
                 $rekapBulananList->push($rekapBulanan);
             }
+
+            // Eager load employee->user relationship
+            $rekapBulananList->load('employee.user');
 
             return $rekapBulananList;
         });

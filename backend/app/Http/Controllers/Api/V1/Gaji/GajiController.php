@@ -61,6 +61,9 @@ class GajiController extends BaseApiController
             $query = $this->gajiService->getAll();
         }
 
+        // Eager load employee->user relationship
+        $query->load('employee.user');
+
         return $this->success(
             GajiResource::collection($query),
             'Gaji records retrieved successfully'
@@ -76,6 +79,7 @@ class GajiController extends BaseApiController
     public function show($id): JsonResponse
     {
         $gaji = $this->gajiService->getById($id);
+        $gaji->load('employee.user');
 
         return $this->success(
             new GajiResource($gaji),
