@@ -54,6 +54,17 @@ export interface PembayaranGajiFormData {
   catatan?: string | null;
 }
 
+export interface DetailLembur {
+  id: number;
+  tanggal: string;
+  sesi_kerja?: {
+    id: number;
+    mata_pelajaran: string | null;
+    kategori: string;
+    tarif: number;
+  } | null;
+}
+
 export interface Gaji {
   id: number;
   karyawan_id: number;
@@ -79,6 +90,7 @@ export interface Gaji {
   } | null;
   komponen_gaji?: KomponenGaji[];
   pembayaran_gaji?: PembayaranGaji[];
+  detail_lembur?: DetailLembur[];
   created_at?: string;
   updated_at?: string;
 }
