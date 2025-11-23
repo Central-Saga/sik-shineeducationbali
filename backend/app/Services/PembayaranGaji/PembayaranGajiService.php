@@ -2,6 +2,7 @@
 
 namespace App\Services\PembayaranGaji;
 
+use App\Models\PembayaranGaji;
 use App\Repositories\Contracts\PembayaranGajiRepositoryInterface;
 use App\Services\Base\BaseService;
 use App\Services\Contracts\PembayaranGajiServiceInterface;
