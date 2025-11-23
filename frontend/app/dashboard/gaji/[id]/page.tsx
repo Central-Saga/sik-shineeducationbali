@@ -34,6 +34,28 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { usePembayaranGaji } from "@/hooks/use-pembayaran-gaji";
+import { HasCan } from "@/components/has-can";
+import type { PembayaranGaji, PembayaranGajiFormData, StatusPembayaran } from "@/lib/types/gaji";
 
 export default function GajiDetailPage() {
   const params = useParams();
@@ -41,7 +63,26 @@ export default function GajiDetailPage() {
   const [gaji, setGaji] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const { komponenGaji: komponenGajiFromHook, loading: loadingKomponen } = useKomponenGaji(gajiId);
-  const { pembayaranGaji: pembayaranGajiFromHook, loading: loadingPembayaran } = usePembayaranGaji(gajiId);
+  const { 
+    pembayaranGaji: pembayaranGajiFromHook, 
+    loading: loadingPembayaran,
+    create: createPembayaran,
+    update: updatePembayaran,
+    updateStatus: updatePembayaranStatus,
+    remove: deletePembayaran,
+    refetch: refetchPembayaran,
+  } = usePembayaranGaji(gajiId);
+  
+  // Dialog states
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [editingPembayaran, setEditingPembayaran] = React.useState<PembayaranGaji | null>(null);
+  const [formData, setFormData] = React.useState<PembayaranGajiFormData>({
+    tanggal_transfer: new Date().toISOString().split('T')[0],
+    status_pembayaran: 'menunggu',
+    bukti_transfer: '',
+    catatan: '',
+  });
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   // Use komponenGaji from gaji object if available, otherwise use hook
   const komponenGaji = gaji?.komponen_gaji && gaji.komponen_gaji.length > 0 
@@ -92,6 +133,109 @@ export default function GajiDetailPage() {
         return "Dibayar";
       default:
         return status;
+    }
+  };
+
+  const getStatusPembayaranLabel = (status: string) => {
+    switch (status) {
+      case "menunggu":
+        return "Menunggu";
+      case "berhasil":
+        return "Berhasil";
+      case "gagal":
+        return "Gagal";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusPembayaranVariant = (status: string) => {
+    switch (status) {
+      case "menunggu":
+        return "secondary";
+      case "berhasil":
+        return "default";
+      case "gagal":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
+
+  const handleOpenDialog = (pembayaran?: PembayaranGaji) => {
+    if (pembayaran) {
+      setEditingPembayaran(pembayaran);
+      setFormData({
+        tanggal_transfer: pembayaran.tanggal_transfer.split('T')[0],
+        status_pembayaran: pembayaran.status_pembayaran,
+        bukti_transfer: pembayaran.bukti_transfer || '',
+        catatan: pembayaran.catatan || '',
+      });
+    } else {
+      setEditingPembayaran(null);
+      setFormData({
+        tanggal_transfer: new Date().toISOString().split('T')[0],
+        status_pembayaran: 'menunggu',
+        bukti_transfer: '',
+        catatan: '',
+      });
+    }
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingPembayaran(null);
+    setFormData({
+      tanggal_transfer: new Date().toISOString().split('T')[0],
+      status_pembayaran: 'menunggu',
+      bukti_transfer: '',
+      catatan: '',
+    });
+  };
+
+  const handleSubmitPembayaran = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (editingPembayaran) {
+        await updatePembayaran(editingPembayaran.id, formData);
+        toast.success("Pembayaran gaji berhasil diperbarui");
+      } else {
+        await createPembayaran(formData);
+        toast.success("Pembayaran gaji berhasil dibuat");
+      }
+      handleCloseDialog();
+      await refetchPembayaran();
+    } catch (err: any) {
+      toast.error(err.message || "Gagal menyimpan pembayaran gaji");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id: number, status: StatusPembayaran) => {
+    try {
+      await updatePembayaranStatus(id, status);
+      toast.success(`Status pembayaran berhasil diubah menjadi ${getStatusPembayaranLabel(status)}`);
+      await refetchPembayaran();
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengupdate status pembayaran");
+    }
+  };
+
+  const handleDeletePembayaran = async (id: number) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus pembayaran ini?")) {
+      return;
+    }
+
+    try {
+      await deletePembayaran(id);
+      toast.success("Pembayaran gaji berhasil dihapus");
+      await refetchPembayaran();
+    } catch (err: any) {
+      toast.error(err.message || "Gagal menghapus pembayaran gaji");
     }
   };
 
@@ -425,7 +569,20 @@ export default function GajiDetailPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Pembayaran Gaji</CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Pembayaran Gaji</CardTitle>
+                  <CardDescription>
+                    Daftar pembayaran gaji untuk periode {gaji.periode}
+                  </CardDescription>
+                </div>
+                <HasCan permission="mengelola pembayaran gaji">
+                  <Button onClick={() => handleOpenDialog()} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Tambah Pembayaran
+                  </Button>
+                </HasCan>
+              </div>
             </CardHeader>
             <CardContent>
               {loadingPembayaran ? (
@@ -440,17 +597,66 @@ export default function GajiDetailPage() {
                       <TableHead>Status</TableHead>
                       <TableHead>Bukti Transfer</TableHead>
                       <TableHead>Catatan</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pembayaranGaji.map((pembayaran) => (
                       <TableRow key={pembayaran.id}>
-                        <TableCell>{pembayaran.tanggal_transfer}</TableCell>
                         <TableCell>
-                          <Badge>{pembayaran.status_pembayaran}</Badge>
+                          {new Date(pembayaran.tanggal_transfer).toLocaleDateString("id-ID", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusPembayaranVariant(pembayaran.status_pembayaran)}>
+                            {getStatusPembayaranLabel(pembayaran.status_pembayaran)}
+                          </Badge>
                         </TableCell>
                         <TableCell>{pembayaran.bukti_transfer || "-"}</TableCell>
                         <TableCell>{pembayaran.catatan || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <HasCan permission="mengelola pembayaran gaji">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenDialog(pembayaran)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {pembayaran.status_pembayaran !== 'berhasil' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(pembayaran.id, 'berhasil')}
+                                  title="Tandai sebagai Berhasil"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                </Button>
+                              )}
+                              {pembayaran.status_pembayaran !== 'gagal' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(pembayaran.id, 'gagal')}
+                                  title="Tandai sebagai Gagal"
+                                >
+                                  <XCircle className="h-4 w-4 text-red-600" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeletePembayaran(pembayaran.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </HasCan>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -458,6 +664,97 @@ export default function GajiDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Dialog Form Pembayaran Gaji */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingPembayaran ? "Edit Pembayaran Gaji" : "Tambah Pembayaran Gaji"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingPembayaran
+                    ? "Ubah informasi pembayaran gaji"
+                    : "Tambahkan pembayaran gaji baru untuk periode ini"}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmitPembayaran}>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tanggal_transfer">Tanggal Transfer *</Label>
+                    <Input
+                      id="tanggal_transfer"
+                      type="date"
+                      value={formData.tanggal_transfer}
+                      onChange={(e) =>
+                        setFormData({ ...formData, tanggal_transfer: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status_pembayaran">Status Pembayaran</Label>
+                    <Select
+                      value={formData.status_pembayaran}
+                      onValueChange={(value: StatusPembayaran) =>
+                        setFormData({ ...formData, status_pembayaran: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="menunggu">Menunggu</SelectItem>
+                        <SelectItem value="berhasil">Berhasil</SelectItem>
+                        <SelectItem value="gagal">Gagal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bukti_transfer">Bukti Transfer</Label>
+                    <Input
+                      id="bukti_transfer"
+                      type="text"
+                      placeholder="URL atau nomor referensi bukti transfer"
+                      value={formData.bukti_transfer || ''}
+                      onChange={(e) =>
+                        setFormData({ ...formData, bukti_transfer: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="catatan">Catatan</Label>
+                    <Textarea
+                      id="catatan"
+                      placeholder="Catatan tambahan (opsional)"
+                      value={formData.catatan || ''}
+                      onChange={(e) =>
+                        setFormData({ ...formData, catatan: e.target.value })
+                      }
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseDialog}
+                    disabled={isSubmitting}
+                  >
+                    Batal
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting
+                      ? "Menyimpan..."
+                      : editingPembayaran
+                      ? "Simpan Perubahan"
+                      : "Tambah Pembayaran"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -94,7 +94,7 @@ class GajiController extends BaseApiController
             $data['detail_lembur'] = $detailLembur->map(function ($realisasiSesi) {
                 return [
                     'id' => $realisasiSesi->id,
-                    'tanggal' => $realisasiSesi->tanggal instanceof \Carbon\Carbon 
+                    'tanggal' => $realisasiSesi->tanggal instanceof \Carbon\Carbon
                         ? $realisasiSesi->tanggal->format('Y-m-d')
                         : $realisasiSesi->tanggal,
                     'sesi_kerja' => $realisasiSesi->sesiKerja ? [
