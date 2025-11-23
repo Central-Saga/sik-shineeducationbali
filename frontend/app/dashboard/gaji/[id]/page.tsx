@@ -299,31 +299,42 @@ export default function GajiDetailPage({ params }: { params: { id: string } }) {
                         }).format(gaji.total_gaji)}
                       </span>
                     </div>
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      <p>
-                        = {komponenGaji
-                          .filter((k) => k.nominal > 0)
-                          .map((k) => 
-                            new Intl.NumberFormat("id-ID", {
-                              style: "currency",
-                              currency: "IDR",
-                            }).format(k.nominal)
-                          )
-                          .join(" + ")}
-                        {komponenGaji.some((k) => k.nominal < 0) && (
-                          <>
-                            {" - "}
-                            {komponenGaji
-                              .filter((k) => k.nominal < 0)
-                              .map((k) => 
-                                new Intl.NumberFormat("id-ID", {
-                                  style: "currency",
-                                  currency: "IDR",
-                                }).format(Math.abs(k.nominal))
-                              )
-                              .join(" - ")}
-                          </>
-                        )}
+                    <div className="mt-2 p-3 bg-muted rounded-md">
+                      <p className="text-sm font-mono">
+                        <span className="font-semibold">Rumus:</span>{" "}
+                        {(() => {
+                          const penghasilan = komponenGaji
+                            .filter((k) => k.nominal > 0)
+                            .reduce((sum, k) => sum + k.nominal, 0);
+                          const potongan = komponenGaji
+                            .filter((k) => k.nominal < 0)
+                            .reduce((sum, k) => sum + Math.abs(k.nominal), 0);
+                          
+                          const parts: string[] = [];
+                          if (penghasilan > 0) {
+                            parts.push(
+                              new Intl.NumberFormat("id-ID", {
+                                style: "currency",
+                                currency: "IDR",
+                              }).format(penghasilan)
+                            );
+                          }
+                          if (potongan > 0) {
+                            parts.push(
+                              new Intl.NumberFormat("id-ID", {
+                                style: "currency",
+                                currency: "IDR",
+                              }).format(potongan)
+                            );
+                          }
+                          
+                          return parts.join(" - ");
+                        })()}
+                        {" = "}
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                        }).format(gaji.total_gaji)}
                       </p>
                     </div>
                   </div>
