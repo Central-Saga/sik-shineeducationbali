@@ -54,15 +54,15 @@ class TestingDataSeeder extends Seeder
             ['name' => 'Budi Santoso', 'email' => 'budi.santoso@shineeducationbali.com', 'kategori' => 'tetap', 'subtipe' => null, 'tipe_gaji' => 'bulanan', 'gaji_pokok' => 12000000],
             ['name' => 'Siti Nurhaliza', 'email' => 'siti.nurhaliza@shineeducationbali.com', 'kategori' => 'tetap', 'subtipe' => null, 'tipe_gaji' => 'bulanan', 'gaji_pokok' => 15000000],
             ['name' => 'Ahmad Fauzi', 'email' => 'ahmad.fauzi@shineeducationbali.com', 'kategori' => 'tetap', 'subtipe' => null, 'tipe_gaji' => 'bulanan', 'gaji_pokok' => 10000000],
-            
+
             // Kontrak Full Time
             ['name' => 'Dewi Lestari', 'email' => 'dewi.lestari@shineeducationbali.com', 'kategori' => 'kontrak', 'subtipe' => 'full_time', 'tipe_gaji' => 'bulanan', 'gaji_pokok' => 8000000],
             ['name' => 'Rudi Hartono', 'email' => 'rudi.hartono@shineeducationbali.com', 'kategori' => 'kontrak', 'subtipe' => 'full_time', 'tipe_gaji' => 'bulanan', 'gaji_pokok' => 7500000],
-            
+
             // Kontrak Part Time
             ['name' => 'Maya Sari', 'email' => 'maya.sari@shineeducationbali.com', 'kategori' => 'kontrak', 'subtipe' => 'part_time', 'tipe_gaji' => 'bulanan', 'gaji_pokok' => 5000000],
             ['name' => 'Indra Gunawan', 'email' => 'indra.gunawan@shineeducationbali.com', 'kategori' => 'kontrak', 'subtipe' => 'part_time', 'tipe_gaji' => 'bulanan', 'gaji_pokok' => 4500000],
-            
+
             // Freelance
             ['name' => 'Lina Wijaya', 'email' => 'lina.wijaya@shineeducationbali.com', 'kategori' => 'freelance', 'subtipe' => null, 'tipe_gaji' => 'per_sesi', 'gaji_pokok' => null],
             ['name' => 'Bambang Sutrisno', 'email' => 'bambang.sutrisno@shineeducationbali.com', 'kategori' => 'freelance', 'subtipe' => null, 'tipe_gaji' => 'per_sesi', 'gaji_pokok' => null],
@@ -79,7 +79,7 @@ class TestingDataSeeder extends Seeder
         foreach ($employees as $empData) {
             // Check if user exists
             $user = User::where('email', $empData['email'])->first();
-            
+
             if (!$user) {
                 // Create user
                 $user = User::create([
@@ -88,7 +88,7 @@ class TestingDataSeeder extends Seeder
                     'password' => bcrypt('password123'),
                     'email_verified_at' => now(),
                 ]);
-                
+
                 if ($karyawanRole) {
                     $user->assignRole($karyawanRole);
                 }
@@ -136,7 +136,7 @@ class TestingDataSeeder extends Seeder
 
         $kategoris = ['coding', 'non_coding'];
         $haris = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
-        
+
         $tarifMap = [
             'coding' => 35000,
             'non_coding' => 30000,
@@ -164,7 +164,7 @@ class TestingDataSeeder extends Seeder
             foreach ($haris as $hari) {
                 // Senin-Jumat: 5-6 sesi, Sabtu: 3-4 sesi
                 $jumlahSesi = ($hari === 'sabtu') ? fake()->numberBetween(3, 4) : fake()->numberBetween(5, 6);
-                
+
                 $nomorSesiTerpakai = [];
                 for ($i = 0; $i < $jumlahSesi; $i++) {
                     // Pilih nomor sesi yang belum terpakai
@@ -214,7 +214,7 @@ class TestingDataSeeder extends Seeder
 
         foreach ($employees as $employee) {
             $currentDate = $startDate->copy();
-            
+
             while ($currentDate->lte($endDate)) {
                 // Skip Sunday
                 if ($currentDate->dayOfWeek === Carbon::SUNDAY) {
@@ -245,16 +245,16 @@ class TestingDataSeeder extends Seeder
 
                 // 85% hadir, 15% izin
                 $random = rand(1, 100);
-                
+
                 if ($random <= 85) {
                     // Hadir
                     $jamMasuk = $currentDate->copy()->setTime(rand(7, 8), rand(0, 59), 0);
                     $jamPulang = $currentDate->copy()->setTime(rand(16, 17), rand(0, 59), 0);
-                    
+
                     if ($jamPulang->lessThanOrEqualTo($jamMasuk)) {
                         $jamPulang = $jamMasuk->copy()->addHours(8);
                     }
-                    
+
                     Absensi::create([
                         'karyawan_id' => $employee->id,
                         'tanggal' => $currentDate->format('Y-m-d'),
@@ -325,7 +325,7 @@ class TestingDataSeeder extends Seeder
 
             for ($i = 0; $i < $cutiCount; $i++) {
                 $tanggal = Carbon::createFromFormat('Y-m-d', fake()->dateTimeBetween($startDate, $endDate)->format('Y-m-d'));
-                
+
                 // Skip Sunday
                 if ($tanggal->dayOfWeek === Carbon::SUNDAY) {
                     continue;
@@ -342,7 +342,7 @@ class TestingDataSeeder extends Seeder
 
                 // 70% disetujui, 20% diajukan, 10% ditolak
                 $random = rand(1, 100);
-                
+
                 if ($random <= 70) {
                     $status = 'disetujui';
                     $disetujuiOleh = $adminUsers->random()->id;
@@ -355,7 +355,7 @@ class TestingDataSeeder extends Seeder
                 }
 
                 $jenis = fake()->randomElement(['izin', 'sakit']);
-                
+
                 $catatanMap = [
                     'izin' => [
                         'Izin keperluan pribadi',
@@ -425,7 +425,7 @@ class TestingDataSeeder extends Seeder
 
         foreach ($employees as $employee) {
             $currentDate = $startDate->copy();
-            
+
             while ($currentDate->lte($endDate)) {
                 // Skip Sunday
                 if ($currentDate->dayOfWeek === Carbon::SUNDAY) {
@@ -490,7 +490,7 @@ class TestingDataSeeder extends Seeder
 
                     // 80% disetujui, 15% diajukan, 5% ditolak
                     $random = rand(1, 100);
-                    
+
                     if ($random <= 80) {
                         $status = 'disetujui';
                         $disetujuiOleh = $adminUsers->random()->id;
@@ -521,7 +521,7 @@ class TestingDataSeeder extends Seeder
 
                     $createdCount++;
                 }
-                
+
                 $currentDate->addDay();
             }
         }
@@ -550,10 +550,8 @@ class TestingDataSeeder extends Seeder
             if (!$exists) {
                 return $kodeKaryawan;
             }
-
         } while ($attempts < $maxAttempts);
 
         return 'SEB' . substr(time(), -4) . rand(0, 9);
     }
 }
-

@@ -65,6 +65,42 @@ class GajiService extends BaseService implements GajiServiceInterface
     }
 
     /**
+     * Get detail lembur sesi for a gaji record.
+     *
+     * @param  int|string  $gajiId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getDetailLembur($gajiId): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola gaji') && !$this->hasPermission('melihat gaji')) {
+            abort(403, 'You do not have permission to view gaji records.');
+        }
+
+        $gaji = $this->getById($gajiId);
+        $employee = $gaji->employee;
+
+        if (!$employee) {
+            return collect();
+        }
+
+        // Get periode start and end date
+        $startDate = Carbon::createFromFormat('Y-m', $gaji->periode)->startOfMonth();
+        $endDate = Carbon::createFromFormat('Y-m', $gaji->periode)->endOfMonth();
+
+        // Get realisasi sesi lembur in periode (only disetujui)
+        $realisasiSesiList = $this->realisasiSesiRepository->findByKaryawanIdAndDateRange(
+            $employee->id,
+            $startDate->format('Y-m-d'),
+            $endDate->format('Y-m-d')
+        )->where('status', 'disetujui')
+        ->where('sumber', 'lembur')
+        ->load('sesiKerja');
+
+        return $realisasiSesiList;
+    }
+
+    /**
      * Generate gaji from rekap bulanan.
      *
      * @param  int|string  $rekapBulananId
@@ -287,4 +323,3 @@ class GajiService extends BaseService implements GajiServiceInterface
         return $this->getRepository()->findByStatus($status);
     }
 }
-

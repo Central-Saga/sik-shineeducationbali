@@ -81,8 +81,32 @@ class GajiController extends BaseApiController
         $gaji = $this->gajiService->getById($id);
         $gaji->load(['employee.user', 'komponenGaji', 'pembayaranGaji']);
 
+        // Get detail lembur if employee is tetap or kontrak
+        $detailLembur = null;
+        if ($gaji->employee && in_array($gaji->employee->kategori_karyawan, ['tetap', 'kontrak'])) {
+            $detailLembur = $this->gajiService->getDetailLembur($id);
+        }
+
+        $resource = new GajiResource($gaji);
+        $data = $resource->toArray(request());
+        
+        if ($detailLembur) {
+            $data['detail_lembur'] = $detailLembur->map(function ($realisasiSesi) {
+                return [
+                    'id' => $realisasiSesi->id,
+                    'tanggal' => $realisasiSesi->tanggal->format('Y-m-d'),
+                    'sesi_kerja' => $realisasiSesi->sesiKerja ? [
+                        'id' => $realisasiSesi->sesiKerja->id,
+                        'mata_pelajaran' => $realisasiSesi->sesiKerja->mata_pelajaran,
+                        'kategori' => $realisasiSesi->sesiKerja->kategori,
+                        'tarif' => (float) $realisasiSesi->sesiKerja->tarif,
+                    ] : null,
+                ];
+            });
+        }
+
         return $this->success(
-            new GajiResource($gaji),
+            $data,
             'Gaji retrieved successfully'
         );
     }

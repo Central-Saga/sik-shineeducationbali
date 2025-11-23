@@ -349,6 +349,80 @@ export default function GajiDetailPage() {
             </CardContent>
           </Card>
 
+          {gaji.detail_lembur && gaji.detail_lembur.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Detail Lembur Sesi</CardTitle>
+                <CardDescription>
+                  Rincian sesi lembur yang dihitung untuk periode {gaji.periode}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Total: {gaji.detail_lembur.length} sesi lembur
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tanggal</TableHead>
+                        <TableHead>Mata Pelajaran</TableHead>
+                        <TableHead>Kategori</TableHead>
+                        <TableHead className="text-right">Tarif</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {gaji.detail_lembur.map((lembur: any) => (
+                        <TableRow key={lembur.id}>
+                          <TableCell>
+                            {new Date(lembur.tanggal).toLocaleDateString("id-ID", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            {lembur.sesi_kerja?.mata_pelajaran || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {lembur.sesi_kerja?.kategori || "-"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {new Intl.NumberFormat("id-ID", {
+                              style: "currency",
+                              currency: "IDR",
+                            }).format(lembur.sesi_kerja?.tarif || 0)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <tfoot>
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-right font-semibold">
+                          Total Lembur:
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                          }).format(
+                            gaji.detail_lembur.reduce(
+                              (sum: number, lembur: any) =>
+                                sum + (lembur.sesi_kerja?.tarif || 0),
+                              0
+                            )
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    </tfoot>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Pembayaran Gaji</CardTitle>
