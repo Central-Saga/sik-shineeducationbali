@@ -70,7 +70,7 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
 
         return DB::transaction(function () use ($periode) {
             $employees = Employee::active()->get();
-            $rekapBulananList = collect();
+            $rekapBulananList = RekapBulanan::newCollection();
 
             foreach ($employees as $employee) {
                 $rekapBulanan = $this->calculateRekapForEmployee($employee, $periode);
