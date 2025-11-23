@@ -85,5 +85,16 @@ interface CutiRepositoryInterface extends BaseRepositoryInterface
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function findByKaryawanIdAndStatus($karyawanId, string $status): Collection;
+
+    /**
+     * Count approved leave requests by employee ID, jenis, and date range.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $jenis
+     * @param  string  $startDate
+     * @param  string  $endDate
+     * @return int
+     */
+    public function countApprovedByKaryawanIdAndJenisAndDateRange($karyawanId, string $jenis, string $startDate, string $endDate): int;
 }
 
