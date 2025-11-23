@@ -48,6 +48,23 @@ class GajiService extends BaseService implements GajiServiceInterface
     }
 
     /**
+     * Get a gaji record by ID.
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Gaji
+     * @throws \App\Exceptions\NotFoundException
+     */
+    public function getById($id): Gaji
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola gaji') && !$this->hasPermission('melihat gaji')) {
+            abort(403, 'You do not have permission to view gaji records.');
+        }
+
+        return parent::getById($id);
+    }
+
+    /**
      * Generate gaji from rekap bulanan.
      *
      * @param  int|string  $rekapBulananId
