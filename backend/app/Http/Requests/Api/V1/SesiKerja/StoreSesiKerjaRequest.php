@@ -26,7 +26,7 @@ class StoreSesiKerjaRequest extends FormRequest
             'kategori' => ['required', 'string', Rule::in(['coding', 'non_coding'])],
             'mata_pelajaran' => ['nullable', 'string', 'max:255'],
             'hari' => ['required', 'string', Rule::in(['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'])],
-            'nomor_sesi' => ['required', 'integer', 'min:1', 'max:255'],
+            'nomor_sesi' => ['nullable', 'integer', 'min:1', 'max:255'], // Optional, will be auto-generated
             'jam_mulai' => ['required', 'date_format:H:i:s'],
             'jam_selesai' => ['required', 'date_format:H:i:s', 'after:jam_mulai'],
             'tarif' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
@@ -48,7 +48,6 @@ class StoreSesiKerjaRequest extends FormRequest
             'mata_pelajaran.max' => 'Mata pelajaran maksimal 255 karakter.',
             'hari.required' => 'Hari wajib diisi.',
             'hari.in' => 'Hari harus salah satu dari: senin, selasa, rabu, kamis, jumat, sabtu.',
-            'nomor_sesi.required' => 'Nomor sesi wajib diisi.',
             'nomor_sesi.integer' => 'Nomor sesi harus berupa angka.',
             'nomor_sesi.min' => 'Nomor sesi minimal 1.',
             'nomor_sesi.max' => 'Nomor sesi maksimal 255.',

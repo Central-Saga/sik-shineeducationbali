@@ -160,6 +160,9 @@ Route::prefix('v1')->group(function () {
         // Get active sesi kerja
         Route::get('/sesi-kerja/aktif', [SesiKerjaController::class, 'aktif'])->middleware('permission:mengelola sesi kerja');
 
+        // Update status sesi kerja
+        Route::patch('/sesi-kerja/{id}/status', [SesiKerjaController::class, 'updateStatus'])->middleware('permission:mengelola sesi kerja');
+
         // Standard CRUD routes
         Route::get('/sesi-kerja', [SesiKerjaController::class, 'index'])->middleware('permission:mengelola sesi kerja');
         Route::post('/sesi-kerja', [SesiKerjaController::class, 'store'])->middleware('permission:mengelola sesi kerja');

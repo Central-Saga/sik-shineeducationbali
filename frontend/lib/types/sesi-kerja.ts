@@ -27,7 +27,7 @@ export interface SesiKerjaFormData {
   kategori: KategoriSesi;
   mata_pelajaran?: string | null;
   hari: HariSesi;
-  nomor_sesi: number;
+  nomor_sesi?: number; // Optional, will be auto-generated
   jam_mulai: string;
   jam_selesai: string;
   tarif: number;

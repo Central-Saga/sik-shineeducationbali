@@ -47,5 +47,14 @@ interface SesiKerjaServiceInterface extends BaseServiceInterface
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function findByStatus(string $status): Collection;
+
+    /**
+     * Update status of sesi kerja.
+     *
+     * @param  int|string  $id
+     * @param  string  $status
+     * @return \App\Models\SesiKerja
+     */
+    public function updateStatus(int|string $id, string $status): SesiKerja;
 }
 

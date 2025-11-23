@@ -41,7 +41,6 @@ export default function EditSesiKerjaPage() {
           kategori: data.kategori,
           mata_pelajaran: data.mata_pelajaran || '',
           hari: data.hari,
-          nomor_sesi: data.nomor_sesi,
           jam_mulai: data.jam_mulai || '08:00:00',
           jam_selesai: data.jam_selesai || '09:00:00',
           tarif: data.tarif || 30000,

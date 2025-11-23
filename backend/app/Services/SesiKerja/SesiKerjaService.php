@@ -78,6 +78,14 @@ class SesiKerjaService extends BaseService implements SesiKerjaServiceInterface
             abort(403, 'You do not have permission to create sesi kerja records.');
         }
 
+        // Auto-generate nomor_sesi if not provided
+        if (!isset($data['nomor_sesi']) || empty($data['nomor_sesi'])) {
+            $data['nomor_sesi'] = $this->getRepository()->getNextNomorSesi(
+                $data['kategori'],
+                $data['hari']
+            );
+        }
+
         // Check if sesi kerja already exists for this kategori, hari, and nomor_sesi
         $existingSesi = $this->getRepository()->findOneBy([
             'kategori' => $data['kategori'],
@@ -223,6 +231,31 @@ class SesiKerjaService extends BaseService implements SesiKerjaServiceInterface
         }
 
         return $this->getRepository()->findByStatus($status);
+    }
+
+    /**
+     * Update status of sesi kerja.
+     *
+     * @param  int|string  $id
+     * @param  string  $status
+     * @return \App\Models\SesiKerja
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function updateStatus(int|string $id, string $status): SesiKerja
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola sesi kerja')) {
+            abort(403, 'You do not have permission to update sesi kerja status.');
+        }
+
+        // Validate status
+        if (!in_array($status, ['aktif', 'non aktif'])) {
+            abort(422, 'Status must be either "aktif" or "non aktif".');
+        }
+
+        $sesiKerja = $this->getById($id);
+        return $this->getRepository()->update($id, ['status' => $status]);
     }
 }
 

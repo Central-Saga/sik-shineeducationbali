@@ -113,5 +113,21 @@ class SesiKerjaRepository extends BaseRepository implements SesiKerjaRepositoryI
             return $this->model->where('status', $status)->get();
         });
     }
-}
 
+    /**
+     * Get next nomor_sesi for given kategori and hari.
+     *
+     * @param  string  $kategori
+     * @param  string  $hari
+     * @return int
+     */
+    public function getNextNomorSesi(string $kategori, string $hari): int
+    {
+        $maxNomorSesi = $this->model
+            ->where('kategori', $kategori)
+            ->where('hari', $hari)
+            ->max('nomor_sesi');
+
+        return ($maxNomorSesi ?? 0) + 1;
+    }
+}

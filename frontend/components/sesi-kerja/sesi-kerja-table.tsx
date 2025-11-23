@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import type { SesiKerja } from "@/lib/types/sesi-kerja";
 import { Clock, Eye, Trash2 } from "lucide-react";
 
@@ -21,6 +22,7 @@ interface SesiKerjaTableProps {
   className?: string;
   onViewDetail?: (sesiKerja: SesiKerja) => void;
   onDelete?: (sesiKerja: SesiKerja) => void;
+  onUpdateStatus?: (sesiKerja: SesiKerja, newStatus: 'aktif' | 'non aktif') => void;
 }
 
 export function SesiKerjaTable({
@@ -29,6 +31,7 @@ export function SesiKerjaTable({
   className,
   onViewDetail,
   onDelete,
+  onUpdateStatus,
 }: SesiKerjaTableProps) {
   const getKategoriLabel = (kategori: string) => {
     const labels: Record<string, string> = {
@@ -190,9 +193,20 @@ export function SesiKerjaTable({
                     {formatCurrency(item.tarif)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(item.status)}>
-                      {item.status === 'aktif' ? 'Aktif' : 'Non Aktif'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getStatusBadgeVariant(item.status)}>
+                        {item.status === 'aktif' ? 'Aktif' : 'Non Aktif'}
+                      </Badge>
+                      {onUpdateStatus && (
+                        <Switch
+                          checked={item.status === 'aktif'}
+                          onCheckedChange={(checked) => {
+                            onUpdateStatus(item, checked ? 'aktif' : 'non aktif');
+                          }}
+                          aria-label={`Toggle status untuk ${item.kategori} - ${item.hari} - Sesi ${item.nomor_sesi}`}
+                        />
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

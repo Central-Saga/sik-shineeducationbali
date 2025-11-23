@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\SesiKerja;
 use App\Http\Controllers\Api\Base\BaseApiController;
 use App\Http\Requests\Api\V1\SesiKerja\StoreSesiKerjaRequest;
 use App\Http\Requests\Api\V1\SesiKerja\UpdateSesiKerjaRequest;
+use App\Http\Requests\Api\V1\SesiKerja\UpdateStatusSesiKerjaRequest;
 use App\Http\Resources\Api\V1\SesiKerja\SesiKerjaResource;
 use App\Services\Contracts\SesiKerjaServiceInterface;
 use Illuminate\Http\JsonResponse;
@@ -254,6 +255,23 @@ class SesiKerjaController extends BaseApiController
         return $this->success(
             SesiKerjaResource::collection($query),
             'Active sesi kerja records retrieved successfully'
+        );
+    }
+
+    /**
+     * Update status of sesi kerja.
+     *
+     * @param  \App\Http\Requests\Api\V1\SesiKerja\UpdateStatusSesiKerjaRequest  $request
+     * @param  string|int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateStatus(UpdateStatusSesiKerjaRequest $request, string|int $id): JsonResponse
+    {
+        $sesiKerja = $this->sesiKerjaService->updateStatus($id, $request->status);
+
+        return $this->success(
+            new SesiKerjaResource($sesiKerja),
+            'Sesi kerja status updated successfully'
         );
     }
 }

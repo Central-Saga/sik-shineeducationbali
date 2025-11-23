@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { SesiKerjaTable } from "@/components/sesi-kerja/sesi-kerja-table";
 import { SesiKerjaDetailDialog } from "@/components/sesi-kerja/sesi-kerja-detail-dialog";
 import { useSesiKerja } from "@/hooks/use-sesi-kerja";
+import { updateSesiKerjaStatus } from "@/lib/api/sesi-kerja";
 import { toast } from "sonner";
 import type { SesiKerja } from "@/lib/types/sesi-kerja";
 import { Clock, Plus } from "lucide-react";
@@ -108,6 +109,17 @@ export default function SesiKerjaPage() {
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleUpdateStatus = async (sesiKerja: SesiKerja, newStatus: 'aktif' | 'non aktif') => {
+    try {
+      await updateSesiKerjaStatus(sesiKerja.id, newStatus);
+      toast.success(`Status sesi kerja berhasil diubah menjadi ${newStatus === 'aktif' ? 'Aktif' : 'Non Aktif'}`);
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal mengubah status sesi kerja";
+      toast.error(errorMessage);
     }
   };
 
@@ -235,6 +247,7 @@ export default function SesiKerjaPage() {
             loading={loading}
             onViewDetail={handleViewDetail}
             onDelete={handleDeleteClick}
+            onUpdateStatus={handleUpdateStatus}
           />
         </div>
       </SidebarInset>

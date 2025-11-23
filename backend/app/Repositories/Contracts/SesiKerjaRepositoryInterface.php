@@ -47,5 +47,14 @@ interface SesiKerjaRepositoryInterface extends BaseRepositoryInterface
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function findByStatus(string $status): Collection;
+
+    /**
+     * Get next nomor_sesi for given kategori and hari.
+     *
+     * @param  string  $kategori
+     * @param  string  $hari
+     * @return int
+     */
+    public function getNextNomorSesi(string $kategori, string $hari): int;
 }
 

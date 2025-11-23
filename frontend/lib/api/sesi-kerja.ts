@@ -106,3 +106,11 @@ export async function getSesiKerjaAktif(params?: Omit<GetSesiKerjaParams, 'statu
   return response.data;
 }
 
+/**
+ * Update status of sesi kerja
+ */
+export async function updateSesiKerjaStatus(id: number | string, status: 'aktif' | 'non aktif'): Promise<SesiKerja> {
+  const response = await apiClient.patch<SesiKerja>(`/v1/sesi-kerja/${id}/status`, { status });
+  return response.data;
+}
+
