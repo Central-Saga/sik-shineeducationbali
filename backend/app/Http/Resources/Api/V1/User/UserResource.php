@@ -21,7 +21,7 @@ class UserResource extends JsonResource
             'roles' => $this->whenLoaded('roles', function () {
                 return $this->roles->pluck('name')->toArray();
             }, []),
-            'permissions' => $this->when($request->user(), function () {
+            'permissions' => $this->when($request->user(), function () use ($request) {
                 // User selalu bisa melihat permissions mereka sendiri
                 if ($request->user()->id === $this->id) {
                     return $this->getAllPermissions()->pluck('name')->toArray();
