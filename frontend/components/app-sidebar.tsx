@@ -123,13 +123,17 @@ const allNavItems: NavItem[] = [
   },
   {
     title: "Cuti",
-    url: "/dashboard/leaves",
+    url: "/dashboard/cuti",
     icon: CalendarDays,
     roles: ["Admin", "Karyawan"],
     items: [
       {
         title: "Semua Cuti",
-        url: "/dashboard/leaves",
+        url: "/dashboard/cuti",
+      },
+      {
+        title: "Ajukan Cuti",
+        url: "/dashboard/cuti/create",
       },
     ],
   },

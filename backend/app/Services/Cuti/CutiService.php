@@ -3,10 +3,12 @@
 namespace App\Services\Cuti;
 
 use App\Models\Cuti;
+use App\Models\Employee;
 use App\Repositories\Contracts\CutiRepositoryInterface;
 use App\Services\Base\BaseService;
 use App\Services\Contracts\CutiServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
 
 class CutiService extends BaseService implements CutiServiceInterface
 {
@@ -95,8 +97,14 @@ class CutiService extends BaseService implements CutiServiceInterface
         );
 
         if ($existingCuti) {
-            abort(422, 'Leave request already exists for this employee on this date.');
+            abort(422, 'Pengajuan cuti untuk karyawan ini pada tanggal tersebut sudah ada.');
         }
+
+        // Validate employee category and leave type restrictions
+        $this->validateEmployeeCategoryAndLeaveType($data['karyawan_id'], $data['jenis']);
+
+        // Validate leave quota based on employee category
+        $this->validateLeaveQuota($data['karyawan_id'], $data['jenis'], $data['tanggal']);
 
         return parent::create($data);
     }
@@ -127,12 +135,25 @@ class CutiService extends BaseService implements CutiServiceInterface
                 // Ambil user yang sedang login sebagai admin yang menyetujui
                 $data['disetujui_oleh'] = auth()->id();
             }
+
+            // Jika status diubah menjadi disetujui, validasi quota
+            if ($data['status'] === 'disetujui') {
+                $cuti = $this->getById($id);
+                // Exclude cuti ini dari perhitungan karena statusnya akan diubah menjadi disetujui
+                $this->validateLeaveQuota($cuti->karyawan_id, $cuti->jenis, $cuti->tanggal, $id);
+            }
         }
 
         // If tanggal or karyawan_id is being updated, check for duplicate
         $cuti = $this->getById($id);
         $checkKaryawanId = $data['karyawan_id'] ?? $cuti->karyawan_id;
         $checkTanggal = $data['tanggal'] ?? $cuti->tanggal;
+        $checkJenis = $data['jenis'] ?? $cuti->jenis;
+
+        // Validate employee category and leave type restrictions if jenis or karyawan_id is being updated
+        if (isset($data['jenis']) || isset($data['karyawan_id'])) {
+            $this->validateEmployeeCategoryAndLeaveType($checkKaryawanId, $checkJenis);
+        }
 
         $existingCuti = $this->getRepository()->findByKaryawanIdAndTanggal(
             $checkKaryawanId,
@@ -140,7 +161,7 @@ class CutiService extends BaseService implements CutiServiceInterface
         );
 
         if ($existingCuti && $existingCuti->id != $id) {
-            abort(422, 'Leave request already exists for this employee on this date.');
+            abort(422, 'Pengajuan cuti untuk karyawan ini pada tanggal tersebut sudah ada.');
         }
 
         return parent::update($id, $data);
@@ -312,6 +333,105 @@ class CutiService extends BaseService implements CutiServiceInterface
         }
 
         return $this->getRepository()->findByKaryawanIdAndStatus($karyawanId, $status);
+    }
+
+    /**
+     * Validate employee category and leave type restrictions.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $jenis
+     * @return void
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException
+     */
+    protected function validateEmployeeCategoryAndLeaveType($karyawanId, string $jenis): void
+    {
+        $employee = Employee::find($karyawanId);
+        
+        if (!$employee) {
+            abort(404, 'Employee not found.');
+        }
+
+        // Tidak ada validasi khusus untuk kategori karyawan dan jenis
+        // Semua karyawan bisa mengajukan izin dan sakit
+    }
+
+    /**
+     * Validate leave quota based on employee category.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $jenis
+     * @param  string  $tanggal
+     * @param  int|string|null  $excludeCutiId  ID cuti yang akan di-exclude dari perhitungan (untuk update)
+     * @return void
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException
+     */
+    protected function validateLeaveQuota($karyawanId, string $jenis, string $tanggal, $excludeCutiId = null): void
+    {
+        $employee = Employee::find($karyawanId);
+        
+        if (!$employee) {
+            abort(404, 'Employee not found.');
+        }
+
+        $tanggalCarbon = Carbon::parse($tanggal);
+
+        // Validasi untuk pegawai kontrak: maksimal 2x izin per bulan
+        if ($employee->kategori_karyawan === 'kontrak' && $jenis === 'izin') {
+            $startOfMonth = $tanggalCarbon->copy()->startOfMonth()->format('Y-m-d');
+            $endOfMonth = $tanggalCarbon->copy()->endOfMonth()->format('Y-m-d');
+            
+            $count = $this->getRepository()->countApprovedByKaryawanIdAndJenisAndDateRange(
+                $karyawanId,
+                'izin',
+                $startOfMonth,
+                $endOfMonth
+            );
+
+            // Jika ada excludeCutiId, kurangi count jika cuti tersebut sudah disetujui
+            if ($excludeCutiId) {
+                $excludeCuti = $this->getRepository()->find($excludeCutiId);
+                if ($excludeCuti && $excludeCuti->status === 'disetujui' && $excludeCuti->jenis === 'izin') {
+                    $excludeDate = Carbon::parse($excludeCuti->tanggal);
+                    if ($excludeDate->format('Y-m') === $tanggalCarbon->format('Y-m')) {
+                        $count--;
+                    }
+                }
+            }
+
+            if ($count >= 2) {
+                abort(422, 'Pegawai kontrak hanya dapat mengajukan maksimal 2x izin per bulan. Anda sudah menggunakan ' . $count . 'x izin di bulan ini.');
+            }
+        }
+
+        // Validasi untuk karyawan tetap: maksimal 12x izin per tahun
+        if ($employee->kategori_karyawan === 'tetap' && $jenis === 'izin') {
+            $startOfYear = $tanggalCarbon->copy()->startOfYear()->format('Y-m-d');
+            $endOfYear = $tanggalCarbon->copy()->endOfYear()->format('Y-m-d');
+            
+            $count = $this->getRepository()->countApprovedByKaryawanIdAndJenisAndDateRange(
+                $karyawanId,
+                'izin',
+                $startOfYear,
+                $endOfYear
+            );
+
+            // Jika ada excludeCutiId, kurangi count jika cuti tersebut sudah disetujui
+            if ($excludeCutiId) {
+                $excludeCuti = $this->getRepository()->find($excludeCutiId);
+                if ($excludeCuti && $excludeCuti->status === 'disetujui' && $excludeCuti->jenis === 'izin') {
+                    $excludeDate = Carbon::parse($excludeCuti->tanggal);
+                    if ($excludeDate->format('Y') === $tanggalCarbon->format('Y')) {
+                        $count--;
+                    }
+                }
+            }
+
+            if ($count >= 12) {
+                abort(422, 'Karyawan tetap hanya dapat mengajukan maksimal 12x izin per tahun. Anda sudah menggunakan ' . $count . 'x izin di tahun ini.');
+            }
+        }
+
+        // Sakit tidak ada batasan quota untuk semua kategori karyawan
     }
 }
 

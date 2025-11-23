@@ -190,5 +190,25 @@ class CutiRepository extends BaseRepository implements CutiRepositoryInterface
                 ->get();
         });
     }
+
+    /**
+     * Count approved leave requests by employee ID, jenis, and date range.
+     *
+     * @param  int|string  $karyawanId
+     * @param  string  $jenis
+     * @param  string  $startDate
+     * @param  string  $endDate
+     * @return int
+     */
+    public function countApprovedByKaryawanIdAndJenisAndDateRange($karyawanId, string $jenis, string $startDate, string $endDate): int
+    {
+        // Don't cache count queries as they need to be real-time
+        return $this->model
+            ->where('karyawan_id', $karyawanId)
+            ->where('jenis', $jenis)
+            ->where('status', 'disetujui')
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->count();
+    }
 }
 

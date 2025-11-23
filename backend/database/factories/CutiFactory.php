@@ -26,18 +26,11 @@ class CutiFactory extends Factory
      */
     public function definition(): array
     {
-        $jenis = fake()->randomElement(['cuti', 'izin', 'sakit']);
+        $jenis = fake()->randomElement(['izin', 'sakit']);
         $status = fake()->randomElement(['diajukan', 'disetujui', 'ditolak']);
 
         // Generate catatan berdasarkan jenis
         $catatanMap = [
-            'cuti' => [
-                'Cuti tahunan',
-                'Cuti bersama',
-                'Cuti melahirkan',
-                'Cuti haji',
-                'Cuti besar',
-            ],
             'izin' => [
                 'Izin pribadi',
                 'Izin keluarga',
@@ -179,4 +172,3 @@ class CutiFactory extends Factory
         });
     }
 }
-
