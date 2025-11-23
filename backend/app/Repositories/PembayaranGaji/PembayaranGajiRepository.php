@@ -65,4 +65,3 @@ class PembayaranGajiRepository extends BaseRepository implements PembayaranGajiR
         $this->forget("findByGajiId:{$gajiId}");
     }
 }
-

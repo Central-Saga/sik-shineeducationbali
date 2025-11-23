@@ -47,6 +47,9 @@ export function usePembayaranGaji(gajiId: number | string): UsePembayaranGajiRet
       setLoading(true);
       setError(null);
       const result = await createPembayaranGaji(gajiId, data);
+      // Immediately add to local state
+      setPembayaranGaji((prev) => [...prev, result]);
+      // Also refetch to ensure consistency
       await fetchPembayaranGaji();
       return result;
     } catch (err) {
@@ -63,6 +66,11 @@ export function usePembayaranGaji(gajiId: number | string): UsePembayaranGajiRet
       setLoading(true);
       setError(null);
       const result = await updatePembayaranGaji(id, data);
+      // Immediately update local state
+      setPembayaranGaji((prev) =>
+        prev.map((item) => (item.id.toString() === id.toString() ? result : item))
+      );
+      // Also refetch to ensure consistency
       await fetchPembayaranGaji();
       return result;
     } catch (err) {
@@ -78,7 +86,12 @@ export function usePembayaranGaji(gajiId: number | string): UsePembayaranGajiRet
     try {
       setLoading(true);
       setError(null);
-      await updatePembayaranGajiStatus(id, status);
+      const result = await updatePembayaranGajiStatus(id, status);
+      // Immediately update local state with the result
+      setPembayaranGaji((prev) =>
+        prev.map((item) => (item.id.toString() === id.toString() ? result : item))
+      );
+      // Also refetch to ensure consistency
       await fetchPembayaranGaji();
     } catch (err) {
       const apiError = err as ApiError;

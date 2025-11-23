@@ -23,4 +23,3 @@ interface PembayaranGajiRepositoryInterface extends BaseRepositoryInterface
      */
     public function clearCacheForGajiId($gajiId): void;
 }
-

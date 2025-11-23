@@ -87,9 +87,8 @@ export default function GajiDetailPage() {
   const komponenGaji = gaji?.komponen_gaji && gaji.komponen_gaji.length > 0 
     ? gaji.komponen_gaji 
     : komponenGajiFromHook;
-  const pembayaranGaji = gaji?.pembayaran_gaji && gaji.pembayaran_gaji.length > 0
-    ? gaji.pembayaran_gaji
-    : pembayaranGajiFromHook;
+  // Always use hook data for pembayaranGaji to ensure it can be refreshed
+  const pembayaranGaji = pembayaranGajiFromHook;
 
   React.useEffect(() => {
     if (!gajiId) return;
@@ -218,7 +217,11 @@ export default function GajiDetailPage() {
     try {
       await updatePembayaranStatus(id, status);
       toast.success(`Status pembayaran berhasil diubah menjadi ${getStatusPembayaranLabel(status)}`);
+      // Force refetch immediately
       await refetchPembayaran();
+      // Also reload gaji data to ensure consistency
+      const data = await getGajiById(gajiId);
+      setGaji(data);
     } catch (err: any) {
       toast.error(err.message || "Gagal mengupdate status pembayaran");
     }

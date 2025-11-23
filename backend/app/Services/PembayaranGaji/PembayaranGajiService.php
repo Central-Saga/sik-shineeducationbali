@@ -60,7 +60,7 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
         }
 
         $pembayaranGaji = parent::create($data);
-        
+
         // Clear cache for this gaji_id
         if (isset($data['gaji_id'])) {
             $this->getRepository()->clearCacheForGajiId($data['gaji_id']);
@@ -84,7 +84,7 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
         }
 
         $pembayaranGaji = parent::update($id, $data);
-        
+
         // Clear cache for this gaji_id
         $this->getRepository()->clearCacheForGajiId($pembayaranGaji->gaji_id);
 
@@ -109,7 +109,7 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
         $gajiId = $pembayaranGaji->gaji_id;
 
         $deleted = parent::delete($id);
-        
+
         // Clear cache for this gaji_id
         $this->getRepository()->clearCacheForGajiId($gajiId);
 
@@ -143,7 +143,7 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
         }
 
         $pembayaranGaji = $this->getRepository()->update($id, $updateData);
-        
+
         // Clear cache for this gaji_id to ensure fresh data
         $gajiId = $pembayaranGaji->gaji_id;
         $this->getRepository()->clearCacheForGajiId($gajiId);
