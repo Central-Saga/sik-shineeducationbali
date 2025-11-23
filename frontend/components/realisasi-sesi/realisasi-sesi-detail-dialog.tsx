@@ -44,8 +44,8 @@ export function RealisasiSesiDetailDialog({
 
   const getSumberLabel = (sumber: string) => {
     const labels: Record<string, string> = {
-      jadwal: 'Jadwal',
-      manual: 'Manual',
+      wajib: 'Wajib',
+      lembur: 'Lembur',
     };
     return labels[sumber] || sumber;
   };

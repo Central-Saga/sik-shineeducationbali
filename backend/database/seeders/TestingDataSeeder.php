@@ -451,10 +451,10 @@ class TestingDataSeeder extends Seeder
                     continue;
                 }
 
-                // Untuk tetap/kontrak: lebih banyak jadwal, sedikit manual
-                // Untuk freelance: lebih banyak manual
+                // Untuk tetap/kontrak: lebih banyak wajib, sedikit lembur
+                // Untuk freelance: lebih banyak lembur
                 $isTetapKontrak = in_array($employee->kategori_karyawan, ['tetap', 'kontrak']);
-                $sumberJadwalRatio = $isTetapKontrak ? 0.7 : 0.3; // 70% jadwal untuk tetap/kontrak, 30% untuk freelance
+                $sumberWajibRatio = $isTetapKontrak ? 0.7 : 0.3; // 70% wajib untuk tetap/kontrak, 30% untuk freelance
 
                 // Generate 1-4 realisasi sesi per day
                 $jumlahRealisasi = fake()->numberBetween(1, min(4, $sesiKerjaHari->count()));
@@ -503,7 +503,7 @@ class TestingDataSeeder extends Seeder
                     }
 
                     // Tentukan sumber berdasarkan ratio
-                    $sumber = (rand(1, 100) / 100) <= $sumberJadwalRatio ? 'jadwal' : 'manual';
+                    $sumber = (rand(1, 100) / 100) <= $sumberWajibRatio ? 'wajib' : 'lembur';
 
                     RealisasiSesi::create([
                         'karyawan_id' => $employee->id,

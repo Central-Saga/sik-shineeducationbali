@@ -8,7 +8,7 @@ export interface GetRealisasiSesiParams {
   start_date?: string;
   end_date?: string;
   status?: 'diajukan' | 'disetujui' | 'ditolak';
-  sumber?: 'jadwal' | 'manual';
+  sumber?: 'wajib' | 'lembur';
 }
 
 /**

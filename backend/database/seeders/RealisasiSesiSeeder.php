@@ -119,7 +119,7 @@ class RealisasiSesiSeeder extends Seeder
                         $disetujuiOleh = $adminUsers->random()->id;
                     }
 
-                    $sumber = fake()->randomElement(['jadwal', 'manual']);
+                    $sumber = fake()->randomElement(['wajib', 'lembur']);
                     
                     $realisasiData = [
                         'karyawan_id' => $employee->id,

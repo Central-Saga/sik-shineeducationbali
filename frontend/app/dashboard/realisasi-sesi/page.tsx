@@ -265,8 +265,8 @@ export default function RealisasiSesiPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="semua">Semua Sumber</SelectItem>
-                  <SelectItem value="jadwal">Jadwal</SelectItem>
-                  <SelectItem value="manual">Manual</SelectItem>
+                  <SelectItem value="wajib">Wajib</SelectItem>
+                  <SelectItem value="lembur">Lembur</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>

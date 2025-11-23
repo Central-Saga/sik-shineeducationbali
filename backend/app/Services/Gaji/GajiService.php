@@ -112,7 +112,8 @@ class GajiService extends BaseService implements GajiServiceInterface
                 'nominal' => $totalGaji,
             ];
         } else {
-            // Tetap/Kontrak: gaji pokok + pendapatan sesi wajib + lembur - potongan cuti
+            // Tetap/Kontrak: gaji pokok + lembur - potongan cuti
+            // Note: Sesi wajib tidak ditambahkan karena sudah termasuk dalam gaji pokok atau tidak perlu ditambahkan
 
             // 1. Gaji pokok
             $gajiPokok = (float) ($employee->gaji_pokok ?? 0);
@@ -125,30 +126,10 @@ class GajiService extends BaseService implements GajiServiceInterface
                 $totalGaji += $gajiPokok;
             }
 
-            // 2. Pendapatan sesi wajib (sumber = 'jadwal')
-            $pendapatanSesiWajib = 0;
-            foreach ($realisasiSesiList as $realisasiSesi) {
-                if ($realisasiSesi->sumber === 'jadwal') {
-                    $sesiKerja = $realisasiSesi->sesiKerja;
-                    if ($sesiKerja) {
-                        $pendapatanSesiWajib += (float) $sesiKerja->tarif;
-                    }
-                }
-            }
-
-            if ($pendapatanSesiWajib > 0) {
-                $komponenGajiData[] = [
-                    'jenis' => 'pendapatan_sesi',
-                    'nama_komponen' => 'Pendapatan Sesi Wajib',
-                    'nominal' => $pendapatanSesiWajib,
-                ];
-                $totalGaji += $pendapatanSesiWajib;
-            }
-
-            // 3. Lembur sesi (sumber = 'manual')
+            // 2. Lembur sesi (sumber = 'lembur') - hanya sesi di luar jadwal wajib
             $lemburSesi = 0;
             foreach ($realisasiSesiList as $realisasiSesi) {
-                if ($realisasiSesi->sumber === 'manual') {
+                if ($realisasiSesi->sumber === 'lembur') {
                     $sesiKerja = $realisasiSesi->sesiKerja;
                     if ($sesiKerja) {
                         $lemburSesi += (float) $sesiKerja->tarif;
@@ -165,9 +146,9 @@ class GajiService extends BaseService implements GajiServiceInterface
                 $totalGaji += $lemburSesi;
             }
 
-            // 4. Potongan cuti
+            // 3. Potongan cuti (jumlah_cuti + jumlah_izin + jumlah_sakit)
             $potonganCuti = 0;
-            $hariCuti = $rekap->jumlah_cuti;
+            $hariCuti = $rekap->jumlah_cuti + $rekap->jumlah_izin + $rekap->jumlah_sakit;
             if ($hariCuti > 0) {
                 // Part time = 50rb/hari, Full time = 100rb/hari
                 $potonganPerHari = ($employee->subtipe_kontrak === 'part_time') ? 50000 : 100000;
@@ -185,10 +166,11 @@ class GajiService extends BaseService implements GajiServiceInterface
         }
 
         // Create or update gaji
+        $hariCuti = $rekap->jumlah_cuti + $rekap->jumlah_izin + $rekap->jumlah_sakit;
         $gajiData = [
             'karyawan_id' => $employee->id,
             'periode' => $rekap->periode,
-            'hari_cuti' => $rekap->jumlah_cuti,
+            'hari_cuti' => $hariCuti,
             'potongan_cuti' => $potonganCuti ?? 0,
             'total_gaji' => max(0, $totalGaji), // Ensure non-negative
             'status' => 'draft',

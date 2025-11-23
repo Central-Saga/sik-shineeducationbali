@@ -93,7 +93,7 @@ export function RealisasiSesiForm({
       karyawan_id: initialData?.karyawan_id || 0,
       tanggal: initialData?.tanggal || today,
       sesi_kerja_id: initialData?.sesi_kerja_id || 0,
-      sumber: initialData?.sumber || 'jadwal',
+      sumber: initialData?.sumber || 'wajib',
       catatan: initialData?.catatan || '',
     };
   });
@@ -556,7 +556,7 @@ export function RealisasiSesiForm({
             <Select
               value={formData.sumber}
               onValueChange={(value) => {
-                setFormData(prev => ({ ...prev, sumber: value as 'jadwal' | 'manual' }));
+                setFormData(prev => ({ ...prev, sumber: value as 'wajib' | 'lembur' }));
                 setErrors(prev => {
                   const newErrors = { ...prev };
                   delete newErrors.sumber;
@@ -572,8 +572,8 @@ export function RealisasiSesiForm({
                 <SelectValue placeholder="Pilih sumber" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="jadwal">Jadwal</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="wajib">Wajib</SelectItem>
+                <SelectItem value="lembur">Lembur</SelectItem>
               </SelectContent>
             </Select>
             {errors.sumber && (

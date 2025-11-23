@@ -39,7 +39,7 @@ class StoreRealisasiSesiRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
-            'sumber' => ['required', 'string', Rule::in(['jadwal', 'manual'])],
+            'sumber' => ['required', 'string', Rule::in(['wajib', 'lembur'])],
             'catatan' => ['nullable', 'string'],
         ];
     }
@@ -65,7 +65,7 @@ class StoreRealisasiSesiRequest extends FormRequest
             'disetujui_oleh.integer' => 'ID user yang menyetujui harus berupa angka.',
             'disetujui_oleh.exists' => 'User yang menyetujui tidak ditemukan.',
             'sumber.required' => 'Sumber wajib diisi.',
-            'sumber.in' => 'Sumber harus salah satu dari: jadwal, manual.',
+            'sumber.in' => 'Sumber harus salah satu dari: wajib, lembur.',
             'catatan.string' => 'Catatan harus berupa teks.',
         ];
     }
