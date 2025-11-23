@@ -53,7 +53,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
-import { usePembayaranGaji } from "@/hooks/use-pembayaran-gaji";
 import { HasCan } from "@/components/has-can";
 import type { PembayaranGaji, PembayaranGajiFormData, StatusPembayaran } from "@/lib/types/gaji";
 
