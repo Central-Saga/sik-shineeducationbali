@@ -89,12 +89,14 @@ class GajiController extends BaseApiController
 
         $resource = new GajiResource($gaji);
         $data = $resource->toArray(request());
-        
-        if ($detailLembur) {
+
+        if ($detailLembur && $detailLembur->count() > 0) {
             $data['detail_lembur'] = $detailLembur->map(function ($realisasiSesi) {
                 return [
                     'id' => $realisasiSesi->id,
-                    'tanggal' => $realisasiSesi->tanggal->format('Y-m-d'),
+                    'tanggal' => $realisasiSesi->tanggal instanceof \Carbon\Carbon 
+                        ? $realisasiSesi->tanggal->format('Y-m-d')
+                        : $realisasiSesi->tanggal,
                     'sesi_kerja' => $realisasiSesi->sesiKerja ? [
                         'id' => $realisasiSesi->sesiKerja->id,
                         'mata_pelajaran' => $realisasiSesi->sesiKerja->mata_pelajaran,
@@ -102,7 +104,9 @@ class GajiController extends BaseApiController
                         'tarif' => (float) $realisasiSesi->sesiKerja->tarif,
                     ] : null,
                 ];
-            });
+            })->values()->toArray();
+        } else {
+            $data['detail_lembur'] = [];
         }
 
         return $this->success(
@@ -217,4 +221,3 @@ class GajiController extends BaseApiController
         );
     }
 }
-

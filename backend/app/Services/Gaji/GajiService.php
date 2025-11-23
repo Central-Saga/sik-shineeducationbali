@@ -81,21 +81,22 @@ class GajiService extends BaseService implements GajiServiceInterface
         $employee = $gaji->employee;
 
         if (!$employee) {
-            return collect();
+            return new Collection();
         }
 
         // Get periode start and end date
         $startDate = Carbon::createFromFormat('Y-m', $gaji->periode)->startOfMonth();
         $endDate = Carbon::createFromFormat('Y-m', $gaji->periode)->endOfMonth();
 
-        // Get realisasi sesi lembur in periode (only disetujui)
-        $realisasiSesiList = $this->realisasiSesiRepository->findByKaryawanIdAndDateRange(
-            $employee->id,
-            $startDate->format('Y-m-d'),
-            $endDate->format('Y-m-d')
-        )->where('status', 'disetujui')
-        ->where('sumber', 'lembur')
-        ->load('sesiKerja');
+        // Get realisasi sesi lembur in periode (only disetujui and sumber = lembur)
+        // Use direct query to avoid cache issues and ensure fresh data
+        $realisasiSesiList = \App\Models\RealisasiSesi::where('karyawan_id', $employee->id)
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('status', 'disetujui')
+            ->where('sumber', 'lembur')
+            ->with('sesiKerja')
+            ->orderBy('tanggal', 'asc')
+            ->get();
 
         return $realisasiSesiList;
     }
