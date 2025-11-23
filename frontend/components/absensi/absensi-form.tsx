@@ -212,6 +212,12 @@ export function AbsensiForm({
           }
         },
         (error) => {
+          // Check for kCLErrorLocationUnknown (CoreLocation error on macOS)
+          const errorMessage = error.message || '';
+          const isLocationUnknown = errorMessage.includes('kCLErrorLocationUnknown') || 
+                                   errorMessage.includes('LocationUnknown') ||
+                                   error.code === error.POSITION_UNAVAILABLE;
+
           // Try different strategies based on attempt number
           if (attempt === 1) {
             // First attempt failed, try with network-based location (better for laptops)
@@ -234,42 +240,62 @@ export function AbsensiForm({
           }
 
           // All attempts failed
-          let errorMessage = "Gagal mengambil lokasi setelah beberapa percobaan. ";
+          let errorMsg = "Gagal mengambil lokasi setelah beberapa percobaan. ";
           
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage += "Akses lokasi ditolak. Silakan:\n";
-              errorMessage += "1. Klik ikon gembok/kamera di address bar browser\n";
-              errorMessage += "2. Izinkan akses lokasi\n";
-              errorMessage += "3. Refresh halaman dan coba lagi\n\n";
-              errorMessage += "Catatan: Laptop biasanya menggunakan lokasi berbasis WiFi/IP, bukan GPS hardware.";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage += "Informasi lokasi tidak tersedia. Silakan:\n";
-              errorMessage += "1. Pastikan WiFi/internet terhubung (laptop menggunakan lokasi berbasis jaringan)\n";
-              errorMessage += "2. Pastikan browser memiliki izin akses lokasi\n";
-              errorMessage += "3. Coba refresh halaman\n\n";
-              errorMessage += "Catatan: Laptop biasanya tidak memiliki GPS hardware. Lokasi diambil dari WiFi/IP address.";
-              break;
-            case error.TIMEOUT:
-              errorMessage += "Waktu tunggu habis. Silakan:\n";
-              errorMessage += "1. Pastikan WiFi/internet terhubung\n";
-              errorMessage += "2. Coba refresh halaman dan coba lagi\n\n";
-              errorMessage += "Catatan: Laptop menggunakan lokasi berbasis jaringan yang mungkin membutuhkan waktu lebih lama.";
-              break;
-            default:
-              errorMessage += "Terjadi kesalahan saat mengambil lokasi. Silakan:\n";
-              errorMessage += "1. Pastikan WiFi/internet terhubung\n";
-              errorMessage += "2. Pastikan browser memiliki izin akses lokasi\n";
-              errorMessage += "3. Coba refresh halaman\n";
-              errorMessage += "4. Jika masih error, coba gunakan browser lain\n\n";
-              errorMessage += "Catatan: Laptop biasanya menggunakan lokasi berbasis WiFi/IP, bukan GPS hardware.";
-              break;
+          // Handle kCLErrorLocationUnknown specifically (macOS CoreLocation error)
+          if (isLocationUnknown) {
+            errorMsg += "Sistem tidak dapat menentukan lokasi Anda. Silakan:\n\n";
+            errorMsg += "1. Pastikan WiFi/internet terhubung (lokasi diambil dari jaringan)\n";
+            errorMsg += "2. Pastikan Location Services aktif di System Preferences (macOS)\n";
+            errorMsg += "3. Pastikan browser memiliki izin akses lokasi\n";
+            errorMsg += "4. Coba gunakan fitur 'Input Koordinat Manual' di bawah ini\n";
+            errorMsg += "5. Atau coba refresh halaman dan coba lagi\n\n";
+            errorMsg += "Catatan: Error ini biasanya terjadi di macOS ketika Location Services tidak bisa mendapatkan lokasi dari WiFi/IP.";
+            
+            // Auto-show manual input option for location unknown errors
+            setShowManualInput(true);
+          } else {
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMsg += "Akses lokasi ditolak. Silakan:\n";
+                errorMsg += "1. Klik ikon gembok/kamera di address bar browser\n";
+                errorMsg += "2. Izinkan akses lokasi\n";
+                errorMsg += "3. Refresh halaman dan coba lagi\n\n";
+                errorMsg += "Catatan: Laptop biasanya menggunakan lokasi berbasis WiFi/IP, bukan GPS hardware.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMsg += "Informasi lokasi tidak tersedia. Silakan:\n";
+                errorMsg += "1. Pastikan WiFi/internet terhubung (laptop menggunakan lokasi berbasis jaringan)\n";
+                errorMsg += "2. Pastikan browser memiliki izin akses lokasi\n";
+                errorMsg += "3. Coba refresh halaman\n";
+                errorMsg += "4. Atau gunakan fitur 'Input Koordinat Manual'\n\n";
+                errorMsg += "Catatan: Laptop biasanya tidak memiliki GPS hardware. Lokasi diambil dari WiFi/IP address.";
+                setShowManualInput(true);
+                break;
+              case error.TIMEOUT:
+                errorMsg += "Waktu tunggu habis. Silakan:\n";
+                errorMsg += "1. Pastikan WiFi/internet terhubung\n";
+                errorMsg += "2. Coba refresh halaman dan coba lagi\n";
+                errorMsg += "3. Atau gunakan fitur 'Input Koordinat Manual'\n\n";
+                errorMsg += "Catatan: Laptop menggunakan lokasi berbasis jaringan yang mungkin membutuhkan waktu lebih lama.";
+                setShowManualInput(true);
+                break;
+              default:
+                errorMsg += "Terjadi kesalahan saat mengambil lokasi. Silakan:\n";
+                errorMsg += "1. Pastikan WiFi/internet terhubung\n";
+                errorMsg += "2. Pastikan browser memiliki izin akses lokasi\n";
+                errorMsg += "3. Coba refresh halaman\n";
+                errorMsg += "4. Atau gunakan fitur 'Input Koordinat Manual'\n";
+                errorMsg += "5. Jika masih error, coba gunakan browser lain\n\n";
+                errorMsg += "Catatan: Laptop biasanya menggunakan lokasi berbasis WiFi/IP, bukan GPS hardware.";
+                setShowManualInput(true);
+                break;
+            }
           }
           
           setErrors(prev => ({ 
             ...prev, 
-            location: errorMessage
+            location: errorMsg
           }));
           setFetchingLocation(false);
         },
