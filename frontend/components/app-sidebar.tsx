@@ -154,6 +154,38 @@ const allNavItems: NavItem[] = [
     ],
   },
   {
+    title: "Sesi Kerja",
+    url: "/dashboard/sesi-kerja",
+    icon: Clock,
+    roles: ["Owner", "Admin"], // Hanya Admin dan Owner
+    items: [
+      {
+        title: "Semua Sesi Kerja",
+        url: "/dashboard/sesi-kerja",
+      },
+      {
+        title: "Tambah Sesi Kerja",
+        url: "/dashboard/sesi-kerja/create",
+      },
+    ],
+  },
+  {
+    title: "Realisasi Sesi",
+    url: "/dashboard/realisasi-sesi",
+    icon: Clock,
+    roles: ["Owner", "Admin", "Karyawan"], // Semua role bisa akses
+    items: [
+      {
+        title: "Semua Realisasi Sesi",
+        url: "/dashboard/realisasi-sesi",
+      },
+      {
+        title: "Ajukan Realisasi Sesi",
+        url: "/dashboard/realisasi-sesi/create",
+      },
+    ],
+  },
+  {
     title: "Pengaturan",
     url: "/dashboard/settings",
     icon: Settings,

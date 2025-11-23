@@ -45,6 +45,13 @@ class RolePermissionSeeder extends Seeder
             'mengelola cuti',
             'melakukan cuti',
 
+            // Sesi Kerja Management
+            'mengelola sesi kerja',
+
+            // Realisasi Sesi Management
+            'mengelola realisasi sesi',
+            'mengajukan realisasi sesi',
+
             // Reports
             'mencetak laporan',
         ];
@@ -66,6 +73,8 @@ class RolePermissionSeeder extends Seeder
             'mengelola gaji',
             'mengelola cuti',
             'mengelola absensi',
+            'mengelola sesi kerja',
+            'mengelola realisasi sesi',
             'mencetak laporan',
         ];
         $owner->givePermissionTo($ownerPermissions);
@@ -81,6 +90,8 @@ class RolePermissionSeeder extends Seeder
             'mengelola absensi',
             'mengelola gaji',
             'mengelola cuti',
+            'mengelola sesi kerja',
+            'mengelola realisasi sesi',
             'mencetak laporan',
         ];
         $admin->givePermissionTo($adminPermissions);
@@ -92,6 +103,7 @@ class RolePermissionSeeder extends Seeder
             'melakukan absensi',
             'melihat gaji',
             'melakukan cuti',
+            'mengajukan realisasi sesi',
         ];
         $karyawan->givePermissionTo($karyawanPermissions);
         $this->command->info('✅ Created Karyawan role with ' . count($karyawanPermissions) . ' permissions');

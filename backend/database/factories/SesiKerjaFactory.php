@@ -30,6 +30,13 @@ class SesiKerjaFactory extends Factory
         // Tarif sesuai kategori: coding 30.000, non_coding 25.000
         $tarif = $kategori === 'coding' ? 30000 : 25000;
 
+        // Mata pelajaran sesuai kategori
+        $mataPelajaranCoding = ['Python', 'JavaScript', 'Web Development', 'Mobile Development', 'Data Science', 'Game Development'];
+        $mataPelajaranNonCoding = ['Matematika', 'Bahasa Inggris', 'IPA', 'IPS', 'Bahasa Indonesia', 'Seni & Budaya'];
+        $mataPelajaran = $kategori === 'coding' 
+            ? fake()->randomElement($mataPelajaranCoding)
+            : fake()->randomElement($mataPelajaranNonCoding);
+
         // Generate jam mulai dan selesai untuk sesi
         $jamMulaiHour = fake()->numberBetween(8, 16);
         $jamMulaiMinute = fake()->randomElement([0, 30]);
@@ -38,6 +45,7 @@ class SesiKerjaFactory extends Factory
 
         return [
             'kategori' => $kategori,
+            'mata_pelajaran' => $mataPelajaran,
             'hari' => $hari,
             'nomor_sesi' => fake()->numberBetween(1, 8),
             'jam_mulai' => sprintf('%02d:%02d:00', $jamMulaiHour, $jamMulaiMinute),
@@ -52,9 +60,11 @@ class SesiKerjaFactory extends Factory
      */
     public function coding(): static
     {
-        return $this->state(function (array $attributes) {
+        $mataPelajaranCoding = ['Python', 'JavaScript', 'Web Development', 'Mobile Development', 'Data Science', 'Game Development'];
+        return $this->state(function (array $attributes) use ($mataPelajaranCoding) {
             return [
                 'kategori' => 'coding',
+                'mata_pelajaran' => fake()->randomElement($mataPelajaranCoding),
                 'tarif' => 30000,
             ];
         });
@@ -65,9 +75,11 @@ class SesiKerjaFactory extends Factory
      */
     public function nonCoding(): static
     {
-        return $this->state(function (array $attributes) {
+        $mataPelajaranNonCoding = ['Matematika', 'Bahasa Inggris', 'IPA', 'IPS', 'Bahasa Indonesia', 'Seni & Budaya'];
+        return $this->state(function (array $attributes) use ($mataPelajaranNonCoding) {
             return [
                 'kategori' => 'non_coding',
+                'mata_pelajaran' => fake()->randomElement($mataPelajaranNonCoding),
                 'tarif' => 25000,
             ];
         });

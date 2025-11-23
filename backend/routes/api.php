@@ -6,7 +6,9 @@ use App\Http\Controllers\Api\V1\Cuti\CutiController;
 use App\Http\Controllers\Api\V1\Employee\EmployeeController;
 use App\Http\Controllers\Api\V1\LogAbsensi\LogAbsensiController;
 use App\Http\Controllers\Api\V1\Permission\PermissionController;
+use App\Http\Controllers\Api\V1\RealisasiSesi\RealisasiSesiController;
 use App\Http\Controllers\Api\V1\Role\RoleController;
+use App\Http\Controllers\Api\V1\SesiKerja\SesiKerjaController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -124,13 +126,13 @@ Route::prefix('v1')->group(function () {
         // Additional routes for cuti (must be before standard CRUD routes to avoid route conflicts)
         // Get leave requests by employee ID
         Route::get('/cuti/karyawan/{karyawanId}', [CutiController::class, 'byKaryawan'])->middleware('permission:mengelola cuti|melakukan cuti');
-        
+
         // Get leave request by employee ID and date
         Route::get('/cuti/karyawan/{karyawanId}/tanggal/{tanggal}', [CutiController::class, 'byKaryawanAndTanggal'])->middleware('permission:melakukan cuti|mengelola cuti');
-        
+
         // Get leave requests by jenis
         Route::get('/cuti/jenis/{jenis}', [CutiController::class, 'byJenis'])->middleware('permission:mengelola cuti');
-        
+
         // Get leave requests by status
         Route::get('/cuti/status/{status}', [CutiController::class, 'byStatus'])->middleware('permission:mengelola cuti');
 
@@ -141,6 +143,63 @@ Route::prefix('v1')->group(function () {
         Route::put('/cuti/{id}', [CutiController::class, 'update'])->middleware('permission:mengelola cuti');
         Route::patch('/cuti/{id}', [CutiController::class, 'update'])->middleware('permission:mengelola cuti');
         Route::delete('/cuti/{id}', [CutiController::class, 'destroy'])->middleware('permission:mengelola cuti');
+    });
+
+    // Sesi Kerja API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Additional routes for sesi kerja (must be before standard CRUD routes to avoid route conflicts)
+        // Get sesi kerja by kategori
+        Route::get('/sesi-kerja/kategori/{kategori}', [SesiKerjaController::class, 'byKategori'])->middleware('permission:mengelola sesi kerja');
+
+        // Get sesi kerja by hari
+        Route::get('/sesi-kerja/hari/{hari}', [SesiKerjaController::class, 'byHari'])->middleware('permission:mengelola sesi kerja');
+
+        // Get sesi kerja by kategori and hari
+        Route::get('/sesi-kerja/kategori/{kategori}/hari/{hari}', [SesiKerjaController::class, 'byKategoriHari'])->middleware('permission:mengelola sesi kerja');
+
+        // Get active sesi kerja
+        Route::get('/sesi-kerja/aktif', [SesiKerjaController::class, 'aktif'])->middleware('permission:mengelola sesi kerja');
+
+        // Standard CRUD routes
+        Route::get('/sesi-kerja', [SesiKerjaController::class, 'index'])->middleware('permission:mengelola sesi kerja');
+        Route::post('/sesi-kerja', [SesiKerjaController::class, 'store'])->middleware('permission:mengelola sesi kerja');
+        Route::get('/sesi-kerja/{id}', [SesiKerjaController::class, 'show'])->middleware('permission:mengelola sesi kerja');
+        Route::put('/sesi-kerja/{id}', [SesiKerjaController::class, 'update'])->middleware('permission:mengelola sesi kerja');
+        Route::patch('/sesi-kerja/{id}', [SesiKerjaController::class, 'update'])->middleware('permission:mengelola sesi kerja');
+        Route::delete('/sesi-kerja/{id}', [SesiKerjaController::class, 'destroy'])->middleware('permission:mengelola sesi kerja');
+    });
+
+    // Realisasi Sesi API - Resource routes with permission middleware
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Additional routes for realisasi sesi (must be before standard CRUD routes to avoid route conflicts)
+        // Get realisasi sesi by karyawan ID
+        Route::get('/realisasi-sesi/karyawan/{karyawanId}', [RealisasiSesiController::class, 'byKaryawan'])->middleware('permission:mengelola realisasi sesi|mengajukan realisasi sesi');
+
+        // Get realisasi sesi by sesi kerja ID
+        Route::get('/realisasi-sesi/sesi-kerja/{sesiKerjaId}', [RealisasiSesiController::class, 'bySesiKerja'])->middleware('permission:mengelola realisasi sesi');
+
+        // Get realisasi sesi by tanggal
+        Route::get('/realisasi-sesi/tanggal/{tanggal}', [RealisasiSesiController::class, 'byTanggal'])->middleware('permission:mengelola realisasi sesi');
+
+        // Get realisasi sesi by status
+        Route::get('/realisasi-sesi/status/{status}', [RealisasiSesiController::class, 'byStatus'])->middleware('permission:mengelola realisasi sesi');
+
+        // Get realisasi sesi by sumber
+        Route::get('/realisasi-sesi/sumber/{sumber}', [RealisasiSesiController::class, 'bySumber'])->middleware('permission:mengelola realisasi sesi');
+
+        // Approve realisasi sesi
+        Route::post('/realisasi-sesi/{id}/approve', [RealisasiSesiController::class, 'approve'])->middleware('permission:mengelola realisasi sesi');
+
+        // Reject realisasi sesi
+        Route::post('/realisasi-sesi/{id}/reject', [RealisasiSesiController::class, 'reject'])->middleware('permission:mengelola realisasi sesi');
+
+        // Standard CRUD routes
+        Route::get('/realisasi-sesi', [RealisasiSesiController::class, 'index'])->middleware('permission:mengelola realisasi sesi|mengajukan realisasi sesi');
+        Route::post('/realisasi-sesi', [RealisasiSesiController::class, 'store'])->middleware('permission:mengajukan realisasi sesi|mengelola realisasi sesi');
+        Route::get('/realisasi-sesi/{id}', [RealisasiSesiController::class, 'show'])->middleware('permission:mengelola realisasi sesi|mengajukan realisasi sesi');
+        Route::put('/realisasi-sesi/{id}', [RealisasiSesiController::class, 'update'])->middleware('permission:mengelola realisasi sesi');
+        Route::patch('/realisasi-sesi/{id}', [RealisasiSesiController::class, 'update'])->middleware('permission:mengelola realisasi sesi');
+        Route::delete('/realisasi-sesi/{id}', [RealisasiSesiController::class, 'destroy'])->middleware('permission:mengelola realisasi sesi');
     });
 
     // Auth routes (protected - requires authentication)

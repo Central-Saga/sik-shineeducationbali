@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SesiKerja extends Model
 {
@@ -23,6 +24,7 @@ class SesiKerja extends Model
      */
     protected $fillable = [
         'kategori',
+        'mata_pelajaran',
         'hari',
         'nomor_sesi',
         'jam_mulai',
@@ -112,6 +114,16 @@ class SesiKerja extends Model
     public function scopeKategoriHari($query, string $kategori, string $hari)
     {
         return $query->where('kategori', $kategori)->where('hari', $hari);
+    }
+
+    /**
+     * Get the realisasi sesi records for the sesi kerja.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function realisasiSesi(): HasMany
+    {
+        return $this->hasMany(RealisasiSesi::class, 'sesi_kerja_id');
     }
 }
 
