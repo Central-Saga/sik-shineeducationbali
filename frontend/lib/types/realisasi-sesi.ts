@@ -1,5 +1,5 @@
 export type StatusRealisasi = 'diajukan' | 'disetujui' | 'ditolak';
-export type SumberRealisasi = 'jadwal' | 'manual';
+export type SumberRealisasi = 'wajib' | 'lembur';
 
 export interface RealisasiSesi {
   id: number;

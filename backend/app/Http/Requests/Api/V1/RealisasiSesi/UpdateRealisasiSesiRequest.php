@@ -36,7 +36,7 @@ class UpdateRealisasiSesiRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
-            'sumber' => ['sometimes', 'string', Rule::in(['jadwal', 'manual'])],
+            'sumber' => ['sometimes', 'string', Rule::in(['wajib', 'lembur'])],
             'catatan' => ['nullable', 'string'],
         ];
     }
@@ -58,7 +58,7 @@ class UpdateRealisasiSesiRequest extends FormRequest
             'status.in' => 'Status harus salah satu dari: diajukan, disetujui, ditolak.',
             'disetujui_oleh.integer' => 'ID user yang menyetujui harus berupa angka.',
             'disetujui_oleh.exists' => 'User yang menyetujui tidak ditemukan.',
-            'sumber.in' => 'Sumber harus salah satu dari: jadwal, manual.',
+            'sumber.in' => 'Sumber harus salah satu dari: wajib, lembur.',
             'catatan.string' => 'Catatan harus berupa teks.',
         ];
     }

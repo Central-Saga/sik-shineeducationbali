@@ -54,6 +54,26 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\RealisasiSesi\RealisasiSesiRepository::class
         );
 
+        $this->app->bind(
+            \App\Repositories\Contracts\RekapBulananRepositoryInterface::class,
+            \App\Repositories\RekapBulanan\RekapBulananRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\Contracts\GajiRepositoryInterface::class,
+            \App\Repositories\Gaji\GajiRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\Contracts\KomponenGajiRepositoryInterface::class,
+            \App\Repositories\KomponenGaji\KomponenGajiRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\Contracts\PembayaranGajiRepositoryInterface::class,
+            \App\Repositories\PembayaranGaji\PembayaranGajiRepository::class
+        );
+
         // Service bindings
         $this->app->bind(
             \App\Services\Contracts\UserServiceInterface::class,
@@ -93,6 +113,26 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             \App\Services\Contracts\RealisasiSesiServiceInterface::class,
             \App\Services\RealisasiSesi\RealisasiSesiService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\RekapBulananServiceInterface::class,
+            \App\Services\RekapBulanan\RekapBulananService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\GajiServiceInterface::class,
+            \App\Services\Gaji\GajiService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\KomponenGajiServiceInterface::class,
+            \App\Services\KomponenGaji\KomponenGajiService::class
+        );
+
+        $this->app->bind(
+            \App\Services\Contracts\PembayaranGajiServiceInterface::class,
+            \App\Services\PembayaranGaji\PembayaranGajiService::class
         );
     }
 

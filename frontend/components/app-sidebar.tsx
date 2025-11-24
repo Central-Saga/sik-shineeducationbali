@@ -10,6 +10,7 @@ import {
   DollarSign,
   Briefcase,
   Clock,
+  FileText,
 } from "lucide-react"
 
 import {
@@ -102,24 +103,16 @@ const allNavItems: NavItem[] = [
     ],
   },
   {
+    title: "Rekap Bulanan",
+    url: "/dashboard/rekap-bulanan",
+    icon: FileText,
+    roles: ["Owner", "Admin"], // Hanya Owner dan Admin
+  },
+  {
     title: "Gaji",
-    url: "/dashboard/salaries",
+    url: "/dashboard/gaji",
     icon: DollarSign,
     roles: ["Owner", "Admin", "Karyawan"], // Semua role bisa akses
-    items: [
-      {
-        title: "Semua Gaji",
-        url: "/dashboard/salaries",
-      },
-      {
-        title: "Buat Gaji",
-        url: "/dashboard/salaries/create",
-      },
-      {
-        title: "Kategori",
-        url: "/dashboard/salaries/categories",
-      },
-    ],
   },
   {
     title: "Cuti",

@@ -39,7 +39,7 @@ class AuthController extends BaseApiController
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = $this->userService->create($request->validated());
-        
+
         // Create token for the newly registered user
         $token = $user->createToken('auth-token')->plainTextToken;
         $user->load('roles');
@@ -96,8 +96,8 @@ class AuthController extends BaseApiController
     public function me(): JsonResponse
     {
         $user = auth()->user();
-        $user->load('roles');
-        
+        $user->load('roles.permissions');
+
         // Load employee relationship if exists
         if ($user->employee) {
             $user->load('employee');
@@ -141,4 +141,3 @@ class AuthController extends BaseApiController
         );
     }
 }
-

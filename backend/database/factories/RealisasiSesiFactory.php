@@ -28,8 +28,8 @@ class RealisasiSesiFactory extends Factory
     public function definition(): array
     {
         $status = fake()->randomElement(['diajukan', 'disetujui', 'ditolak']);
-        $sumber = fake()->randomElement(['jadwal', 'manual']);
-        
+        $sumber = fake()->randomElement(['wajib', 'lembur']);
+
         $data = [
             'karyawan_id' => Employee::factory(),
             'tanggal' => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
@@ -88,25 +88,25 @@ class RealisasiSesiFactory extends Factory
     }
 
     /**
-     * Indicate that the realisasi sesi sumber is jadwal.
+     * Indicate that the realisasi sesi sumber is wajib.
      */
-    public function jadwal(): static
+    public function wajib(): static
     {
         return $this->state(function (array $attributes) {
             return [
-                'sumber' => 'jadwal',
+                'sumber' => 'wajib',
             ];
         });
     }
 
     /**
-     * Indicate that the realisasi sesi sumber is manual.
+     * Indicate that the realisasi sesi sumber is lembur.
      */
-    public function manual(): static
+    public function lembur(): static
     {
         return $this->state(function (array $attributes) {
             return [
-                'sumber' => 'manual',
+                'sumber' => 'lembur',
             ];
         });
     }
