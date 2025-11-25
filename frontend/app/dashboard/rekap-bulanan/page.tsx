@@ -22,7 +22,7 @@ import { useGaji } from "@/hooks/use-gaji";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { toast } from "sonner";
-import { Calendar, Plus, DollarSign } from "lucide-react";
+import { Calendar, Plus, DollarSign, Printer, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -65,7 +65,7 @@ export default function RekapBulananPage() {
     Object.keys(params).length > 0 ? params : undefined
   );
   const { generateFromRekap: generateGajiFromRekap } = useGaji();
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
 
   const handleGenerate = async () => {
     if (!periodeInput.match(/^\d{4}-\d{2}$/)) {
@@ -136,6 +136,189 @@ export default function RekapBulananPage() {
     }
   }, [error]);
 
+  const handleExportToCSV = () => {
+    if (rekapBulanan.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+
+    // Prepare CSV data
+    const headers = [
+      "Periode",
+      "Karyawan",
+      "Hadir",
+      "Izin",
+      "Sakit",
+      "Cuti",
+      "Alfa",
+      "Sesi Coding",
+      "Sesi Non-Coding",
+      "Total Pendapatan",
+    ];
+
+    const csvRows = [
+      headers.join(","),
+      ...rekapBulanan.map((rekap) =>
+        [
+          rekap.periode,
+          `"${rekap.employee?.user?.name || `Karyawan #${rekap.karyawan_id}`}"`,
+          rekap.jumlah_hadir,
+          rekap.jumlah_izin,
+          rekap.jumlah_sakit,
+          rekap.jumlah_cuti,
+          rekap.jumlah_alfa,
+          rekap.jumlah_sesi_coding,
+          rekap.jumlah_sesi_non_coding,
+          rekap.total_pendapatan_sesi,
+        ].join(",")
+      ),
+    ];
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `rekap-bulanan-${periodeFilter || "all"}-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Laporan berhasil diekspor");
+  };
+
+  const handlePrint = () => {
+    if (rekapBulanan.length === 0) {
+      toast.error("Tidak ada data untuk dicetak");
+      return;
+    }
+
+    // Create print window
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Tidak dapat membuka jendela cetak. Pastikan pop-up tidak diblokir.");
+      return;
+    }
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Laporan Rekap Bulanan</title>
+          <style>
+            @media print {
+              @page {
+                margin: 1cm;
+              }
+              .print-button {
+                display: none;
+              }
+            }
+            body {
+              font-family: Arial, sans-serif;
+              margin: 20px;
+            }
+            .print-button {
+              margin-bottom: 20px;
+              padding: 10px 20px;
+              background-color: #007bff;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 16px;
+            }
+            .print-button:hover {
+              background-color: #0056b3;
+            }
+            h1 {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .info {
+              margin-bottom: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f2f2f2;
+              font-weight: bold;
+            }
+            tr:nth-child(even) {
+              background-color: #f9f9f9;
+            }
+            .text-right {
+              text-align: right;
+            }
+          </style>
+        </head>
+        <body>
+          <button class="print-button" onclick="window.print()">Cetak / Print</button>
+          <h1>Laporan Rekap Bulanan</h1>
+          <div class="info">
+            <p><strong>Periode:</strong> ${periodeFilter || "Semua Periode"}</p>
+            <p><strong>Tanggal Cetak:</strong> ${new Date().toLocaleDateString("id-ID")}</p>
+            <p><strong>Jumlah Data:</strong> ${rekapBulanan.length}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Periode</th>
+                <th>Karyawan</th>
+                <th>Hadir</th>
+                <th>Izin</th>
+                <th>Sakit</th>
+                <th>Cuti</th>
+                <th>Alfa</th>
+                <th>Sesi Coding</th>
+                <th>Sesi Non-Coding</th>
+                <th class="text-right">Total Pendapatan</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rekapBulanan
+                .map(
+                  (rekap) => `
+                <tr>
+                  <td>${rekap.periode}</td>
+                  <td>${rekap.employee?.user?.name || `Karyawan #${rekap.karyawan_id}`}</td>
+                  <td>${rekap.jumlah_hadir}</td>
+                  <td>${rekap.jumlah_izin}</td>
+                  <td>${rekap.jumlah_sakit}</td>
+                  <td>${rekap.jumlah_cuti}</td>
+                  <td>${rekap.jumlah_alfa}</td>
+                  <td>${rekap.jumlah_sesi_coding}</td>
+                  <td>${rekap.jumlah_sesi_non_coding}</td>
+                  <td class="text-right">${new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                  }).format(rekap.total_pendapatan_sesi)}</td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -164,6 +347,26 @@ export default function RekapBulananPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              {(hasRole("Admin") || hasRole("Owner")) && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handlePrint}
+                    disabled={rekapBulanan.length === 0}
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Cetak Laporan
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportToCSV}
+                    disabled={rekapBulanan.length === 0}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </>
+              )}
               <HasCan permission="mengelola gaji">
                 <Button
                   variant="outline"

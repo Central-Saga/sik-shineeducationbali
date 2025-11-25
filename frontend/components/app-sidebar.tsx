@@ -11,6 +11,8 @@ import {
   Briefcase,
   Clock,
   FileText,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react"
 
 import {
@@ -202,6 +204,43 @@ const allNavItems: NavItem[] = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { hasRole, loading, logout, user } = useAuth();
+  
+  // State untuk tracking menu yang terbuka
+  const [openSubMenus, setOpenSubMenus] = React.useState<Set<string>>(new Set());
+  // State untuk profile dropdown
+  const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  // Ref untuk profile dropdown
+  const profileRef = React.useRef<HTMLDivElement>(null);
+
+  // Toggle sub menu
+  const toggleSubMenu = (menuTitle: string) => {
+    setOpenSubMenus((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(menuTitle)) {
+        newSet.delete(menuTitle);
+      } else {
+        newSet.add(menuTitle);
+      }
+      return newSet;
+    });
+  };
+
+  // Close profile dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    if (isProfileOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   // Filter menu berdasarkan role user
   const filteredNavItems = React.useMemo(() => {
@@ -243,25 +282,60 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu className="gap-2">
             {filteredNavItems.map((item) => {
               const Icon = item.icon || Home
+              const hasSubMenu = item.items && item.items.length > 0
+              const isSubMenuOpen = openSubMenus.has(item.title)
+              
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="font-medium transition-all duration-200">
-                    <a href={item.url} className="group flex items-center gap-2">
-                      <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-sidebar-accent-foreground" />
-                      <span className="transition-colors duration-200 group-hover:text-sidebar-primary">{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                  {item.items?.length ? (
-                    <SidebarMenuSub className="ml-0 border-l-0 px-1.5">
-                      {item.items.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild isActive={subItem.isActive || false}>
-                            <a href={subItem.url}>{subItem.title}</a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  ) : null}
+                  {hasSubMenu ? (
+                    <div className="flex items-center">
+                      <SidebarMenuButton asChild className="font-medium transition-all duration-200 flex-1">
+                        <a href={item.url} className="group flex items-center gap-2">
+                          <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-sidebar-accent-foreground" />
+                          <span className="transition-colors duration-200 group-hover:text-sidebar-primary flex-1">{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          toggleSubMenu(item.title)
+                        }}
+                        className="p-2 hover:bg-sidebar-accent rounded-md transition-colors duration-200 flex items-center justify-center"
+                        aria-label={`Toggle ${item.title} submenu`}
+                      >
+                        <ChevronDown
+                          className={`size-4 text-sidebar-foreground transition-transform duration-200 ${
+                            isSubMenuOpen ? "rotate-180" : "rotate-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  ) : (
+                    <SidebarMenuButton asChild className="font-medium transition-all duration-200">
+                      <a href={item.url} className="group flex items-center gap-2">
+                        <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-sidebar-accent-foreground" />
+                        <span className="transition-colors duration-200 group-hover:text-sidebar-primary">{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  )}
+                  {hasSubMenu && (
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isSubMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <SidebarMenuSub className="ml-0 border-l-0 px-1.5 mt-1">
+                        {item.items!.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={subItem.isActive || false}>
+                              <a href={subItem.url}>{subItem.title}</a>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </div>
+                  )}
                 </SidebarMenuItem>
               )
             })}
@@ -270,27 +344,53 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={async () => {
-                try {
-                  await logout();
-                  toast.success("Logout berhasil");
-                } catch {
-                  toast.error("Gagal logout");
-                }
-              }}
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="size-4" />
-              <span>Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           {user && (
             <SidebarMenuItem>
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                <div className="font-medium text-foreground">{user.name}</div>
-                <div className="truncate">{user.email}</div>
+              <div ref={profileRef} className="relative w-full">
+                <SidebarMenuButton
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="w-full justify-start font-medium transition-all duration-200"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground font-semibold text-sm shrink-0">
+                      {user.name?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                    <div className="flex flex-col items-start min-w-0 flex-1">
+                      <span className="text-sm font-medium text-foreground truncate w-full">{user.name}</span>
+                      <span className="text-xs text-muted-foreground truncate w-full">{user.email}</span>
+                    </div>
+                    <ChevronDown
+                      className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${
+                        isProfileOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                </SidebarMenuButton>
+                {isProfileOpen && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-sidebar border border-sidebar-border rounded-md shadow-lg overflow-hidden z-50 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
+                    <div className="px-3 py-2 border-b border-sidebar-border">
+                      <div className="text-xs text-muted-foreground">
+                        <div className="font-medium text-foreground text-sm mb-0.5">{user.name}</div>
+                        <div className="truncate">{user.email}</div>
+                      </div>
+                    </div>
+                    <SidebarMenuButton
+                      onClick={async () => {
+                        try {
+                          await logout();
+                          toast.success("Logout berhasil");
+                          setIsProfileOpen(false);
+                        } catch {
+                          toast.error("Gagal logout");
+                        }
+                      }}
+                      className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-none"
+                    >
+                      <LogOut className="size-4" />
+                      <span>Logout</span>
+                    </SidebarMenuButton>
+                  </div>
+                )}
               </div>
             </SidebarMenuItem>
           )}

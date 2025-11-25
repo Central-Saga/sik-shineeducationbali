@@ -26,28 +26,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { EmployeeTable } from "@/components/employees/employee-table";
 import { useEmployees } from "@/hooks/use-employees";
+import { updateEmployeeStatus } from "@/lib/api/employees";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Employee } from "@/lib/types/employee";
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const { employees, loading, error, removeEmployee } = useEmployees();
+  const { employees, loading, error, refetch } = useEmployees();
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [kategoriFilter, setKategoriFilter] = React.useState<string>("semua");
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingEmployee, setDeletingEmployee] = React.useState<Employee | null>(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Calculate statistics
   const stats = React.useMemo(() => {
@@ -89,25 +79,14 @@ export default function EmployeesPage() {
     router.push(`/dashboard/employees/${employee.id}/edit`);
   };
 
-  const handleDeleteClick = (employee: Employee) => {
-    setDeletingEmployee(employee);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deletingEmployee) return;
-
+  const handleUpdateStatus = async (employee: Employee, newStatus: 'aktif' | 'nonaktif') => {
     try {
-      setIsDeleting(true);
-      await removeEmployee(deletingEmployee.id);
-      toast.success("Karyawan berhasil dihapus");
-      setDeleteDialogOpen(false);
-      setDeletingEmployee(null);
+      await updateEmployeeStatus(employee.id, newStatus);
+      toast.success(`Status karyawan berhasil diubah menjadi ${newStatus === 'aktif' ? 'Aktif' : 'Nonaktif'}`);
+      await refetch();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus karyawan";
+      const errorMessage = error instanceof Error ? error.message : "Gagal mengubah status karyawan";
       toast.error(errorMessage);
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -219,43 +198,10 @@ export default function EmployeesPage() {
             loading={loading}
             onView={handleView}
             onEdit={handleEdit}
-            onDelete={handleDeleteClick}
+            onUpdateStatus={handleUpdateStatus}
           />
         </div>
       </SidebarInset>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Hapus Karyawan</DialogTitle>
-            <DialogDescription>
-              Apakah Anda yakin ingin menghapus karyawan &quot;
-              {deletingEmployee?.user?.name || deletingEmployee?.kode_karyawan || `ID: ${deletingEmployee?.id}`}
-              &quot;? Tindakan ini tidak dapat dibatalkan.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteDialogOpen(false);
-                setDeletingEmployee(null);
-              }}
-              disabled={isDeleting}
-            >
-              Batal
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Menghapus..." : "Hapus"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </SidebarProvider>
   );
 }

@@ -68,6 +68,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/employees/{id}', [EmployeeController::class, 'show'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
         Route::put('/employees/{id}', [EmployeeController::class, 'update'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
         Route::patch('/employees/{id}', [EmployeeController::class, 'update'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
+        Route::patch('/employees/{id}/status', [EmployeeController::class, 'updateStatus'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
         Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->where('id', '[0-9]+')->middleware('permission:mengelola karyawan');
     });
 
@@ -255,7 +256,7 @@ Route::prefix('v1')->group(function () {
     // Pembayaran Gaji API - Resource routes with permission middleware
     Route::middleware(['auth:sanctum'])->group(function () {
         // Get pembayaran gaji by gaji_id
-        Route::get('/gaji/{gajiId}/pembayaran', [PembayaranGajiController::class, 'index'])->middleware('permission:mengelola pembayaran gaji|mengelola gaji');
+        Route::get('/gaji/{gajiId}/pembayaran', [PembayaranGajiController::class, 'index'])->middleware('permission:mengelola pembayaran gaji|mengelola gaji|melihat gaji');
 
         // Create pembayaran gaji
         Route::post('/gaji/{gajiId}/pembayaran', [PembayaranGajiController::class, 'store'])->middleware('permission:mengelola pembayaran gaji');
@@ -264,7 +265,7 @@ Route::prefix('v1')->group(function () {
         Route::patch('/pembayaran-gaji/{id}/status', [PembayaranGajiController::class, 'updateStatus'])->middleware('permission:mengelola pembayaran gaji');
 
         // Standard CRUD routes
-        Route::get('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'show'])->middleware('permission:mengelola pembayaran gaji|mengelola gaji');
+        Route::get('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'show'])->middleware('permission:mengelola pembayaran gaji|mengelola gaji|melihat gaji');
         Route::put('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'update'])->middleware('permission:mengelola pembayaran gaji');
         Route::delete('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'destroy'])->middleware('permission:mengelola pembayaran gaji');
     });

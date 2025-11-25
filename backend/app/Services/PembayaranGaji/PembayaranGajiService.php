@@ -39,11 +39,28 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
     public function findByGajiId($gajiId): Collection
     {
         // Check permission
-        if (!$this->hasPermission('mengelola pembayaran gaji') && !$this->hasPermission('mengelola gaji')) {
+        if (!$this->hasPermission('mengelola pembayaran gaji') && !$this->hasPermission('mengelola gaji') && !$this->hasPermission('melihat gaji')) {
             abort(403, 'You do not have permission to view pembayaran gaji records.');
         }
 
         return $this->getRepository()->findByGajiId($gajiId);
+    }
+
+    /**
+     * Get a record by ID.
+     *
+     * @param  int|string  $id
+     * @return \App\Models\PembayaranGaji
+     * @throws \App\Exceptions\NotFoundException
+     */
+    public function getById($id): PembayaranGaji
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola pembayaran gaji') && !$this->hasPermission('mengelola gaji') && !$this->hasPermission('melihat gaji')) {
+            abort(403, 'You do not have permission to view pembayaran gaji records.');
+        }
+
+        return parent::getById($id);
     }
 
     /**

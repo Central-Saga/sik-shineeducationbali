@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Employee;
 use App\Http\Controllers\Api\Base\BaseApiController;
 use App\Http\Requests\Api\V1\Employee\StoreEmployeeRequest;
 use App\Http\Requests\Api\V1\Employee\UpdateEmployeeRequest;
+use App\Http\Requests\Api\V1\Employee\UpdateStatusEmployeeRequest;
 use App\Http\Resources\Api\V1\Employee\EmployeeResource;
 use App\Services\Contracts\EmployeeServiceInterface;
 use Illuminate\Http\JsonResponse;
@@ -97,6 +98,24 @@ class EmployeeController extends BaseApiController
         return $this->success(
             new EmployeeResource($employee),
             'Employee updated successfully'
+        );
+    }
+
+    /**
+     * Update employee status.
+     *
+     * @param  \App\Http\Requests\Api\V1\Employee\UpdateStatusEmployeeRequest  $request
+     * @param  string|int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateStatus(UpdateStatusEmployeeRequest $request, string|int $id): JsonResponse
+    {
+        $employee = $this->employeeService->updateStatus($id, $request->status);
+        $employee->load('user.roles');
+
+        return $this->success(
+            new EmployeeResource($employee),
+            'Employee status updated successfully'
         );
     }
 

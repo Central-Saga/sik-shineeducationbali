@@ -46,6 +46,14 @@ export async function updateEmployee(id: number | string, data: Partial<Employee
 }
 
 /**
+ * Update employee status
+ */
+export async function updateEmployeeStatus(id: number | string, status: 'aktif' | 'nonaktif'): Promise<Employee> {
+  const response = await apiClient.patch<Employee>(`/v1/employees/${id}/status`, { status });
+  return response.data;
+}
+
+/**
  * Delete an employee
  */
 export async function deleteEmployee(id: number | string): Promise<void> {

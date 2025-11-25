@@ -47,9 +47,6 @@ export default function SesiKerjaPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [selectedSesiKerja, setSelectedSesiKerja] = React.useState<SesiKerja | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = React.useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingSesiKerja, setDeletingSesiKerja] = React.useState<SesiKerja | null>(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Build params based on filters
   const params = React.useMemo(() => {
@@ -70,7 +67,7 @@ export default function SesiKerjaPage() {
     return Object.keys(filters).length > 0 ? filters : undefined;
   }, [kategoriFilter, hariFilter, statusFilter]);
 
-  const { sesiKerja, loading, error, refetch, removeSesiKerja } = useSesiKerja(params);
+  const { sesiKerja, loading, error, refetch } = useSesiKerja(params);
 
   // Calculate statistics
   const stats = React.useMemo(() => {
@@ -88,28 +85,6 @@ export default function SesiKerjaPage() {
   const handleViewDetail = (sesiKerja: SesiKerja) => {
     setSelectedSesiKerja(sesiKerja);
     setDetailDialogOpen(true);
-  };
-
-  const handleDeleteClick = (sesiKerja: SesiKerja) => {
-    setDeletingSesiKerja(sesiKerja);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deletingSesiKerja) return;
-
-    try {
-      setIsDeleting(true);
-      await removeSesiKerja(deletingSesiKerja.id);
-      toast.success("Sesi kerja berhasil dihapus");
-      setDeleteDialogOpen(false);
-      setDeletingSesiKerja(null);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus sesi kerja";
-      toast.error(errorMessage);
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   const handleUpdateStatus = async (sesiKerja: SesiKerja, newStatus: 'aktif' | 'non aktif') => {
@@ -246,7 +221,6 @@ export default function SesiKerjaPage() {
             sesiKerja={sesiKerja}
             loading={loading}
             onViewDetail={handleViewDetail}
-            onDelete={handleDeleteClick}
             onUpdateStatus={handleUpdateStatus}
           />
         </div>
@@ -259,38 +233,6 @@ export default function SesiKerjaPage() {
         onOpenChange={setDetailDialogOpen}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Hapus Sesi Kerja</DialogTitle>
-            <DialogDescription>
-              Apakah Anda yakin ingin menghapus sesi kerja &quot;
-              {deletingSesiKerja?.kategori === 'coding' ? 'Coding' : 'Non-Coding'} - {deletingSesiKerja?.hari.charAt(0).toUpperCase() + deletingSesiKerja?.hari.slice(1)} - Sesi {deletingSesiKerja?.nomor_sesi}
-              &quot;? Tindakan ini tidak dapat dibatalkan.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteDialogOpen(false);
-                setDeletingSesiKerja(null);
-              }}
-              disabled={isDeleting}
-            >
-              Batal
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Menghapus..." : "Hapus"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </SidebarProvider>
   );
 }

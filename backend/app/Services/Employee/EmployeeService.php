@@ -230,6 +230,31 @@ class EmployeeService extends BaseService implements EmployeeServiceInterface
     }
 
     /**
+     * Update status of employee.
+     *
+     * @param  int|string  $id
+     * @param  string  $status
+     * @return \App\Models\Employee
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function updateStatus(int|string $id, string $status): Employee
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola karyawan')) {
+            abort(403, 'You do not have permission to update employee status.');
+        }
+
+        // Validate status
+        if (!in_array($status, ['aktif', 'nonaktif'])) {
+            abort(422, 'Status must be either "aktif" or "nonaktif".');
+        }
+
+        $employee = $this->getById($id);
+        return $this->getRepository()->update($id, ['status' => $status]);
+    }
+
+    /**
      * Find active employees.
      *
      * @return \Illuminate\Database\Eloquent\Collection

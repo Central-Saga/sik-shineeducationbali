@@ -13,8 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import type { Employee } from "@/lib/types/employee";
-import { Briefcase, Eye, Pencil, Trash2 } from "lucide-react";
+import { Briefcase, Eye, Pencil } from "lucide-react";
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -22,7 +23,7 @@ interface EmployeeTableProps {
   className?: string;
   onView?: (employee: Employee) => void;
   onEdit?: (employee: Employee) => void;
-  onDelete?: (employee: Employee) => void;
+  onUpdateStatus?: (employee: Employee, newStatus: 'aktif' | 'nonaktif') => void;
 }
 
 export function EmployeeTable({
@@ -31,7 +32,7 @@ export function EmployeeTable({
   className,
   onView,
   onEdit,
-  onDelete,
+  onUpdateStatus,
 }: EmployeeTableProps) {
   const getKategoriLabel = (kategori: string) => {
     const labels: Record<string, string> = {
@@ -196,16 +197,14 @@ export function EmployeeTable({
                           </Link>
                         </Button>
                       )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onDelete(employee)}
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Hapus</span>
-                        </Button>
+                      {onUpdateStatus && (
+                        <Switch
+                          checked={employee.status === 'aktif'}
+                          onCheckedChange={(checked) => {
+                            onUpdateStatus(employee, checked ? 'aktif' : 'nonaktif');
+                          }}
+                          aria-label={`Toggle status untuk ${employee.user?.name || employee.kode_karyawan}`}
+                        />
                       )}
                     </div>
                   </TableCell>

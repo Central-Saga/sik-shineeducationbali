@@ -14,14 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import type { SesiKerja } from "@/lib/types/sesi-kerja";
-import { Clock, Eye, Trash2 } from "lucide-react";
+import { Clock, Eye } from "lucide-react";
 
 interface SesiKerjaTableProps {
   sesiKerja: SesiKerja[];
   loading?: boolean;
   className?: string;
   onViewDetail?: (sesiKerja: SesiKerja) => void;
-  onDelete?: (sesiKerja: SesiKerja) => void;
   onUpdateStatus?: (sesiKerja: SesiKerja, newStatus: 'aktif' | 'non aktif') => void;
 }
 
@@ -30,7 +29,6 @@ export function SesiKerjaTable({
   loading = false,
   className,
   onViewDetail,
-  onDelete,
   onUpdateStatus,
 }: SesiKerjaTableProps) {
   const getKategoriLabel = (kategori: string) => {
@@ -193,23 +191,12 @@ export function SesiKerjaTable({
                     {formatCurrency(item.tarif)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getStatusBadgeVariant(item.status)}>
-                        {item.status === 'aktif' ? 'Aktif' : 'Non Aktif'}
-                      </Badge>
-                      {onUpdateStatus && (
-                        <Switch
-                          checked={item.status === 'aktif'}
-                          onCheckedChange={(checked) => {
-                            onUpdateStatus(item, checked ? 'aktif' : 'non aktif');
-                          }}
-                          aria-label={`Toggle status untuk ${item.kategori} - ${item.hari} - Sesi ${item.nomor_sesi}`}
-                        />
-                      )}
-                    </div>
+                    <Badge variant={getStatusBadgeVariant(item.status)}>
+                      {item.status === 'aktif' ? 'Aktif' : 'Non Aktif'}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2">
                       {onViewDetail && (
                         <Button
                           variant="ghost"
@@ -221,16 +208,14 @@ export function SesiKerjaTable({
                           <span className="sr-only">Lihat Detail</span>
                         </Button>
                       )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(item)}
-                          title="Hapus"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                          <span className="sr-only">Hapus</span>
-                        </Button>
+                      {onUpdateStatus && (
+                        <Switch
+                          checked={item.status === 'aktif'}
+                          onCheckedChange={(checked) => {
+                            onUpdateStatus(item, checked ? 'aktif' : 'non aktif');
+                          }}
+                          aria-label={`Toggle status untuk ${item.kategori} - ${item.hari} - Sesi ${item.nomor_sesi}`}
+                        />
                       )}
                     </div>
                   </TableCell>
