@@ -11,6 +11,7 @@ export interface DashboardStatistics {
   
   // Owner statistics
   total_rekap_bulanan?: number;
+  gaji_perlu_disetujui?: number;
   
   // Karyawan statistics
   cuti_tersisa?: number;

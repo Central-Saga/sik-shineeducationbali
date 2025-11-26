@@ -68,15 +68,24 @@ export default function DashboardPage() {
           setBarChartData(gajiTrend as BarChartDataPoint[])
           setPieChartData(realisasiDistribution as PieChartDataPoint[])
         } else if (hasRole("Karyawan")) {
-          const [absensiBulan, realisasiStatus] = await Promise.all([
-            getChartData("absensi-bulan-ini"),
-            getChartData("realisasi-sesi-status"),
-          ])
-          setBarChartData(absensiBulan as BarChartDataPoint[])
-          setPieChartData(realisasiStatus as PieChartDataPoint[])
+          try {
+            const [absensiBulan, realisasiStatus] = await Promise.all([
+              getChartData("absensi-bulan-ini"),
+              getChartData("realisasi-sesi-status"),
+            ])
+            setBarChartData(absensiBulan as BarChartDataPoint[])
+            setPieChartData(realisasiStatus as PieChartDataPoint[])
+          } catch (chartError) {
+            // Jika chart error, set empty array (chart tidak wajib)
+            console.warn("Chart data error:", chartError)
+            setBarChartData([])
+            setPieChartData([])
+          }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat data dashboard")
+        const errorMessage = err instanceof Error ? err.message : "Gagal memuat data dashboard"
+        setError(errorMessage)
+        console.error("Dashboard error:", err)
       } finally {
         setLoading(false)
       }
@@ -249,6 +258,13 @@ export default function DashboardPage() {
                   icon={Clock}
                   href="/dashboard/realisasi-sesi"
                   iconColor="bg-orange-500"
+                />
+                <DashboardCard
+                  title="Gaji yang Perlu Disetujui"
+                  value={statistics.gaji_perlu_disetujui || 0}
+                  icon={DollarSign}
+                  href="/dashboard/gaji?status=draft"
+                  iconColor="bg-red-500"
                 />
               </>
             )}

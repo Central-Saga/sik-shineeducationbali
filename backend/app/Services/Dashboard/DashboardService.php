@@ -22,9 +22,9 @@ class DashboardService implements DashboardServiceInterface
      */
     public function getStatistics($user): array
     {
-        if ($user->hasRole('Admin')) {
+        if ($user->hasRole('Admin')) {  
             return $this->getAdminStatistics();
-        } elseif ($user->hasRole('Owner')) {
+        } elseif ($user->hasRole('Owner')) { 
             return $this->getOwnerStatistics();
         } elseif ($user->hasRole('Karyawan')) {
             return $this->getKaryawanStatistics($user);
@@ -67,6 +67,7 @@ class DashboardService implements DashboardServiceInterface
             'total_gaji_bulan_ini' => Gaji::where('periode', $currentMonth)->sum('total_gaji'),
             'total_rekap_bulanan' => RekapBulanan::count(),
             'realisasi_sesi_pending' => RealisasiSesi::where('status', 'diajukan')->count(),
+            'gaji_perlu_disetujui' => Gaji::where('status', 'draft')->count(),
         ];
     }
 
@@ -78,45 +79,55 @@ class DashboardService implements DashboardServiceInterface
      */
     protected function getKaryawanStatistics($user): array
     {
-        $employee = $user->employee;
-        
-        if (!$employee) {
+        try {
+            $employee = $user->employee;
+            
+            if (!$employee) {
+                return [
+                    'absensi_hari_ini' => 0,
+                    'cuti_tersisa' => 12,
+                    'gaji_terakhir' => null,
+                    'realisasi_sesi_saya' => 0,
+                ];
+            }
+
+            $today = Carbon::today();
+            $currentYear = Carbon::now()->year;
+
+            // Hitung cuti tersisa (asumsi 12 hari per tahun)
+            $cutiTerpakai = Cuti::where('karyawan_id', $employee->id)
+                ->where('status', 'disetujui')
+                ->whereYear('tanggal_mulai', $currentYear)
+                ->sum('jumlah_hari');
+
+            $cutiTersisa = max(0, 12 - (int)$cutiTerpakai);
+
+            // Gaji terakhir
+            $gajiTerakhir = Gaji::where('karyawan_id', $employee->id)
+                ->orderBy('periode', 'desc')
+                ->first();
+
+            return [
+                'absensi_hari_ini' => Absensi::where('karyawan_id', $employee->id)
+                    ->whereDate('tanggal', $today)
+                    ->count(),
+                'cuti_tersisa' => $cutiTersisa,
+                'gaji_terakhir' => $gajiTerakhir ? [
+                    'periode' => $gajiTerakhir->periode,
+                    'total_gaji' => (float)$gajiTerakhir->total_gaji,
+                ] : null,
+                'realisasi_sesi_saya' => RealisasiSesi::where('karyawan_id', $employee->id)
+                    ->count(),
+            ];
+        } catch (\Exception $e) {
+            // Return default values if any error occurs
             return [
                 'absensi_hari_ini' => 0,
-                'cuti_tersisa' => 0,
+                'cuti_tersisa' => 12,
                 'gaji_terakhir' => null,
                 'realisasi_sesi_saya' => 0,
             ];
         }
-
-        $today = Carbon::today();
-        $currentMonth = Carbon::now()->format('Y-m');
-
-        // Hitung cuti tersisa (asumsi 12 hari per tahun)
-        $cutiTerpakai = Cuti::where('karyawan_id', $employee->id)
-            ->where('status', 'disetujui')
-            ->whereYear('tanggal_mulai', Carbon::now()->year)
-            ->sum('jumlah_hari');
-
-        $cutiTersisa = max(0, 12 - $cutiTerpakai);
-
-        // Gaji terakhir
-        $gajiTerakhir = Gaji::where('karyawan_id', $employee->id)
-            ->orderBy('periode', 'desc')
-            ->first();
-
-        return [
-            'absensi_hari_ini' => Absensi::where('karyawan_id', $employee->id)
-                ->whereDate('tanggal', $today)
-                ->count(),
-            'cuti_tersisa' => $cutiTersisa,
-            'gaji_terakhir' => $gajiTerakhir ? [
-                'periode' => $gajiTerakhir->periode,
-                'total_gaji' => $gajiTerakhir->total_gaji,
-            ] : null,
-            'realisasi_sesi_saya' => RealisasiSesi::where('karyawan_id', $employee->id)
-                ->count(),
-        ];
     }
 
     /**
