@@ -22,8 +22,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Koordinat SHINE EDUCATION BALI
 // Updated based on actual location: -8.5207971, 115.1378314
-const CENTRAL_SAGA_MANDALA_LAT = -8.5207971;
-const CENTRAL_SAGA_MANDALA_LON = 115.1378314;
+const SHINE_EDUCATION_BALI_LAT = -8.5207971;
+const SHINE_EDUCATION_BALI_LON = 115.1378314;
 const MAX_RADIUS_METERS = 50;
 
 interface AbsensiFormProps {
@@ -186,7 +186,7 @@ export function AbsensiForm({
           const accuracy = Math.round(position.coords.accuracy);
           
           // Hitung jarak dari SHINE EDUCATION BALI
-          const distance = calculateDistance(CENTRAL_SAGA_MANDALA_LAT, CENTRAL_SAGA_MANDALA_LON, lat, lon);
+          const distance = calculateDistance(SHINE_EDUCATION_BALI_LAT, SHINE_EDUCATION_BALI_LON, lat, lon);
           
           setLocation({
             latitude: lat,
@@ -333,7 +333,7 @@ export function AbsensiForm({
     }
 
     // Hitung jarak dari SHINE EDUCATION BALI
-    const distance = calculateDistance(CENTRAL_SAGA_MANDALA_LAT, CENTRAL_SAGA_MANDALA_LON, lat, lon);
+    const distance = calculateDistance(SHINE_EDUCATION_BALI_LAT, SHINE_EDUCATION_BALI_LON, lat, lon);
 
     setLocation({
       latitude: lat,
@@ -353,7 +353,7 @@ export function AbsensiForm({
     if (distance > MAX_RADIUS_METERS) {
       setErrors(prev => ({ 
         ...prev, 
-        location: `Jarak Anda ${distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.` 
+        location: `Jarak Anda ${distance.toFixed(0)} meter dari SHINE EDUCATION BALI. Maksimal ${MAX_RADIUS_METERS} meter.` 
       }));
     }
   };

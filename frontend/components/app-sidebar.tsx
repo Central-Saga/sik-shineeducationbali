@@ -155,7 +155,7 @@ const allNavItems: NavItem[] = [
     title: "Sesi Kerja",
     url: "/dashboard/sesi-kerja",
     icon: Clock,
-    roles: ["Owner", "Admin"], // Hanya Admin dan Owner
+    roles: ["Admin"], // Hanya Admin
     items: [
       {
         title: "Semua Sesi Kerja",
@@ -171,7 +171,7 @@ const allNavItems: NavItem[] = [
     title: "Realisasi Sesi",
     url: "/dashboard/realisasi-sesi",
     icon: Clock,
-    roles: ["Owner", "Admin", "Karyawan"], // Semua role bisa akses
+    roles: ["Admin", "Karyawan"], // Admin dan Karyawan
     items: [
       {
         title: "Semua Realisasi Sesi",

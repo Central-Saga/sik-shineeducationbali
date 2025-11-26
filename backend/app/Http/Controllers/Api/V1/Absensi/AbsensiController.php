@@ -49,7 +49,7 @@ class AbsensiController extends BaseApiController
                 );
             }
             
-            // Force filter by karyawan_id for karyawan
+            // Force filter by karyawan_id for karyawan - mereka hanya bisa melihat absensi mereka sendiri
             $karyawanId = $employee->id;
             
             // Priority: date range > tanggal > status > all (for karyawan)
@@ -77,8 +77,8 @@ class AbsensiController extends BaseApiController
                 $query = $this->absensiService->findByKaryawanId($karyawanId);
             }
         }
-        // For Owner and Admin, allow all filters
-        else {
+        // For Owner and Admin, allow all filters - mereka bisa melihat semua absensi
+        elseif ($user && ($user->hasRole('Owner') || $user->hasRole('Admin'))) {
             // Priority: date range > tanggal > karyawan_id + status > status > karyawan_id > all
             
             // Filter by date range if provided (highest priority)
@@ -119,6 +119,13 @@ class AbsensiController extends BaseApiController
             else {
                 $query = $this->absensiService->getAll();
             }
+        }
+        // If user doesn't have any of the allowed roles, return empty
+        else {
+            return $this->success(
+                AbsensiResource::collection(collect([])),
+                'Attendance records retrieved successfully'
+            );
         }
 
         // Ensure $query is a collection
