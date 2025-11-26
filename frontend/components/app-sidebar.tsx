@@ -33,6 +33,7 @@ import { LogOut } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import Image from "next/image"
 
 // Navigation data untuk aplikasi SIK - Shine Education Bali
 type NavItem = {
@@ -52,7 +53,7 @@ const allNavItems: NavItem[] = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
-    roles: ["Admin"], // Dashboard hanya untuk Admin
+    roles: ["Admin", "Owner", "Karyawan"], // Dashboard untuk semua role
   },
   {
     title: "Pengguna",
@@ -241,19 +242,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar variant="floating" {...props}>
-      <SidebarHeader className="bg-red-600 rounded-t-lg overflow-hidden">
+      <SidebarHeader className="bg-white rounded-t-lg p-2 border-b border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild className="gap-3 hover:bg-red-700/50 transition-colors duration-200">
-              <a href="/dashboard">
-                <div className="bg-white/20 backdrop-blur-sm text-white flex aspect-square size-10 items-center justify-center rounded-xl shadow-sm border border-white/10 transition-all duration-200 group-hover:bg-white/30 group-hover:scale-105">
-                  <GraduationCap className="size-5 transition-transform duration-200 group-hover:scale-110" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold text-white">SIK</span>
-                  <span className="text-xs text-white/90">
-                    Shine Education
-                  </span>
+            <SidebarMenuButton size="lg" asChild className="p-0 hover:bg-transparent h-auto min-h-0">
+              <a href="/dashboard" className="flex items-center justify-center w-full block">
+                <div className="w-full">
+                  <Image
+                    src="/sidebar logo.svg"
+                    alt="SIK Shine Education Bali"
+                    width={223}
+                    height={72}
+                    className="w-full h-auto transition-opacity duration-200 hover:opacity-90"
+                    style={{ objectFit: 'contain', width: '100%', height: 'auto' }}
+                    priority
+                  />
                 </div>
               </a>
             </SidebarMenuButton>

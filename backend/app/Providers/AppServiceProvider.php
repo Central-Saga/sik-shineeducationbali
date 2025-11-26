@@ -134,6 +134,11 @@ class AppServiceProvider extends ServiceProvider
             \App\Services\Contracts\PembayaranGajiServiceInterface::class,
             \App\Services\PembayaranGaji\PembayaranGajiService::class
         );
+
+        $this->app->bind(
+            \App\Services\Contracts\DashboardServiceInterface::class,
+            \App\Services\Dashboard\DashboardService::class
+        );
     }
 
     /**

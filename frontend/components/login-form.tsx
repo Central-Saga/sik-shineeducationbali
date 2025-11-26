@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { login } from "@/lib/api/auth";
 import { toast } from "sonner";
 import type { LoginCredentials } from "@/lib/api/auth";
-import { GraduationCap } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -116,8 +115,16 @@ export function LoginForm({
           <form onSubmit={handleSubmit} className="p-6 md:p-8">
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <div className="flex items-center gap-2 mb-2">
-                  <GraduationCap className="h-8 w-8 text-primary" />
+                <div className="flex items-center justify-center mb-6">
+                  <Image
+                    src="/sidebar logo.svg"
+                    alt="SIK Shine Education Bali"
+                    width={223}
+                    height={72}
+                    priority
+                  />
+                </div>
+                <div className="mb-2">
                   <h1 className="text-2xl font-bold">Selamat Datang Kembali</h1>
                 </div>
                 <p className="text-muted-foreground text-balance">
@@ -181,7 +188,6 @@ export function LoginForm({
             />
             <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary/70 flex items-center justify-center">
               <div className="text-center p-8 text-white">
-                <GraduationCap className="h-24 w-24 mx-auto mb-4 text-white/90" />
                 <h2 className="text-3xl font-bold mb-2">SIK</h2>
                 <p className="text-lg font-semibold mb-1">Sistem Informasi Kepegawaian</p>
                 <p className="text-white/90">

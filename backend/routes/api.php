@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Absensi\AbsensiController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Cuti\CutiController;
+use App\Http\Controllers\Api\V1\Dashboard\DashboardController;
 use App\Http\Controllers\Api\V1\Employee\EmployeeController;
 use App\Http\Controllers\Api\V1\Gaji\GajiController;
 use App\Http\Controllers\Api\V1\KomponenGaji\KomponenGajiController;
@@ -268,6 +269,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'show'])->middleware('permission:mengelola pembayaran gaji|mengelola gaji|melihat gaji');
         Route::put('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'update'])->middleware('permission:mengelola pembayaran gaji');
         Route::delete('/pembayaran-gaji/{id}', [PembayaranGajiController::class, 'destroy'])->middleware('permission:mengelola pembayaran gaji');
+    });
+
+    // Dashboard API - Statistics and charts
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/dashboard/statistics', [DashboardController::class, 'statistics']);
+        Route::get('/dashboard/charts/{type}', [DashboardController::class, 'chartData']);
     });
 
     // Auth routes (protected - requires authentication)
