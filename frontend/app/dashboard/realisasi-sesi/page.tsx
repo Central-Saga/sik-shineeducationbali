@@ -238,16 +238,6 @@ export default function RealisasiSesiPage() {
                   </a>
                 </Button>
               </HasCan>
-              <HasCan permission="mengajukan realisasi sesi">
-                {!hasRole('Admin') && !hasRole('Owner') && (
-                  <Button asChild variant="outline">
-                    <a href="/dashboard/realisasi-sesi/create">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajukan Realisasi Sesi
-                    </a>
-                  </Button>
-                )}
-              </HasCan>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter Status" />

@@ -27,9 +27,30 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function CreateRealisasiSesiPage() {
   const router = useRouter();
-  const { hasRole } = useAuth();
+  const { hasRole, hasPermission, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const isAdmin = hasRole('Admin') || hasRole('Owner');
+  
+  // Check if user has permission to create realisasi sesi
+  const canCreate = hasPermission('mengajukan realisasi sesi') || hasPermission('mengelola realisasi sesi');
+  
+  // Redirect if user doesn't have permission
+  React.useEffect(() => {
+    if (!loading && !canCreate) {
+      router.replace("/dashboard/realisasi-sesi");
+    }
+  }, [loading, canCreate, router]);
+  
+  // Show loading state while checking auth
+  if (loading || !canCreate) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-medium">Memuat...</div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (data: RealisasiSesiFormData) => {
     setIsSubmitting(true);

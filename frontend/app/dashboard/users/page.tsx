@@ -143,6 +143,7 @@ export default function UsersPage() {
           {/* Users Table */}
           <UserTable
             users={filteredUsers}
+            allUsers={users}
             loading={loading}
             onDelete={handleDelete}
           />

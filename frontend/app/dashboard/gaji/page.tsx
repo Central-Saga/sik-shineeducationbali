@@ -66,15 +66,30 @@ export default function GajiPage() {
     Object.keys(params).length > 0 ? params : undefined
   );
 
-  // Filter gaji berdasarkan tahun untuk Karyawan
+  // Filter gaji berdasarkan tahun untuk Karyawan dan defense in depth filter
   const gaji = React.useMemo(() => {
+    let filtered = allGaji;
+    
+    // Defense in depth: Untuk Karyawan, pastikan hanya gaji mereka yang ditampilkan
+    // (Backend sudah memfilter, ini hanya untuk memastikan)
+    if (isKaryawan && filtered.length > 0) {
+      // Ambil karyawan_id dari gaji pertama (karena backend sudah memfilter, semua gaji seharusnya milik karyawan yang sama)
+      const firstKaryawanId = filtered[0]?.karyawan_id;
+      if (firstKaryawanId) {
+        // Filter untuk memastikan hanya gaji dengan karyawan_id yang sama
+        filtered = filtered.filter((item) => item.karyawan_id === firstKaryawanId);
+      }
+    }
+    
+    // Filter berdasarkan tahun untuk Karyawan
     if (isKaryawan && tahunFilter) {
-      return allGaji.filter((item) => {
+      filtered = filtered.filter((item) => {
         const [year] = item.periode.split("-");
         return year === tahunFilter;
       });
     }
-    return allGaji;
+    
+    return filtered;
   }, [allGaji, tahunFilter, isKaryawan]);
 
   React.useEffect(() => {
@@ -378,14 +393,14 @@ export default function GajiPage() {
               </Select>
             ) : (
               <div className="w-[200px]">
-                <input
-                  type="month"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="Filter periode (YYYY-MM)"
-                  value={periodeFilter}
-                  onChange={(e) => setPeriodeFilter(e.target.value)}
-                />
-              </div>
+              <input
+                type="month"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Filter periode (YYYY-MM)"
+                value={periodeFilter}
+                onChange={(e) => setPeriodeFilter(e.target.value)}
+              />
+            </div>
             )}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">

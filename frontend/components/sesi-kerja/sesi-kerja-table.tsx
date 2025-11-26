@@ -191,9 +191,9 @@ export function SesiKerjaTable({
                     {formatCurrency(item.tarif)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(item.status)}>
-                      {item.status === 'aktif' ? 'Aktif' : 'Non Aktif'}
-                    </Badge>
+                      <Badge variant={getStatusBadgeVariant(item.status)}>
+                        {item.status === 'aktif' ? 'Aktif' : 'Non Aktif'}
+                      </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">

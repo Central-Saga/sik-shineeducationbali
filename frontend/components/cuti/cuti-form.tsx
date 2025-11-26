@@ -341,7 +341,7 @@ export function CutiForm({
             <Label htmlFor="tanggal">
               Tanggal <span className="text-destructive">*</span>
             </Label>
-            <div className="relative flex gap-2">
+            <div className="relative flex gap-2 max-w-xs">
               <Input
                 id="tanggal"
                 value={value}

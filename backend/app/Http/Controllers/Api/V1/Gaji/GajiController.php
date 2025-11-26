@@ -51,14 +51,48 @@ class GajiController extends BaseApiController
      */
     public function index(Request $request): JsonResponse
     {
-        if ($request->has('periode')) {
-            $query = $this->gajiService->findByPeriode($request->periode);
-        } elseif ($request->has('karyawan_id')) {
-            $query = $this->gajiService->findByKaryawanId($request->karyawan_id);
-        } elseif ($request->has('status')) {
-            $query = $this->gajiService->findByStatus($request->status);
-        } else {
-            $query = $this->gajiService->getAll();
+        $user = $request->user();
+        
+        // For karyawan role, filter by their employee_id
+        if ($user && $user->hasRole('Karyawan')) {
+            $employee = $user->employee;
+            if (!$employee) {
+                return $this->success(
+                    GajiResource::collection(collect([])),
+                    'Gaji records retrieved successfully'
+                );
+            }
+            
+            // Force filter by karyawan_id for karyawan
+            $karyawanId = $employee->id;
+            
+            // Get all gaji for this karyawan first
+            $query = $this->gajiService->findByKaryawanId($karyawanId);
+            
+            // Apply additional filters if provided
+            if ($request->has('periode')) {
+                $query = $query->filter(function ($gaji) use ($request) {
+                    return $gaji->periode === $request->periode;
+                });
+            }
+            
+            if ($request->has('status')) {
+                $query = $query->filter(function ($gaji) use ($request) {
+                    return $gaji->status === $request->status;
+                });
+            }
+        }
+        // For Owner and Admin, allow all filters
+        else {
+            if ($request->has('periode')) {
+                $query = $this->gajiService->findByPeriode($request->periode);
+            } elseif ($request->has('karyawan_id')) {
+                $query = $this->gajiService->findByKaryawanId($request->karyawan_id);
+            } elseif ($request->has('status')) {
+                $query = $this->gajiService->findByStatus($request->status);
+            } else {
+                $query = $this->gajiService->getAll();
+            }
         }
 
         // Eager load employee->user relationship
@@ -76,10 +110,19 @@ class GajiController extends BaseApiController
      * @param  int|string  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show($id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
         $gaji = $this->gajiService->getById($id);
         $gaji->load(['employee.user', 'komponenGaji', 'pembayaranGaji']);
+
+        // For karyawan role, validate that they can only view their own gaji
+        $user = $request->user();
+        if ($user && $user->hasRole('Karyawan')) {
+            $employee = $user->employee;
+            if (!$employee || $gaji->karyawan_id !== $employee->id) {
+                return $this->forbidden('You do not have permission to view this gaji record.');
+            }
+        }
 
         // Get detail lembur if employee is tetap or kontrak
         $detailLembur = null;

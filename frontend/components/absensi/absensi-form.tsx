@@ -20,10 +20,10 @@ import { cn } from "@/lib/utils";
 import { MapPin, Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// Koordinat PT. CENTRAL SAGA MANDALA
-// Updated based on actual location: -8.549553, 115.124725
-const CENTRAL_SAGA_MANDALA_LAT = -8.549553;
-const CENTRAL_SAGA_MANDALA_LON = 115.124725;
+// Koordinat SHINE EDUCATION BALI
+// Updated based on actual location: -8.5207971, 115.1378314
+const CENTRAL_SAGA_MANDALA_LAT = -8.5207971;
+const CENTRAL_SAGA_MANDALA_LON = 115.1378314;
 const MAX_RADIUS_METERS = 50;
 
 interface AbsensiFormProps {
@@ -185,7 +185,7 @@ export function AbsensiForm({
           const lon = position.coords.longitude;
           const accuracy = Math.round(position.coords.accuracy);
           
-          // Hitung jarak dari PT. CENTRAL SAGA MANDALA
+          // Hitung jarak dari SHINE EDUCATION BALI
           const distance = calculateDistance(CENTRAL_SAGA_MANDALA_LAT, CENTRAL_SAGA_MANDALA_LON, lat, lon);
           
           setLocation({
@@ -201,7 +201,7 @@ export function AbsensiForm({
           if (distance > MAX_RADIUS_METERS) {
             setErrors(prev => ({ 
               ...prev, 
-              location: `Jarak Anda ${distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.` 
+              location: `Jarak Anda ${distance.toFixed(0)} meter dari SHINE EDUCATION BALI. Maksimal ${MAX_RADIUS_METERS} meter.` 
             }));
           } else {
             setErrors(prev => {
@@ -332,7 +332,7 @@ export function AbsensiForm({
       return;
     }
 
-    // Hitung jarak dari PT. CENTRAL SAGA MANDALA
+    // Hitung jarak dari SHINE EDUCATION BALI
     const distance = calculateDistance(CENTRAL_SAGA_MANDALA_LAT, CENTRAL_SAGA_MANDALA_LON, lat, lon);
 
     setLocation({
@@ -405,7 +405,7 @@ export function AbsensiForm({
       if (!locationFetched || !location.latitude || !location.longitude) {
         newErrors.location = "Lokasi wajib diambil terlebih dahulu sebelum upload foto.";
       } else if (location.distance !== null && location.distance !== undefined && location.distance > MAX_RADIUS_METERS) {
-        newErrors.location = `Jarak Anda ${location.distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.`;
+        newErrors.location = `Jarak Anda ${location.distance.toFixed(0)} meter dari SHINE EDUCATION BALI. Maksimal ${MAX_RADIUS_METERS} meter.`;
       }
       if (!photoFile) {
         newErrors.photo = "Foto wajib diupload untuk check-in.";
@@ -419,7 +419,7 @@ export function AbsensiForm({
       }
       // Jika lokasi diambil, validasi radius
       if (locationFetched && location.distance !== null && location.distance !== undefined && location.distance > MAX_RADIUS_METERS) {
-        newErrors.location = `Jarak Anda ${location.distance.toFixed(0)} meter dari PT. CENTRAL SAGA MANDALA. Maksimal ${MAX_RADIUS_METERS} meter.`;
+        newErrors.location = `Jarak Anda ${location.distance.toFixed(0)} meter dari SHINE EDUCATION BALI. Maksimal ${MAX_RADIUS_METERS} meter.`;
       }
     }
 
@@ -645,7 +645,7 @@ export function AbsensiForm({
                         id="manual_lat"
                         type="number"
                         step="any"
-                        placeholder="-8.549553"
+                        placeholder="-8.5207971"
                         value={manualLat}
                         onChange={(e) => setManualLat(e.target.value)}
                         disabled={isSubmitting || isLoading}
@@ -657,7 +657,7 @@ export function AbsensiForm({
                         id="manual_lon"
                         type="number"
                         step="any"
-                        placeholder="115.124725"
+                        placeholder="115.1378314"
                         value={manualLon}
                         onChange={(e) => setManualLon(e.target.value)}
                         disabled={isSubmitting || isLoading}
@@ -690,7 +690,7 @@ export function AbsensiForm({
                           "mt-1 font-medium",
                           location.distance > MAX_RADIUS_METERS ? "text-destructive" : "text-green-600"
                         )}>
-                          Jarak dari PT. CENTRAL SAGA MANDALA: {location.distance.toFixed(0)} meter
+                          Jarak dari SHINE EDUCATION BALI: {location.distance.toFixed(0)} meter
                           {location.distance > MAX_RADIUS_METERS && (
                             <span className="ml-1">(Melebihi maksimal {MAX_RADIUS_METERS} meter)</span>
                           )}
@@ -702,7 +702,7 @@ export function AbsensiForm({
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>
-                        Lokasi Anda terlalu jauh dari PT. CENTRAL SAGA MANDALA. Maksimal {MAX_RADIUS_METERS} meter.
+                        Lokasi Anda terlalu jauh dari SHINE EDUCATION BALI. Maksimal {MAX_RADIUS_METERS} meter.
                       </AlertDescription>
                     </Alert>
                   )}

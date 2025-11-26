@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Users,
   GraduationCap,
-  Settings,
   Shield,
   Home,
   CalendarDays,
@@ -13,6 +12,7 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
+  UserCircle,
 } from "lucide-react"
 
 import {
@@ -31,6 +31,7 @@ import {
 import { useAuth } from "@/hooks/use-auth"
 import { LogOut } from "lucide-react"
 import { toast } from "sonner"
+import Link from "next/link"
 
 // Navigation data untuk aplikasi SIK - Shine Education Bali
 type NavItem = {
@@ -56,7 +57,7 @@ const allNavItems: NavItem[] = [
     title: "Pengguna",
     url: "/dashboard/users",
     icon: Users,
-    roles: ["Admin"],
+    roles: ["Admin", "Owner"],
     items: [
       {
         title: "Semua Pengguna",
@@ -180,30 +181,10 @@ const allNavItems: NavItem[] = [
       },
     ],
   },
-  {
-    title: "Pengaturan",
-    url: "/dashboard/settings",
-    icon: Settings,
-    roles: ["Admin"],
-    items: [
-      {
-        title: "Umum",
-        url: "/dashboard/settings/general",
-      },
-      {
-        title: "Akun",
-        url: "/dashboard/settings/account",
-      },
-      {
-        title: "Keamanan",
-        url: "/dashboard/settings/security",
-      },
-    ],
-  },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { hasRole, loading, logout, user } = useAuth();
+  const { hasRole, hasPermission, loading, logout, user } = useAuth();
   
   // State untuk tracking menu yang terbuka
   const [openSubMenus, setOpenSubMenus] = React.useState<Set<string>>(new Set());
@@ -326,7 +307,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       }`}
                     >
                       <SidebarMenuSub className="ml-0 border-l-0 px-1.5 mt-1">
-                        {item.items!.map((subItem) => (
+                        {item.items!.filter((subItem) => {
+                          // Filter submenu "Ajukan Realisasi Sesi" - hanya tampilkan jika user memiliki permission
+                          if (subItem.title === "Ajukan Realisasi Sesi") {
+                            return hasPermission('mengajukan realisasi sesi') || hasPermission('mengelola realisasi sesi');
+                          }
+                          return true;
+                        }).map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton asChild isActive={subItem.isActive || false}>
                               <a href={subItem.url}>{subItem.title}</a>
@@ -374,6 +361,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <div className="truncate">{user.email}</div>
                       </div>
                     </div>
+                    <SidebarMenuButton
+                      asChild
+                      className="w-full justify-start rounded-none border-b border-sidebar-border"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <Link href="/dashboard/account">
+                        <UserCircle className="size-4" />
+                        <span>Akun</span>
+                      </Link>
+                    </SidebarMenuButton>
                     <SidebarMenuButton
                       onClick={async () => {
                         try {

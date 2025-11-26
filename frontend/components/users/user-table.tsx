@@ -22,10 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/types/user";
-import { Pencil, Trash2, Users } from "lucide-react";
+import { Pencil, Trash2, Users, AlertTriangle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 
 interface UserTableProps {
   users: User[];
+  allUsers?: User[]; // Semua users untuk validasi (termasuk yang tidak terfilter)
   loading?: boolean;
   onDelete?: (id: number | string) => Promise<void>;
   className?: string;
@@ -33,15 +36,79 @@ interface UserTableProps {
 
 export function UserTable({
   users,
+  allUsers,
   loading = false,
   onDelete,
   className,
 }: UserTableProps) {
+  const router = useRouter();
+  const { user: currentUser } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [alertDialogOpen, setAlertDialogOpen] = React.useState(false);
   const [deletingUser, setDeletingUser] = React.useState<User | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
+  // Helper function untuk cek apakah user adalah Admin atau Owner
+  const isAdminOrOwner = (user: User): boolean => {
+    if (!user.roles || user.roles.length === 0) return false;
+    return user.roles.some(
+      (role) => role.toLowerCase() === "admin" || role.toLowerCase() === "owner"
+    );
+  };
+
+  // Helper function untuk menghitung jumlah Admin/Owner
+  const countAdminOwner = (usersList: User[]): number => {
+    return usersList.filter((user) => isAdminOrOwner(user)).length;
+  };
+
+  // Helper function untuk cek apakah button delete harus disabled
+  const isDeleteDisabled = (user: User): boolean => {
+    if (!currentUser) return true;
+    
+    // User tidak bisa menghapus akun mereka sendiri
+    if (currentUser.id === user.id) {
+      return true;
+    }
+    
+    // Cek apakah current user adalah Admin atau Owner
+    const currentIsAdmin = currentUser.roles?.some(
+      (role) => role.toLowerCase() === "admin"
+    ) ?? false;
+    const currentIsOwner = currentUser.roles?.some(
+      (role) => role.toLowerCase() === "owner"
+    ) ?? false;
+    
+    // Admin tidak bisa menghapus Admin atau Owner
+    if (currentIsAdmin && isAdminOrOwner(user)) {
+      return true;
+    }
+    // Owner bisa menghapus Admin (tidak ada restriksi)
+    
+    return false;
+  };
+
   const handleDeleteClick = (user: User) => {
+    // Validasi: jika button disabled, jangan buka dialog
+    if (isDeleteDisabled(user)) {
+      return;
+    }
+    
+    // Gunakan allUsers jika tersedia, jika tidak gunakan users
+    const usersForValidation = allUsers || users;
+    
+    // Cek apakah user yang akan dihapus adalah Admin/Owner
+    if (isAdminOrOwner(user)) {
+      const adminOwnerCount = countAdminOwner(usersForValidation);
+      
+      // Jika hanya ada 1 Admin/Owner, tampilkan alert khusus
+      if (adminOwnerCount <= 1) {
+        setDeletingUser(user);
+        setAlertDialogOpen(true);
+        return;
+      }
+    }
+    
+    // Jika bukan Admin/Owner terakhir, tampilkan dialog konfirmasi biasa
     setDeletingUser(user);
     setDeleteDialogOpen(true);
   };
@@ -182,8 +249,10 @@ export function UserTable({
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteClick(user)}
+                        disabled={isDeleteDisabled(user)}
+                        className={isDeleteDisabled(user) ? "opacity-50 cursor-not-allowed" : ""}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className={`h-4 w-4 ${isDeleteDisabled(user) ? "text-muted-foreground" : "text-destructive"}`} />
                         <span className="sr-only">Hapus</span>
                       </Button>
                     )}
@@ -222,6 +291,44 @@ export function UserTable({
               disabled={isDeleting}
             >
               {isDeleting ? "Menghapus..." : "Hapus"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alert Dialog untuk Admin/Owner Terakhir */}
+      <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <DialogTitle>Tidak Dapat Menghapus Admin/Owner</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              Pengguna &quot;{deletingUser?.name}&quot; adalah Admin/Owner terakhir dalam sistem.
+              Sistem memerlukan setidaknya satu akun Admin atau Owner untuk berfungsi dengan baik.
+              <br /><br />
+              Untuk menghapus pengguna ini, Anda harus membuat akun Admin atau Owner baru terlebih dahulu.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAlertDialogOpen(false);
+                setDeletingUser(null);
+              }}
+            >
+              Tutup
+            </Button>
+            <Button
+              onClick={() => {
+                setAlertDialogOpen(false);
+                setDeletingUser(null);
+                router.push("/dashboard/users/create");
+              }}
+            >
+              Buat Admin/Owner Baru
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -136,6 +136,46 @@ class UserService extends BaseService implements UserServiceInterface
             abort(403, 'You do not have permission to delete users.');
         }
 
+        // Get current authenticated user
+        $currentUser = auth()->user();
+        if (!$currentUser) {
+            abort(401, 'User not authenticated.');
+        }
+        $currentUser->load('roles');
+
+        // Get user yang akan dihapus
+        $user = $this->getById($id);
+        $user->load('roles');
+
+        // Validasi 1: User tidak bisa menghapus akun mereka sendiri
+        if ($currentUser->id == $user->id) {
+            abort(422, 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        // Cek apakah user yang akan dihapus memiliki role Admin atau Owner
+        $targetIsAdminOrOwner = $user->hasRole(['Admin', 'Owner']);
+        
+        // Cek apakah current user adalah Admin atau Owner
+        $currentIsAdmin = $currentUser->hasRole('Admin');
+        $currentIsOwner = $currentUser->hasRole('Owner');
+        
+        // Validasi 2: Admin tidak bisa menghapus Admin atau Owner
+        if ($currentIsAdmin && $targetIsAdminOrOwner) {
+            abort(422, 'Admin tidak dapat menghapus akun Admin atau Owner.');
+        }
+        // Owner bisa menghapus Admin (tidak ada restriksi khusus)
+
+        // Validasi 3: Cek apakah user yang akan dihapus adalah Admin/Owner terakhir
+        if ($targetIsAdminOrOwner) {
+            // Hitung jumlah user lain yang memiliki role Admin atau Owner
+            $adminOwnerCount = User::role(['Admin', 'Owner'])->count();
+
+            // Jika hanya ada 1 Admin/Owner, tidak boleh dihapus
+            if ($adminOwnerCount <= 1) {
+                abort(422, 'Tidak dapat menghapus Admin/Owner terakhir. Sistem memerlukan setidaknya satu akun Admin atau Owner. Silakan buat akun Admin/Owner baru terlebih dahulu.');
+            }
+        }
+
         return parent::delete($id);
     }
 }

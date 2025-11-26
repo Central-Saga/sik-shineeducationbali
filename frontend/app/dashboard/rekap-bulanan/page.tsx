@@ -387,7 +387,7 @@ export default function RekapBulananPage() {
           </div>
 
           <div className="flex gap-4">
-            <div className="flex-1">
+            <div className="w-[200px]">
               <Input
                 type="month"
                 placeholder="Filter periode (YYYY-MM)"

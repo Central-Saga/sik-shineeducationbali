@@ -74,6 +74,7 @@ class RolePermissionSeeder extends Seeder
         $owner = Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web']);
         $ownerPermissions = [
             'mengelola users',
+            'mengelola roles',
             'mengelola rekap bulanan',
             'mengelola gaji',
             'mengelola pembayaran gaji',
@@ -111,7 +112,6 @@ class RolePermissionSeeder extends Seeder
             'melakukan absensi',
             'melihat gaji',
             'melakukan cuti',
-            'mengajukan realisasi sesi',
         ];
         $karyawan->givePermissionTo($karyawanPermissions);
         $this->command->info('✅ Created Karyawan role with ' . count($karyawanPermissions) . ' permissions');

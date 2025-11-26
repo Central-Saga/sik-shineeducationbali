@@ -24,9 +24,43 @@ import { createUser } from "@/lib/api/users";
 import type { UserFormData } from "@/lib/types/user";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const { hasRole, loading } = useAuth();
+
+  // Validasi role - redirect jika tidak memiliki akses
+  React.useEffect(() => {
+    if (!loading && !hasRole('Admin') && !hasRole('Owner')) {
+      toast.error("Anda tidak memiliki akses untuk menambah pengguna");
+      router.push("/dashboard/users");
+    }
+  }, [hasRole, loading, router]);
+
+  // Tampilkan loading jika masih loading
+  if (loading) {
+    return (
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "19rem",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex items-center justify-center h-screen">
+            <p>Memuat...</p>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  if (!hasRole('Admin') && !hasRole('Owner')) {
+    return null; // Akan di-redirect oleh useEffect
+  }
 
   const handleSubmit = async (data: UserFormData) => {
     try {

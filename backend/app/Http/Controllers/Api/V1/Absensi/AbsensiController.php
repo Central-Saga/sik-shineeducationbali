@@ -210,7 +210,7 @@ class AbsensiController extends BaseApiController
             // Use current time for check-in/check-out
             $currentTime = now()->format('Y-m-d H:i:s');
             
-            // Koordinat PT. CENTRAL SAGA MANDALA: -8.549553, 115.124725
+            // Koordinat SHINE EDUCATION BALI: -8.5207971, 115.1378314
             // Radius maksimal: 50 meter
             $logData = [
                 'absensi_id' => $absensi->id,
@@ -221,8 +221,8 @@ class AbsensiController extends BaseApiController
                 'akurasi' => $akurasi ?? 0,
                 'foto_selfie' => $fotoPath,
                 'sumber' => $absensi->sumber_absen ?? 'web',
-                'latitude_referensi' => -8.549553,
-                'longitude_referensi' => 115.124725,
+                'latitude_referensi' => -8.5207971,
+                'longitude_referensi' => 115.1378314,
                 'radius_max' => 50,
             ];
 
