@@ -52,9 +52,9 @@ export function SesiKerjaTable({
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      aktif: 'default',
-      'non aktif': 'secondary',
+    const variants: Record<string, "success" | "danger" | "outline"> = {
+      aktif: 'success',
+      'non aktif': 'danger',
     };
     return variants[status] || 'outline';
   };

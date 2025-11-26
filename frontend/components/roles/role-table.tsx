@@ -130,7 +130,7 @@ export function RoleTable({
           <p className="text-sm text-muted-foreground mb-4">
             Mulai dengan membuat peran baru.
           </p>
-          <Button asChild>
+          <Button asChild variant="success">
             <Link href="/dashboard/roles/create">Buat Peran</Link>
           </Button>
         </div>

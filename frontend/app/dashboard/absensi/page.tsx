@@ -183,7 +183,7 @@ export default function AbsensiPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <HasCan role={["Admin", "Owner"]}>
-                <Button asChild>
+                <Button asChild variant="success">
                   <a href="/dashboard/absensi/create">
                     <Plus className="h-4 w-4 mr-2" />
                     Tambah Absensi

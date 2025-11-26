@@ -231,7 +231,7 @@ export default function RealisasiSesiPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <HasCan permission="mengelola realisasi sesi">
-                <Button asChild>
+                <Button asChild variant="success">
                   <a href="/dashboard/realisasi-sesi/create">
                     <Plus className="h-4 w-4 mr-2" />
                     Tambah Realisasi Sesi

@@ -746,7 +746,7 @@ export default function GajiDetailPage() {
                   >
                     Batal
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button type="submit" variant="success" disabled={isSubmitting}>
                     {isSubmitting
                       ? "Menyimpan..."
                       : editingPembayaran

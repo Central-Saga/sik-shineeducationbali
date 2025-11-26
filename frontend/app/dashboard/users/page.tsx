@@ -94,7 +94,7 @@ export default function UsersPage() {
                 Kelola pengguna dan peran mereka
               </p>
             </div>
-            <Button asChild>
+            <Button asChild variant="success">
               <Link href="/dashboard/users/create">
                 <Plus className="h-4 w-4" />
                 Tambah Pengguna

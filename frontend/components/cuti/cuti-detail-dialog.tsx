@@ -63,10 +63,10 @@ export function CutiDetailDialog({
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    const variants: Record<string, "success" | "danger" | "secondary" | "outline"> = {
       diajukan: 'secondary',
-      disetujui: 'default',
-      ditolak: 'destructive',
+      disetujui: 'success',
+      ditolak: 'danger',
     };
     return variants[status] || 'outline';
   };

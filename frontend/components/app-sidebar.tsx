@@ -32,6 +32,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { LogOut } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 // Navigation data untuk aplikasi SIK - Shine Education Bali
 type NavItem = {
@@ -185,6 +186,7 @@ const allNavItems: NavItem[] = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { hasRole, hasPermission, loading, logout, user } = useAuth();
+  const pathname = usePathname();
   
   // State untuk tracking menu yang terbuka
   const [openSubMenus, setOpenSubMenus] = React.useState<Set<string>>(new Set());
@@ -265,12 +267,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               const Icon = item.icon || Home
               const hasSubMenu = item.items && item.items.length > 0
               const isSubMenuOpen = openSubMenus.has(item.title)
+              const isActive = pathname === item.url || (hasSubMenu && item.items?.some(subItem => pathname === subItem.url))
               
               return (
                 <SidebarMenuItem key={item.title}>
                   {hasSubMenu ? (
                     <div className="flex items-center">
-                      <SidebarMenuButton asChild className="font-medium transition-all duration-200 flex-1">
+                      <SidebarMenuButton asChild isActive={isActive} className="font-medium transition-all duration-200 flex-1">
                         <a href={item.url} className="group flex items-center gap-2">
                           <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-sidebar-accent-foreground" />
                           <span className="transition-colors duration-200 group-hover:text-sidebar-primary flex-1">{item.title}</span>
@@ -293,7 +296,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       </button>
                     </div>
                   ) : (
-                    <SidebarMenuButton asChild className="font-medium transition-all duration-200">
+                    <SidebarMenuButton asChild isActive={isActive} className="font-medium transition-all duration-200">
                       <a href={item.url} className="group flex items-center gap-2">
                         <Icon className="size-4 text-sidebar-primary transition-colors duration-200 group-hover:text-sidebar-accent-foreground" />
                         <span className="transition-colors duration-200 group-hover:text-sidebar-primary">{item.title}</span>
@@ -313,13 +316,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             return hasPermission('mengajukan realisasi sesi') || hasPermission('mengelola realisasi sesi');
                           }
                           return true;
-                        }).map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={subItem.isActive || false}>
-                              <a href={subItem.url}>{subItem.title}</a>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
+                        }).map((subItem) => {
+                          const isSubItemActive = pathname === subItem.url;
+                          return (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton asChild isActive={isSubItemActive}>
+                                <a href={subItem.url}>{subItem.title}</a>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
                       </SidebarMenuSub>
                     </div>
                   )}
@@ -381,7 +387,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           toast.error("Gagal logout");
                         }
                       }}
-                      className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-none"
+                      className="w-full justify-start text-[#EF4444] hover:text-[#EF4444] hover:bg-[#EF4444]/10 rounded-none"
                     >
                       <LogOut className="size-4" />
                       <span>Logout</span>

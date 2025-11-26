@@ -25,6 +25,8 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -59,7 +61,9 @@
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.65 0.2 25);
+  --success: oklch(0.7 0.15 165);
+  --success-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -72,8 +76,8 @@
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-accent: oklch(0.45 0.2 25);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
@@ -93,7 +97,9 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: oklch(0.7 0.2 25);
+  --success: oklch(0.65 0.15 165);
+  --success-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -106,7 +112,7 @@
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: oklch(0.5 0.2 25);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
@@ -118,5 +124,66 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Sidebar active state styling - menggunakan merah soft #D32F2F */
+  [data-sidebar="menu-button"][data-active="true"],
+  [data-sidebar="menu-sub-button"][data-active="true"] {
+    background-color: #D32F2F !important;
+    color: white !important;
+  }
+  
+  /* Memastikan semua elemen di dalam active state berwarna putih */
+  [data-sidebar="menu-button"][data-active="true"] *,
+  [data-sidebar="menu-sub-button"][data-active="true"] * {
+    color: white !important;
+  }
+  
+  [data-sidebar="menu-button"][data-active="true"] svg,
+  [data-sidebar="menu-sub-button"][data-active="true"] svg {
+    color: white !important;
+  }
+  
+  [data-sidebar="menu-button"][data-active="true"] span,
+  [data-sidebar="menu-sub-button"][data-active="true"] span {
+    color: white !important;
+  }
+  
+  /* Hover state - konsisten dengan active state menggunakan #D32F2F */
+  [data-sidebar="menu-button"]:not([data-active="true"]):hover,
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):hover {
+    background-color: #D32F2F !important;
+    color: white !important;
+  }
+  
+  [data-sidebar="menu-button"]:not([data-active="true"]):hover *,
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):hover * {
+    color: white !important;
+  }
+  
+  [data-sidebar="menu-button"]:not([data-active="true"]):hover svg,
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):hover svg {
+    color: white !important;
+  }
+  
+  [data-sidebar="menu-button"]:not([data-active="true"]):hover span,
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):hover span {
+    color: white !important;
+  }
+  
+  /* Memastikan teks non-active terlihat jelas dengan warna gelap */
+  [data-sidebar="menu-button"]:not([data-active="true"]):not(:hover),
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):not(:hover) {
+    color: oklch(0.145 0 0) !important;
+  }
+  
+  [data-sidebar="menu-button"]:not([data-active="true"]):not(:hover) svg,
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):not(:hover) svg {
+    color: oklch(0.145 0 0) !important;
+  }
+  
+  [data-sidebar="menu-button"]:not([data-active="true"]):not(:hover) span,
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):not(:hover) span {
+    color: oklch(0.145 0 0) !important;
   }
 }

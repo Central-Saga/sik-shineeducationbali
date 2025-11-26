@@ -618,6 +618,7 @@ export function RealisasiSesiForm({
         )}
         <Button
           type="submit"
+          variant="success"
           disabled={isSubmitting || isLoading}
         >
           {isSubmitting || isLoading ? (

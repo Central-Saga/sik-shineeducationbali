@@ -777,7 +777,7 @@ export function AbsensiForm({
               Batal
             </Button>
           )}
-          <Button type="submit" disabled={isSubmitting || isLoading || !employee}>
+          <Button type="submit" variant="success" disabled={isSubmitting || isLoading || !employee}>
             {isSubmitting ? "Menyimpan..." : submitLabel}
           </Button>
         </div>

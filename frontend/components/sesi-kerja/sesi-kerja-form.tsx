@@ -436,6 +436,7 @@ export function SesiKerjaForm({
         )}
         <Button
           type="submit"
+          variant="success"
           disabled={isSubmitting || isLoading}
         >
           {isSubmitting || isLoading ? (

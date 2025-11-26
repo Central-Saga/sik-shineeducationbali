@@ -278,7 +278,7 @@ export function UserForm({
             Batal
           </Button>
         )}
-        <Button type="submit" disabled={isSubmitting || isLoading}>
+        <Button type="submit" variant="success" disabled={isSubmitting || isLoading}>
           {isSubmitting ? "Menyimpan..." : submitLabel}
         </Button>
       </div>

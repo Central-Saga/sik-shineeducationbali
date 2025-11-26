@@ -165,7 +165,7 @@ export function LoginForm({
                 )}
               </Field>
               <Field>
-                <Button type="submit" disabled={isLoading} className="w-full">
+                <Button type="submit" variant="gradient" disabled={isLoading} className="w-full">
                   {isLoading ? "Masuk..." : "Masuk"}
                 </Button>
               </Field>

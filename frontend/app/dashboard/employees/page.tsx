@@ -148,7 +148,7 @@ export default function EmployeesPage() {
                   <SelectItem value="freelance">Freelance</SelectItem>
                 </SelectContent>
               </Select>
-              <Button asChild>
+              <Button asChild variant="success">
                 <Link href="/dashboard/employees/create">
                   <Plus className="h-4 w-4 mr-2" />
                   Tambah Karyawan

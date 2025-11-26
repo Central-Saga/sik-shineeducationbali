@@ -39,9 +39,9 @@ export function AbsensiTable({
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      hadir: 'default',
-      izin: 'secondary',
+    const variants: Record<string, "success" | "danger" | "outline"> = {
+      hadir: 'success',
+      izin: 'danger',
     };
     return variants[status] || 'outline';
   };

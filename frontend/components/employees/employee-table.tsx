@@ -44,7 +44,7 @@ export function EmployeeTable({
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    return status === 'aktif' ? 'default' : 'secondary';
+    return status === 'aktif' ? 'success' : 'danger';
   };
 
   const getStatusLabel = (status: string) => {

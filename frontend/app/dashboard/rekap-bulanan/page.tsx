@@ -369,7 +369,7 @@ export default function RekapBulananPage() {
               )}
               <HasCan permission="mengelola gaji">
                 <Button
-                  variant="outline"
+                  variant="gradient"
                   onClick={handleGenerateAllGaji}
                   disabled={rekapBulanan.length === 0 || isGeneratingGaji === -1}
                 >
@@ -378,7 +378,7 @@ export default function RekapBulananPage() {
                 </Button>
               </HasCan>
               <HasCan permission="mengelola rekap bulanan">
-                <Button onClick={() => setGenerateDialogOpen(true)}>
+                <Button variant="gradient" onClick={() => setGenerateDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Generate Rekap
                 </Button>

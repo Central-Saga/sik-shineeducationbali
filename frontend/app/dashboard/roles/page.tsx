@@ -95,7 +95,7 @@ export default function RolesPage() {
                 Kelola peran dan izin mereka
               </p>
             </div>
-            <Button asChild>
+            <Button asChild variant="success">
               <Link href="/dashboard/roles/create">
                 <Plus className="h-4 w-4" />
                 Buat Peran
