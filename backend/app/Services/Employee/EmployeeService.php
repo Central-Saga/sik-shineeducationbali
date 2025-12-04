@@ -50,7 +50,10 @@ class EmployeeService extends BaseService implements EmployeeServiceInterface
             abort(403, 'You do not have permission to view employees.');
         }
 
-        return parent::getAll();
+        // Exclude employees with owner or admin roles
+        return Employee::whereDoesntHave('user.roles', function ($query) {
+            $query->whereIn('name', ['Owner', 'Admin']);
+        })->get();
     }
 
     /**

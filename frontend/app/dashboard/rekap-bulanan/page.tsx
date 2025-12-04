@@ -22,7 +22,7 @@ import { useGaji } from "@/hooks/use-gaji";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { toast } from "sonner";
-import { Calendar, Plus, DollarSign, Printer, Download } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, DollarSign, Printer, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -44,6 +51,24 @@ import {
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
+function formatMonth(date: Date | undefined): string {
+  if (!date) {
+    return "";
+  }
+  return date.toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function parseMonth(monthString: string): Date | undefined {
+  if (!monthString || !monthString.match(/^\d{4}-\d{2}$/)) {
+    return undefined;
+  }
+  const [year, month] = monthString.split("-");
+  return new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+}
+
 export default function RekapBulananPage() {
   const [periodeFilter, setPeriodeFilter] = React.useState<string>("");
   const [generateDialogOpen, setGenerateDialogOpen] = React.useState(false);
@@ -52,6 +77,49 @@ export default function RekapBulananPage() {
   );
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isGeneratingGaji, setIsGeneratingGaji] = React.useState<number | null>(null);
+
+  // Date picker state for periode filter
+  const [periodeFilterPickerOpen, setPeriodeFilterPickerOpen] = React.useState(false);
+  const [periodeFilterDate, setPeriodeFilterDate] = React.useState<Date | undefined>(() => {
+    return periodeFilter ? parseMonth(periodeFilter) : undefined;
+  });
+  const [periodeFilterMonth, setPeriodeFilterMonth] = React.useState<Date | undefined>(periodeFilterDate || new Date());
+  const [periodeFilterValue, setPeriodeFilterValue] = React.useState(() => formatMonth(periodeFilterDate));
+
+  // Date picker state for periode input in dialog
+  const [periodeInputPickerOpen, setPeriodeInputPickerOpen] = React.useState(false);
+  const [periodeInputDate, setPeriodeInputDate] = React.useState<Date | undefined>(() => {
+    return periodeInput ? parseMonth(periodeInput) : new Date();
+  });
+  const [periodeInputMonth, setPeriodeInputMonth] = React.useState<Date | undefined>(periodeInputDate);
+  const [periodeInputValue, setPeriodeInputValue] = React.useState(() => formatMonth(periodeInputDate));
+
+  // Sync periodeFilter with date picker
+  React.useEffect(() => {
+    if (periodeFilter) {
+      const newDate = parseMonth(periodeFilter);
+      if (newDate) {
+        setPeriodeFilterDate(newDate);
+        setPeriodeFilterMonth(newDate);
+        setPeriodeFilterValue(formatMonth(newDate));
+      }
+    } else {
+      setPeriodeFilterDate(undefined);
+      setPeriodeFilterValue("");
+    }
+  }, [periodeFilter]);
+
+  // Sync periodeInput with date picker
+  React.useEffect(() => {
+    if (periodeInput) {
+      const newDate = parseMonth(periodeInput);
+      if (newDate) {
+        setPeriodeInputDate(newDate);
+        setPeriodeInputMonth(newDate);
+        setPeriodeInputValue(formatMonth(newDate));
+      }
+    }
+  }, [periodeInput]);
 
   const params = React.useMemo(() => {
     const filters: Record<string, string> = {};
@@ -388,12 +456,71 @@ export default function RekapBulananPage() {
 
           <div className="flex gap-4">
             <div className="w-[200px]">
-              <Input
-                type="month"
-                placeholder="Filter periode (YYYY-MM)"
-                value={periodeFilter}
-                onChange={(e) => setPeriodeFilter(e.target.value)}
-              />
+              <div className="relative flex gap-2">
+                <Input
+                  placeholder="Filter periode (YYYY-MM)"
+                  value={periodeFilterValue}
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    setPeriodeFilterValue(inputValue);
+                    // Try to parse if user types YYYY-MM format
+                    const parsed = parseMonth(inputValue);
+                    if (parsed) {
+                      setPeriodeFilterDate(parsed);
+                      setPeriodeFilterMonth(parsed);
+                      const year = parsed.getFullYear();
+                      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+                      setPeriodeFilter(`${year}-${month}`);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setPeriodeFilterPickerOpen(true);
+                    }
+                  }}
+                  className="bg-background pr-10"
+                />
+                <Popover open={periodeFilterPickerOpen} onOpenChange={setPeriodeFilterPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                    >
+                      <CalendarIcon className="size-3.5" />
+                      <span className="sr-only">Pilih periode</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto overflow-hidden p-0"
+                    align="start"
+                    alignOffset={-8}
+                    sideOffset={10}
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={periodeFilterDate}
+                      captionLayout="dropdown"
+                      fromYear={2020}
+                      toYear={2030}
+                      month={periodeFilterMonth}
+                      onMonthChange={setPeriodeFilterMonth}
+                      onSelect={(selectedDate) => {
+                        if (selectedDate) {
+                          setPeriodeFilterDate(selectedDate);
+                          setPeriodeFilterMonth(selectedDate);
+                          setPeriodeFilterValue(formatMonth(selectedDate));
+                          setPeriodeFilterPickerOpen(false);
+                          const year = selectedDate.getFullYear();
+                          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                          setPeriodeFilter(`${year}-${month}`);
+                        }
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
 
@@ -477,12 +604,73 @@ export default function RekapBulananPage() {
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="periode">Periode (YYYY-MM)</Label>
-                  <Input
-                    id="periode"
-                    type="month"
-                    value={periodeInput}
-                    onChange={(e) => setPeriodeInput(e.target.value)}
-                  />
+                  <div className="relative flex gap-2 max-w-xs">
+                    <Input
+                      id="periode"
+                      value={periodeInputValue}
+                      placeholder="Pilih periode"
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        setPeriodeInputValue(inputValue);
+                        // Try to parse if user types YYYY-MM format
+                        const parsed = parseMonth(inputValue);
+                        if (parsed) {
+                          setPeriodeInputDate(parsed);
+                          setPeriodeInputMonth(parsed);
+                          const year = parsed.getFullYear();
+                          const month = String(parsed.getMonth() + 1).padStart(2, '0');
+                          setPeriodeInput(`${year}-${month}`);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          setPeriodeInputPickerOpen(true);
+                        }
+                      }}
+                      className={cn("bg-background pr-10")}
+                    />
+                    <Popover open={periodeInputPickerOpen} onOpenChange={setPeriodeInputPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="periode-picker"
+                          variant="ghost"
+                          type="button"
+                          className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                        >
+                          <CalendarIcon className="size-3.5" />
+                          <span className="sr-only">Pilih periode</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto overflow-hidden p-0"
+                        align="end"
+                        alignOffset={-8}
+                        sideOffset={10}
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={periodeInputDate}
+                          captionLayout="dropdown"
+                          fromYear={2020}
+                          toYear={2030}
+                          month={periodeInputMonth}
+                          onMonthChange={setPeriodeInputMonth}
+                          onSelect={(selectedDate) => {
+                            if (selectedDate) {
+                              setPeriodeInputDate(selectedDate);
+                              setPeriodeInputMonth(selectedDate);
+                              setPeriodeInputValue(formatMonth(selectedDate));
+                              setPeriodeInputPickerOpen(false);
+                              const year = selectedDate.getFullYear();
+                              const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                              setPeriodeInput(`${year}-${month}`);
+                            }
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
               <DialogFooter>

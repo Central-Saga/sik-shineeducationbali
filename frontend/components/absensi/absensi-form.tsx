@@ -17,14 +17,31 @@ import type { Employee } from "@/lib/types/employee";
 import { getMyEmployee } from "@/lib/api/employees";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { MapPin, Loader2, AlertCircle } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, CalendarIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Koordinat SHINE EDUCATION BALI
 // Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
 const SHINE_EDUCATION_BALI_LAT = -8.6728589;
 const SHINE_EDUCATION_BALI_LON = 115.2265453;
 const MAX_RADIUS_METERS = 100;
+
+function formatDate(date: Date | undefined) {
+  if (!date) {
+    return "";
+  }
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 interface AbsensiFormProps {
   initialData?: Partial<AbsensiFormData> & {
@@ -89,6 +106,12 @@ export function AbsensiForm({
   const [loadingEmployee, setLoadingEmployee] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Date picker state for tanggal (read-only, today's date)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [tanggalDate] = React.useState<Date>(today);
+  const tanggalValue = formatDate(tanggalDate);
 
   // Auto-fill karyawan_id dari user yang login
   React.useEffect(() => {
@@ -532,14 +555,46 @@ export function AbsensiForm({
             {/* Tanggal - Read Only (Hari Ini) */}
             <div className="space-y-2">
               <Label htmlFor="tanggal">Tanggal</Label>
-              <Input
-                id="tanggal"
-                type="date"
-                value={new Date().toISOString().split('T')[0]}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
+              <div className="relative flex gap-2 max-w-xs">
+                <Input
+                  id="tanggal"
+                  value={tanggalValue}
+                  placeholder="Tanggal"
+                  className="bg-muted pr-10"
+                  readOnly
+                  disabled
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="tanggal-picker"
+                      variant="ghost"
+                      type="button"
+                      className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                      disabled
+                    >
+                      <CalendarIcon className="size-3.5" />
+                      <span className="sr-only">Tanggal</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto overflow-hidden p-0"
+                    align="end"
+                    alignOffset={-8}
+                    sideOffset={10}
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={tanggalDate}
+                      disabled
+                      className="pointer-events-none opacity-50"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tanggal otomatis diatur ke hari ini
+              </p>
             </div>
 
             {/* Status Kehadiran - Read Only */}

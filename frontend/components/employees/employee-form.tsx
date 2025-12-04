@@ -20,6 +20,13 @@ import {
 import { Label } from "@/components/ui/label";
 import type { EmployeeFormData } from "@/lib/types/employee";
 import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface EmployeeFormProps {
   initialData?: Partial<EmployeeFormData> & {
@@ -37,6 +44,24 @@ interface EmployeeFormProps {
   submitLabel?: string;
   className?: string;
   isEditing?: boolean;
+}
+
+function formatDate(date: Date | undefined) {
+  if (!date) {
+    return "";
+  }
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function isValidDate(date: Date | undefined) {
+  if (!date) {
+    return false;
+  }
+  return !isNaN(date.getTime()) && date instanceof Date;
 }
 
 export function EmployeeForm({
@@ -66,6 +91,35 @@ export function EmployeeForm({
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Date picker state for tanggal_lahir
+  const [tanggalLahirPickerOpen, setTanggalLahirPickerOpen] = React.useState(false);
+  const [tanggalLahirDate, setTanggalLahirDate] = React.useState<Date | undefined>(() => {
+    if (initialData?.tanggal_lahir) {
+      const d = new Date(initialData.tanggal_lahir);
+      if (isValidDate(d)) {
+        return d;
+      }
+    }
+    return undefined;
+  });
+  const [tanggalLahirMonth, setTanggalLahirMonth] = React.useState<Date | undefined>(tanggalLahirDate);
+  const [tanggalLahirValue, setTanggalLahirValue] = React.useState(() => formatDate(tanggalLahirDate));
+
+  // Sync tanggal_lahir date state with formData
+  React.useEffect(() => {
+    if (formData.tanggal_lahir) {
+      const newDate = new Date(formData.tanggal_lahir);
+      if (!isNaN(newDate.getTime())) {
+        setTanggalLahirDate(newDate);
+        setTanggalLahirMonth(newDate);
+        setTanggalLahirValue(formatDate(newDate));
+      }
+    } else {
+      setTanggalLahirDate(undefined);
+      setTanggalLahirValue("");
+    }
+  }, [formData.tanggal_lahir]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -502,13 +556,88 @@ export function EmployeeForm({
           {/* Tanggal Lahir */}
           <div className="space-y-2">
             <Label htmlFor="tanggal_lahir">Tanggal Lahir</Label>
-            <Input
-              id="tanggal_lahir"
-              type="date"
-              value={formData.tanggal_lahir || ""}
-              onChange={(e) => handleChange("tanggal_lahir", e.target.value)}
-              disabled={isSubmitting || isLoading}
-            />
+            <div className="relative flex gap-2 max-w-xs">
+              <Input
+                id="tanggal_lahir"
+                value={tanggalLahirValue}
+                placeholder="Pilih tanggal lahir"
+                className={cn(
+                  "bg-background pr-10",
+                  errors.tanggal_lahir ? "border-destructive" : ""
+                )}
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  setTanggalLahirValue(inputValue);
+                  const parsedDate = new Date(inputValue);
+                  if (isValidDate(parsedDate)) {
+                    setTanggalLahirDate(parsedDate);
+                    setTanggalLahirMonth(parsedDate);
+                    const formattedDate = parsedDate.toISOString().split('T')[0];
+                    handleChange("tanggal_lahir", formattedDate);
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.tanggal_lahir;
+                      return newErrors;
+                    });
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setTanggalLahirPickerOpen(true);
+                  }
+                }}
+                aria-invalid={!!errors.tanggal_lahir}
+                disabled={isSubmitting || isLoading}
+              />
+              <Popover open={tanggalLahirPickerOpen} onOpenChange={setTanggalLahirPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="tanggal-lahir-picker"
+                    variant="ghost"
+                    type="button"
+                    className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                    disabled={isSubmitting || isLoading}
+                  >
+                    <CalendarIcon className="size-3.5" />
+                    <span className="sr-only">Pilih tanggal lahir</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="end"
+                  alignOffset={-8}
+                  sideOffset={10}
+                >
+                  <Calendar
+                    mode="single"
+                    selected={tanggalLahirDate}
+                    captionLayout="dropdown"
+                    fromYear={1950}
+                    toYear={new Date().getFullYear()}
+                    month={tanggalLahirMonth}
+                    onMonthChange={setTanggalLahirMonth}
+                    onSelect={(selectedDate) => {
+                      if (selectedDate) {
+                        setTanggalLahirDate(selectedDate);
+                        setTanggalLahirValue(formatDate(selectedDate));
+                        setTanggalLahirPickerOpen(false);
+                        const formattedDate = selectedDate.toISOString().split('T')[0];
+                        handleChange("tanggal_lahir", formattedDate);
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.tanggal_lahir;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            {errors.tanggal_lahir && (
+              <p className="text-sm text-destructive">{errors.tanggal_lahir}</p>
+            )}
           </div>
         </CardContent>
       </Card>

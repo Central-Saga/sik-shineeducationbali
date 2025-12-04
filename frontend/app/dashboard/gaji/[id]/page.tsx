@@ -52,9 +52,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, XCircle, CalendarIcon } from "lucide-react";
 import { HasCan } from "@/components/has-can";
 import type { PembayaranGaji, PembayaranGajiFormData, StatusPembayaran } from "@/lib/types/gaji";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+
+function formatDate(date: Date | undefined) {
+  if (!date) {
+    return "";
+  }
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function isValidDate(date: Date | undefined) {
+  if (!date) {
+    return false;
+  }
+  return !isNaN(date.getTime()) && date instanceof Date;
+}
 
 export default function GajiDetailPage() {
   const params = useParams();
@@ -82,6 +107,31 @@ export default function GajiDetailPage() {
     catatan: '',
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Date picker state for tanggal_transfer
+  const [tanggalTransferPickerOpen, setTanggalTransferPickerOpen] = React.useState(false);
+  const [tanggalTransferDate, setTanggalTransferDate] = React.useState<Date | undefined>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
+  const [tanggalTransferMonth, setTanggalTransferMonth] = React.useState<Date | undefined>(tanggalTransferDate);
+  const [tanggalTransferValue, setTanggalTransferValue] = React.useState(() => formatDate(tanggalTransferDate));
+
+  // Sync tanggal_transfer date state with formData
+  React.useEffect(() => {
+    if (formData.tanggal_transfer) {
+      const newDate = new Date(formData.tanggal_transfer);
+      if (!isNaN(newDate.getTime())) {
+        setTanggalTransferDate(newDate);
+        setTanggalTransferMonth(newDate);
+        setTanggalTransferValue(formatDate(newDate));
+      }
+    } else {
+      setTanggalTransferDate(undefined);
+      setTanggalTransferValue("");
+    }
+  }, [formData.tanggal_transfer]);
   
   // Use komponenGaji from gaji object if available, otherwise use hook
   const komponenGaji = gaji?.komponen_gaji && gaji.komponen_gaji.length > 0 
@@ -684,15 +734,72 @@ export default function GajiDetailPage() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="tanggal_transfer">Tanggal Transfer *</Label>
-                    <Input
-                      id="tanggal_transfer"
-                      type="date"
-                      value={formData.tanggal_transfer}
-                      onChange={(e) =>
-                        setFormData({ ...formData, tanggal_transfer: e.target.value })
-                      }
-                      required
-                    />
+                    <div className="relative flex gap-2 max-w-xs">
+                      <Input
+                        id="tanggal_transfer"
+                        value={tanggalTransferValue}
+                        placeholder="Pilih tanggal transfer"
+                        className={cn(
+                          "bg-background pr-10"
+                        )}
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          setTanggalTransferValue(inputValue);
+                          const parsedDate = new Date(inputValue);
+                          if (isValidDate(parsedDate)) {
+                            setTanggalTransferDate(parsedDate);
+                            setTanggalTransferMonth(parsedDate);
+                            const formattedDate = parsedDate.toISOString().split('T')[0];
+                            setFormData({ ...formData, tanggal_transfer: formattedDate });
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setTanggalTransferPickerOpen(true);
+                          }
+                        }}
+                        required
+                      />
+                      <Popover open={tanggalTransferPickerOpen} onOpenChange={setTanggalTransferPickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="tanggal-transfer-picker"
+                            variant="ghost"
+                            type="button"
+                            className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                          >
+                            <CalendarIcon className="size-3.5" />
+                            <span className="sr-only">Pilih tanggal transfer</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-auto overflow-hidden p-0"
+                          align="end"
+                          alignOffset={-8}
+                          sideOffset={10}
+                        >
+                          <Calendar
+                            mode="single"
+                            selected={tanggalTransferDate}
+                            captionLayout="dropdown"
+                            fromYear={2020}
+                            toYear={2030}
+                            month={tanggalTransferMonth}
+                            onMonthChange={setTanggalTransferMonth}
+                            onSelect={(selectedDate) => {
+                              if (selectedDate) {
+                                setTanggalTransferDate(selectedDate);
+                                setTanggalTransferValue(formatDate(selectedDate));
+                                setTanggalTransferPickerOpen(false);
+                                const formattedDate = selectedDate.toISOString().split('T')[0];
+                                setFormData({ ...formData, tanggal_transfer: formattedDate });
+                              }
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="status_pembayaran">Status Pembayaran</Label>

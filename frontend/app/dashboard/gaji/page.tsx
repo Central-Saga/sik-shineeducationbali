@@ -17,10 +17,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useGaji } from "@/hooks/use-gaji";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { DollarSign, Download, Printer } from "lucide-react";
+import { DollarSign, Download, Printer, CalendarIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -39,11 +47,52 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
+function formatMonth(date: Date | undefined): string {
+  if (!date) {
+    return "";
+  }
+  return date.toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function parseMonth(monthString: string): Date | undefined {
+  if (!monthString || !monthString.match(/^\d{4}-\d{2}$/)) {
+    return undefined;
+  }
+  const [year, month] = monthString.split("-");
+  return new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+}
+
 export default function GajiPage() {
   const [periodeFilter, setPeriodeFilter] = React.useState<string>("");
   const [tahunFilter, setTahunFilter] = React.useState<string>("");
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [updatingStatus, setUpdatingStatus] = React.useState<number | null>(null);
+
+  // Date picker state for periode filter
+  const [periodeFilterPickerOpen, setPeriodeFilterPickerOpen] = React.useState(false);
+  const [periodeFilterDate, setPeriodeFilterDate] = React.useState<Date | undefined>(() => {
+    return periodeFilter ? parseMonth(periodeFilter) : undefined;
+  });
+  const [periodeFilterMonth, setPeriodeFilterMonth] = React.useState<Date | undefined>(periodeFilterDate || new Date());
+  const [periodeFilterValue, setPeriodeFilterValue] = React.useState(() => formatMonth(periodeFilterDate));
+
+  // Sync periodeFilter with date picker
+  React.useEffect(() => {
+    if (periodeFilter) {
+      const newDate = parseMonth(periodeFilter);
+      if (newDate) {
+        setPeriodeFilterDate(newDate);
+        setPeriodeFilterMonth(newDate);
+        setPeriodeFilterValue(formatMonth(newDate));
+      }
+    } else {
+      setPeriodeFilterDate(undefined);
+      setPeriodeFilterValue("");
+    }
+  }, [periodeFilter]);
 
   const { hasRole, hasPermission, user } = useAuth();
   const isKaryawan = hasRole("Karyawan");
@@ -393,14 +442,72 @@ export default function GajiPage() {
               </Select>
             ) : (
               <div className="w-[200px]">
-              <input
-                type="month"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Filter periode (YYYY-MM)"
-                value={periodeFilter}
-                onChange={(e) => setPeriodeFilter(e.target.value)}
-              />
-            </div>
+                <div className="relative flex gap-2">
+                  <Input
+                    placeholder="Filter periode (YYYY-MM)"
+                    value={periodeFilterValue}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      setPeriodeFilterValue(inputValue);
+                      // Try to parse if user types YYYY-MM format
+                      const parsed = parseMonth(inputValue);
+                      if (parsed) {
+                        setPeriodeFilterDate(parsed);
+                        setPeriodeFilterMonth(parsed);
+                        const year = parsed.getFullYear();
+                        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+                        setPeriodeFilter(`${year}-${month}`);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setPeriodeFilterPickerOpen(true);
+                      }
+                    }}
+                    className="bg-background pr-10"
+                  />
+                  <Popover open={periodeFilterPickerOpen} onOpenChange={setPeriodeFilterPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                      >
+                        <CalendarIcon className="size-3.5" />
+                        <span className="sr-only">Pilih periode</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto overflow-hidden p-0"
+                      align="start"
+                      alignOffset={-8}
+                      sideOffset={10}
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={periodeFilterDate}
+                        captionLayout="dropdown"
+                        fromYear={2020}
+                        toYear={2030}
+                        month={periodeFilterMonth}
+                        onMonthChange={setPeriodeFilterMonth}
+                        onSelect={(selectedDate) => {
+                          if (selectedDate) {
+                            setPeriodeFilterDate(selectedDate);
+                            setPeriodeFilterMonth(selectedDate);
+                            setPeriodeFilterValue(formatMonth(selectedDate));
+                            setPeriodeFilterPickerOpen(false);
+                            const year = selectedDate.getFullYear();
+                            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                            setPeriodeFilter(`${year}-${month}`);
+                          }
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
             )}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
