@@ -155,7 +155,7 @@ const allNavItems: NavItem[] = [
     title: "Sesi Kerja",
     url: "/dashboard/sesi-kerja",
     icon: Clock,
-    roles: ["Admin"], // Hanya Admin
+    roles: ["Admin", "Owner"], // Admin dan Owner
     items: [
       {
         title: "Semua Sesi Kerja",
@@ -171,7 +171,7 @@ const allNavItems: NavItem[] = [
     title: "Realisasi Sesi",
     url: "/dashboard/realisasi-sesi",
     icon: Clock,
-    roles: ["Admin", "Karyawan"], // Admin dan Karyawan
+    roles: ["Admin", "Owner", "Karyawan"], // Admin, Owner, dan Karyawan
     items: [
       {
         title: "Semua Realisasi Sesi",
@@ -317,6 +317,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           // Filter submenu "Ajukan Realisasi Sesi" - hanya tampilkan jika user memiliki permission
                           if (subItem.title === "Ajukan Realisasi Sesi") {
                             return hasPermission('mengajukan realisasi sesi') || hasPermission('mengelola realisasi sesi');
+                          }
+                          // Filter submenu "Tambah Sesi Kerja" - tidak tampilkan untuk Owner (view-only)
+                          if (subItem.title === "Tambah Sesi Kerja") {
+                            return hasPermission('mengelola sesi kerja') && !hasRole('Owner');
                           }
                           return true;
                         }).map((subItem) => {

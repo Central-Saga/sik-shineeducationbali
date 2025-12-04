@@ -79,16 +79,16 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         }
 
         // Auto-fill nilai default untuk koordinat referensi dan radius jika tidak diisi
-        // Koordinat SHINE EDUCATION BALI: -8.5207971, 115.1378314
+        // Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
         if (!isset($data['latitude_referensi'])) {
-            $data['latitude_referensi'] = -8.5207971;
+            $data['latitude_referensi'] = -8.6728589;
         }
         if (!isset($data['longitude_referensi'])) {
-            $data['longitude_referensi'] = 115.1378314;
+            $data['longitude_referensi'] = 115.2265453;
         }
-        // Radius maksimal: 50 meter (tidak perlu radius_min lagi)
+        // Radius maksimal: 100 meter (tidak perlu radius_min lagi)
         if (!isset($data['radius_max'])) {
-            $data['radius_max'] = 50;
+            $data['radius_max'] = 100;
         }
 
         // Validasi GPS berdasarkan radius maksimal dan koordinat referensi
@@ -131,7 +131,7 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         );
 
         // Valid jika jarak tidak melebihi radius maksimal (distance <= radiusMax) dalam meter
-        // Lokasi absensi harus berada dalam radius maksimal 50 meter dari koordinat referensi SHINE EDUCATION BALI
+        // Lokasi absensi harus berada dalam radius maksimal 100 meter dari koordinat referensi SHINE EDUCATION BALI
         return $distance <= $radiusMax;
     }
 
@@ -179,24 +179,24 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         $existingRecord = $this->getRepository()->find($id);
 
         // Auto-fill nilai default jika tidak diisi
-        // Koordinat SHINE EDUCATION BALI: -8.5207971, 115.1378314
+        // Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
         if (!isset($data['latitude_referensi']) && $existingRecord) {
-            $data['latitude_referensi'] = $existingRecord->latitude_referensi ?? -8.5207971;
+            $data['latitude_referensi'] = $existingRecord->latitude_referensi ?? -8.6728589;
         } elseif (!isset($data['latitude_referensi'])) {
-            $data['latitude_referensi'] = -8.5207971;
+            $data['latitude_referensi'] = -8.6728589;
         }
 
         if (!isset($data['longitude_referensi']) && $existingRecord) {
-            $data['longitude_referensi'] = $existingRecord->longitude_referensi ?? 115.1378314;
+            $data['longitude_referensi'] = $existingRecord->longitude_referensi ?? 115.2265453;
         } elseif (!isset($data['longitude_referensi'])) {
-            $data['longitude_referensi'] = 115.1378314;
+            $data['longitude_referensi'] = 115.2265453;
         }
 
-        // Radius maksimal: 50 meter
+        // Radius maksimal: 100 meter
         if (!isset($data['radius_max']) && $existingRecord) {
-            $data['radius_max'] = $existingRecord->radius_max ?? 50;
+            $data['radius_max'] = $existingRecord->radius_max ?? 100;
         } elseif (!isset($data['radius_max'])) {
-            $data['radius_max'] = 50;
+            $data['radius_max'] = 100;
         }
 
         // Validasi GPS jika latitude/longitude diubah atau koordinat referensi/radius diubah

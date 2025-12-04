@@ -217,8 +217,8 @@ class AbsensiController extends BaseApiController
             // Use current time for check-in/check-out
             $currentTime = now()->format('Y-m-d H:i:s');
             
-            // Koordinat SHINE EDUCATION BALI: -8.5207971, 115.1378314
-            // Radius maksimal: 50 meter
+            // Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
+            // Radius maksimal: 100 meter
             $logData = [
                 'absensi_id' => $absensi->id,
                 'jenis' => $jenis,
@@ -228,9 +228,9 @@ class AbsensiController extends BaseApiController
                 'akurasi' => $akurasi ?? 0,
                 'foto_selfie' => $fotoPath,
                 'sumber' => $absensi->sumber_absen ?? 'web',
-                'latitude_referensi' => -8.5207971,
-                'longitude_referensi' => 115.1378314,
-                'radius_max' => 50,
+                'latitude_referensi' => -8.6728589,
+                'longitude_referensi' => 115.2265453,
+                'radius_max' => 100,
             ];
 
             $logAbsensiService->create($logData);

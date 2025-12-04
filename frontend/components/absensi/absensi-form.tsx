@@ -21,10 +21,10 @@ import { MapPin, Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Koordinat SHINE EDUCATION BALI
-// Updated based on actual location: -8.5207971, 115.1378314
-const SHINE_EDUCATION_BALI_LAT = -8.5207971;
-const SHINE_EDUCATION_BALI_LON = 115.1378314;
-const MAX_RADIUS_METERS = 50;
+// Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
+const SHINE_EDUCATION_BALI_LAT = -8.6728589;
+const SHINE_EDUCATION_BALI_LON = 115.2265453;
+const MAX_RADIUS_METERS = 100;
 
 interface AbsensiFormProps {
   initialData?: Partial<AbsensiFormData> & {
@@ -645,7 +645,7 @@ export function AbsensiForm({
                         id="manual_lat"
                         type="number"
                         step="any"
-                        placeholder="-8.5207971"
+                        placeholder="-8.6728589"
                         value={manualLat}
                         onChange={(e) => setManualLat(e.target.value)}
                         disabled={isSubmitting || isLoading}
@@ -657,7 +657,7 @@ export function AbsensiForm({
                         id="manual_lon"
                         type="number"
                         step="any"
-                        placeholder="115.1378314"
+                        placeholder="115.2265453"
                         value={manualLon}
                         onChange={(e) => setManualLon(e.target.value)}
                         disabled={isSubmitting || isLoading}
