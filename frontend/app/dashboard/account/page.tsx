@@ -33,14 +33,22 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
 export default function AccountPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasRole } = useAuth();
   const [employee, setEmployee] = React.useState<Employee | null>(null);
   const [loadingEmployee, setLoadingEmployee] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  
+  const isOwnerOrAdmin = hasRole('Owner') || hasRole('Admin');
 
   React.useEffect(() => {
     const fetchEmployee = async () => {
       if (!user) return;
+      
+      // Skip fetch employee jika user adalah Owner atau Admin
+      if (isOwnerOrAdmin) {
+        setLoadingEmployee(false);
+        return;
+      }
       
       setLoadingEmployee(true);
       setError(null);
@@ -49,7 +57,7 @@ export default function AccountPage() {
         const employeeData = await getMyEmployee();
         setEmployee(employeeData);
       } catch (err: any) {
-        // Jika 404, berarti user tidak memiliki data karyawan (Admin/Owner)
+        // Jika 404, berarti user tidak memiliki data karyawan
         if (err?.response?.status === 404) {
           setEmployee(null);
         } else {
@@ -63,7 +71,7 @@ export default function AccountPage() {
     if (user) {
       fetchEmployee();
     }
-  }, [user]);
+  }, [user, isOwnerOrAdmin]);
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "-";
@@ -107,7 +115,7 @@ export default function AccountPage() {
     return labels[tipe] || tipe;
   };
 
-  if (authLoading || loadingEmployee) {
+  if (authLoading || (!isOwnerOrAdmin && loadingEmployee)) {
     return (
       <SidebarProvider
         style={
@@ -249,8 +257,8 @@ export default function AccountPage() {
               </CardContent>
             </Card>
 
-            {/* Informasi Karyawan - Hanya ditampilkan jika ada data karyawan */}
-            {employee ? (
+            {/* Informasi Karyawan - Hanya ditampilkan jika ada data karyawan dan bukan Owner/Admin */}
+            {employee && !isOwnerOrAdmin ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Informasi Karyawan</CardTitle>
@@ -307,23 +315,11 @@ export default function AccountPage() {
                   </div>
                 </CardContent>
               </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informasi Karyawan</CardTitle>
-                  <CardDescription>Data karyawan tidak tersedia</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Akun Anda tidak memiliki data karyawan. Data karyawan hanya tersedia untuk pengguna dengan peran Karyawan.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            ) : null}
           </div>
 
-          {/* Informasi Detail Karyawan - Hanya ditampilkan jika ada data karyawan */}
-          {employee && (
+          {/* Informasi Detail Karyawan - Hanya ditampilkan jika ada data karyawan dan bukan Owner/Admin */}
+          {employee && !isOwnerOrAdmin && (
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
