@@ -289,10 +289,14 @@ SESSION_ENCRYPT=false
 SESSION_PATH=/
 SESSION_DOMAIN=null
 
-REDIS_CLIENT=phpredis
-REDIS_HOST=127.0.0.1
+CACHE_STORE=redis
+CACHE_PREFIX=
+REDIS_CLIENT=predis
+REDIS_HOST=redis
 REDIS_PASSWORD=null
 REDIS_PORT=6379
+REDIS_DB=0
+REDIS_CACHE_DB=1
 
 MAIL_MAILER=log
 MAIL_SCHEME=null
@@ -372,6 +376,23 @@ start_containers() {
     if [ $retry -eq 30 ]; then
         print_error "Database tidak ready setelah 60 detik. Cek logs dengan: docker compose logs db"
     fi
+    
+    # Wait for Redis
+    print_info "Menunggu Redis ready..."
+    sleep 2
+    retry=0
+    while [ $retry -lt 15 ]; do
+        if docker compose exec -T redis redis-cli ping 2>/dev/null | grep -q "PONG"; then
+            print_success "Redis siap"
+            break
+        fi
+        sleep 2
+        retry=$((retry + 1))
+    done
+    
+    if [ $retry -eq 15 ]; then
+        print_warning "Redis tidak ready setelah 30 detik (akan dicoba lagi nanti jika diperlukan)"
+    fi
 }
 
 # Step 8: Setup Laravel
@@ -385,10 +406,26 @@ setup_laravel() {
     # Install PHP dependencies (dev) di dalam container
     print_info "Menginstall PHP dependencies (termasuk dev) di container backend..."
     set +e
+    # Tunggu container ready dulu
+    sleep 3
     if docker compose exec -T backend composer install --no-interaction 2>/dev/null; then
         print_success "Composer install selesai"
     else
-        print_warning "Composer install gagal (mungkin sudah terinstall). Melanjutkan..."
+        print_warning "Composer install gagal (mungkin sudah terinstall atau container belum ready). Melanjutkan..."
+    fi
+    
+    # Regenerate autoload untuk memastikan semua class ter-load dengan benar
+    print_info "Meregenerate autoload files..."
+    docker compose exec -T backend composer dump-autoload -o 2>/dev/null || print_warning "Autoload regeneration skipped"
+    
+    # Install Predis (Redis client) jika belum ada
+    # Note: Predis seharusnya sudah ada di composer.json, jadi tidak perlu install manual
+    print_info "Memeriksa Predis (Redis client)..."
+    if docker compose exec -T backend composer show predis/predis --no-interaction 2>/dev/null >/dev/null; then
+        print_success "Predis sudah terinstall"
+    else
+        print_warning "Predis tidak ditemukan di vendor (seharusnya sudah ada di composer.json). Regenerating autoload..."
+        docker compose exec -T backend composer dump-autoload -o 2>/dev/null || true
     fi
     set -e
 
@@ -412,6 +449,11 @@ setup_laravel() {
     # Clear dan cache config agar membaca .env terbaru
     print_info "Membersihkan cache konfigurasi..."
     docker compose exec -T backend php artisan optimize:clear || true
+    
+    # Clear config cache untuk memastikan Redis config ter-load
+    print_info "Memastikan konfigurasi Redis ter-load..."
+    docker compose exec -T backend php artisan config:clear || true
+    docker compose exec -T backend php artisan config:cache || true
     
     # Run migrations (non-critical, continue even if fails)
     print_info "Menjalankan database migrations..."

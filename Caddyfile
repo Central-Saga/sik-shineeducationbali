@@ -28,8 +28,9 @@ https://shine.local.test {
         Referrer-Policy "strict-origin-when-cross-origin"
     }
     
-    # Handle API routes ke Laravel backend (HTTP server)
-    handle /api/* {
+    # Handle vendor assets PERTAMA (untuk log-viewer frontend assets)
+    # PENTING: Handle ini harus sebelum /log-viewer* agar tidak diintercept
+    handle /vendor/* {
         reverse_proxy backend:8000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
@@ -38,8 +39,36 @@ https://shine.local.test {
         }
     }
     
+    # Handle API routes ke Laravel backend (HTTP server)
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+            # Increase body size limit for file uploads (10MB + buffer)
+            transport http {
+                dial_timeout 30s
+            }
+        }
+        # Set max body size for file uploads
+        request_body {
+            max_size 12MB
+        }
+    }
+    
     # Handle static files dari Laravel
     handle /storage/* {
+        reverse_proxy backend:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+    
+    # Handle Log Viewer routes ke Laravel backend (setelah vendor assets)
+    handle /log-viewer* {
         reverse_proxy backend:8000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}

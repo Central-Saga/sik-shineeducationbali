@@ -171,6 +171,11 @@ docker compose down -v rů
 - `DB_DATABASE=shine_db`
 - `DB_USERNAME=shine_user`
 - `DB_PASSWORD=shine_password`
+- `CACHE_STORE=redis` (default menggunakan Redis)
+- `REDIS_HOST=redis` (nama service Docker)
+- `REDIS_PORT=6379`
+- `REDIS_DB=0` (default database)
+- `REDIS_CACHE_DB=1` (cache database)
 
 **Frontend (.env):**
 - `NEXT_PUBLIC_API_BASE=https://shine.local.test/api`
@@ -179,6 +184,7 @@ docker compose down -v rů
 
 - **80/443**: Caddy reverse proxy (HTTP/HTTPS)
 - **3306**: MySQL database
+- **6379**: Redis cache
 - **3000**: Next.js frontend (internal)
 - **9000**: PHP-FPM backend (internal)
 
@@ -207,6 +213,22 @@ Pastikan di `backend/.env`:
 1. Check status: `docker compose ps db`
 2. Check logs: `docker compose logs db`
 3. Pastikan `DB_HOST=db` (nama service, bukan localhost)
+
+### Redis Connection Error
+
+1. Check status: `docker compose ps redis`
+2. Check logs: `docker compose logs redis`
+3. Pastikan `REDIS_HOST=redis` (nama service, bukan localhost)
+4. Test Redis connection:
+   ```bash
+   docker compose exec redis redis-cli ping
+   # Harus return: PONG
+   ```
+5. Test dari Laravel:
+   ```bash
+   docker compose exec backend php artisan tinker
+   # Kemudian jalankan: Cache::get('test')
+   ```
 
 ### Port Already in Use
 
