@@ -254,7 +254,7 @@ export default function AbsensiPage() {
             absensi={absensi}
             loading={loading}
             onViewDetail={handleViewDetail}
-            onDelete={handleDeleteClick}
+            onDelete={!hasRole('Karyawan') ? handleDeleteClick : undefined}
           />
         </div>
       </SidebarInset>

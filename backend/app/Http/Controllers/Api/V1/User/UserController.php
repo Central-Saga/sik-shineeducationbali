@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Api\Base\BaseApiController;
 use App\Http\Requests\Api\V1\User\StoreUserRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserRequest;
+use App\Http\Requests\Api\V1\User\UpdateStatusUserRequest;
 use App\Http\Resources\Api\V1\User\UserResource;
 use App\Services\Contracts\UserServiceInterface;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +108,23 @@ class UserController extends BaseApiController
         return $this->success(
             new UserResource($user),
             'User updated successfully'
+        );
+    }
+
+    /**
+     * Update user status.
+     *
+     * @param  \App\Http\Requests\Api\V1\User\UpdateStatusUserRequest  $request
+     * @param  string|int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateStatus(UpdateStatusUserRequest $request, string|int $id): JsonResponse
+    {
+        $user = $this->userService->updateStatus($id, $request->status);
+        $user->load('roles');
+        return $this->success(
+            new UserResource($user),
+            'User status updated successfully'
         );
     }
 

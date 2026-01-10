@@ -34,6 +34,14 @@ export async function updateUser(id: number | string, data: Partial<UserFormData
 }
 
 /**
+ * Update user status
+ */
+export async function updateUserStatus(id: number | string, status: 'aktif' | 'nonaktif'): Promise<User> {
+  const response = await apiClient.patch<User>(`/v1/users/${id}/status`, { status });
+  return response.data;
+}
+
+/**
  * Delete a user
  */
 export async function deleteUser(id: number | string): Promise<void> {

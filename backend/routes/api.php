@@ -39,6 +39,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/users/{id}', [UserController::class, 'show'])->middleware('permission:mengelola users');
         Route::put('/users/{id}', [UserController::class, 'update'])->middleware('permission:mengelola users');
         Route::patch('/users/{id}', [UserController::class, 'update'])->middleware('permission:mengelola users');
+        Route::patch('/users/{id}/status', [UserController::class, 'updateStatus'])->middleware('permission:mengelola users');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->middleware('permission:mengelola users');
     });
 

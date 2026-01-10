@@ -122,6 +122,42 @@ class UserService extends BaseService implements UserServiceInterface
     }
 
     /**
+     * Update status of user.
+     *
+     * @param  int|string  $id
+     * @param  string  $status
+     * @return \App\Models\User
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function updateStatus(int|string $id, string $status): User
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola users')) {
+            abort(403, 'You do not have permission to update user status.');
+        }
+
+        // Validate status
+        if (!in_array($status, ['aktif', 'nonaktif'])) {
+            abort(422, 'Status must be either "aktif" or "nonaktif".');
+        }
+
+        $user = $this->getById($id);
+        
+        // Load roles untuk validasi
+        $user->load('roles');
+        
+        // Validasi: Owner dan Admin tidak boleh dinonaktifkan
+        if ($user->hasRole(['Owner', 'Admin'])) {
+            if ($status === 'nonaktif') {
+                abort(422, 'Akun Owner dan Admin tidak dapat dinonaktifkan.');
+            }
+        }
+        
+        return $this->getRepository()->update($id, ['status' => $status]);
+    }
+
+    /**
      * Delete a user by ID.
      *
      * @param  int|string  $id

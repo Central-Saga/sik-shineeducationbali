@@ -2,6 +2,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  status?: 'aktif' | 'nonaktif';
   roles?: string[];
   permissions?: string[];
   created_at: string;

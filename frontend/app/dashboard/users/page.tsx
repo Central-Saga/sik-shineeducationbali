@@ -21,11 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserTable } from "@/components/users/user-table";
 import { useUsers } from "@/hooks/use-users";
+import { updateUserStatus } from "@/lib/api/users";
 import { Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
+import type { User } from "@/lib/types/user";
 
 export default function UsersPage() {
-  const { users, loading, error, refetch, removeUser } = useUsers();
+  const { users, loading, error, refetch } = useUsers();
   const [searchQuery, setSearchQuery] = React.useState("");
 
   // Filter users based on search query
@@ -43,13 +45,13 @@ export default function UsersPage() {
     );
   }, [users, searchQuery]);
 
-  const handleDelete = async (id: number | string) => {
+  const handleUpdateStatus = async (user: User, newStatus: 'aktif' | 'nonaktif') => {
     try {
-      await removeUser(id);
-      toast.success("Pengguna berhasil dihapus");
+      await updateUserStatus(user.id, newStatus);
+      toast.success(`Status pengguna berhasil diubah menjadi ${newStatus === 'aktif' ? 'Aktif' : 'Nonaktif'}`);
       await refetch();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus pengguna";
+      const errorMessage = error instanceof Error ? error.message : "Gagal mengubah status pengguna";
       toast.error(errorMessage);
     }
   };
@@ -145,7 +147,7 @@ export default function UsersPage() {
             users={filteredUsers}
             allUsers={users}
             loading={loading}
-            onDelete={handleDelete}
+            onUpdateStatus={handleUpdateStatus}
           />
         </div>
       </SidebarInset>

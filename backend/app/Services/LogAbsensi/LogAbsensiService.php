@@ -8,6 +8,7 @@ use App\Services\Base\BaseService;
 use App\Services\Contracts\LogAbsensiServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 
+
 class LogAbsensiService extends BaseService implements LogAbsensiServiceInterface
 {
     /**
@@ -79,12 +80,12 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         }
 
         // Auto-fill nilai default untuk koordinat referensi dan radius jika tidak diisi
-        // Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
+        // Koordinat SHINE EDUCATION BALI: -8.5210302, 115.1380711
         if (!isset($data['latitude_referensi'])) {
-            $data['latitude_referensi'] = -8.6728589;
+            $data['latitude_referensi'] = -8.5210302;
         }
         if (!isset($data['longitude_referensi'])) {
-            $data['longitude_referensi'] = 115.2265453;
+            $data['longitude_referensi'] = 115.1380711;
         }
         // Radius maksimal: 100 meter (tidak perlu radius_min lagi)
         if (!isset($data['radius_max'])) {
@@ -179,17 +180,17 @@ class LogAbsensiService extends BaseService implements LogAbsensiServiceInterfac
         $existingRecord = $this->getRepository()->find($id);
 
         // Auto-fill nilai default jika tidak diisi
-        // Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
+        // Koordinat SHINE EDUCATION BALI: -8.5210302, 115.1380711
         if (!isset($data['latitude_referensi']) && $existingRecord) {
-            $data['latitude_referensi'] = $existingRecord->latitude_referensi ?? -8.6728589;
+            $data['latitude_referensi'] = $existingRecord->latitude_referensi ?? -8.5210302;
         } elseif (!isset($data['latitude_referensi'])) {
-            $data['latitude_referensi'] = -8.6728589;
+            $data['latitude_referensi'] = -8.5210302;
         }
 
         if (!isset($data['longitude_referensi']) && $existingRecord) {
-            $data['longitude_referensi'] = $existingRecord->longitude_referensi ?? 115.2265453;
+            $data['longitude_referensi'] = $existingRecord->longitude_referensi ?? 115.1380711;
         } elseif (!isset($data['longitude_referensi'])) {
-            $data['longitude_referensi'] = 115.2265453;
+            $data['longitude_referensi'] = 115.1380711;
         }
 
         // Radius maksimal: 100 meter

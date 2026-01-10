@@ -15,10 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AbsensiFormData } from "@/lib/types/absensi";
 import type { Employee } from "@/lib/types/employee";
 import { getMyEmployee } from "@/lib/api/employees";
+import { getAbsensiByKaryawanAndTanggal } from "@/lib/api/absensi";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { MapPin, Loader2, AlertCircle, CalendarIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -27,9 +29,9 @@ import {
 } from "@/components/ui/popover";
 
 // Koordinat SHINE EDUCATION BALI
-// Koordinat SHINE EDUCATION BALI: -8.6728589, 115.2265453
-const SHINE_EDUCATION_BALI_LAT = -8.6728589;
-const SHINE_EDUCATION_BALI_LON = 115.2265453;
+// Koordinat SHINE EDUCATION BALI: -8.5210302, 115.1380711
+const SHINE_EDUCATION_BALI_LAT = -8.5210302;
+const SHINE_EDUCATION_BALI_LON = 115.1380711;
 const MAX_RADIUS_METERS = 100;
 
 function formatDate(date: Date | undefined) {
@@ -458,6 +460,34 @@ export function AbsensiForm({
       const today = now.toISOString().split('T')[0];
       const timeString = now.toTimeString().slice(0, 8); // HH:MM:SS format
 
+      // Validasi absensi ganda untuk check-in (hanya jika enableCheckInOut aktif)
+      if (enableCheckInOut && mode === 'check_in' && employee) {
+        try {
+          const existingAbsensi = await getAbsensiByKaryawanAndTanggal(employee.id, today);
+          // Jika sudah ada absensi dengan jam_masuk (sudah check-in), tampilkan alert
+          if (existingAbsensi && existingAbsensi.jam_masuk) {
+            toast.error("Absensi hanya bisa dilakukan sekali");
+            setIsSubmitting(false);
+            return;
+          }
+        } catch (error: unknown) {
+          // Jika error 404 atau "not found", berarti belum ada absensi, lanjutkan submit
+          // Jika error lain, log dan lanjutkan juga (biarkan backend yang handle)
+          const errorMessage = error && typeof error === 'object' && 'message' in error 
+            ? String((error as { message: string }).message) 
+            : error instanceof Error 
+            ? error.message 
+            : '';
+          
+          // Jika bukan error "not found", log error tapi tetap lanjutkan submit
+          // (biarkan backend yang handle validasi final)
+          if (errorMessage && !errorMessage.toLowerCase().includes('not found') && !errorMessage.includes('404')) {
+            console.error("Error checking existing absensi:", error);
+          }
+          // Lanjutkan submit meskipun ada error saat cek (biarkan backend yang handle)
+        }
+      }
+
       const submitData: AbsensiFormData = {
         karyawan_id: employee!.id,
         tanggal: today,
@@ -700,7 +730,7 @@ export function AbsensiForm({
                         id="manual_lat"
                         type="number"
                         step="any"
-                        placeholder="-8.6728589"
+                        placeholder="-8.5210302"
                         value={manualLat}
                         onChange={(e) => setManualLat(e.target.value)}
                         disabled={isSubmitting || isLoading}
@@ -712,7 +742,7 @@ export function AbsensiForm({
                         id="manual_lon"
                         type="number"
                         step="any"
-                        placeholder="115.2265453"
+                        placeholder="115.1380711"
                         value={manualLon}
                         onChange={(e) => setManualLon(e.target.value)}
                         disabled={isSubmitting || isLoading}
