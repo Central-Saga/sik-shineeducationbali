@@ -30,10 +30,7 @@ class StoreUserRequest extends FormRequest
             'roles' => ['sometimes', 'array'],
             'roles.*' => [
                 'string',
-                Rule::exists('roles', 'name')->where(function ($query) {
-                    // Ensure role exists with guard_name matching user's guard (default: web)
-                    $query->where('guard_name', config('auth.defaults.guard', 'web'));
-                }),
+                Rule::exists('roles', 'name')->where('guard_name', 'web'),
             ],
         ];
     }
