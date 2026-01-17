@@ -27,6 +27,6 @@ jobs:
           # Tarik codingan terbaru
           git pull origin main
 
-          # Restart Docker (Penting agar update terlihat)
+          # Restart Docker
           docker compose down
           docker compose up -d --build
