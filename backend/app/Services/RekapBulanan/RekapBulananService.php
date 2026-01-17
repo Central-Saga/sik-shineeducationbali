@@ -51,6 +51,18 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
     }
 
     /**
+     * Get all rekap bulanan records, filtered to only include active employees.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAll(): Collection
+    {
+        return $this->getRepository()->findAll()->filter(function ($rekap) {
+            return $rekap->employee && $rekap->employee->status === 'aktif';
+        })->values();
+    }
+
+    /**
      * Generate rekap bulanan for all active employees for a given periode.
      *
      * @param  string  $periode

@@ -77,6 +77,7 @@ export default function RekapBulananPage() {
   );
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isGeneratingGaji, setIsGeneratingGaji] = React.useState<number | null>(null);
+  const [hasGeneratedRekap, setHasGeneratedRekap] = React.useState<boolean>(false);
 
   // Date picker state for periode filter
   const [periodeFilterPickerOpen, setPeriodeFilterPickerOpen] = React.useState(false);
@@ -135,6 +136,21 @@ export default function RekapBulananPage() {
   const { generateFromRekap: generateGajiFromRekap } = useGaji();
   const { hasPermission, hasRole } = useAuth();
 
+  // Auto-detect jika rekap sudah ada untuk periode yang dipilih
+  // Reset hasGeneratedRekap ketika periode filter berubah
+  React.useEffect(() => {
+    if (!periodeFilter) {
+      setHasGeneratedRekap(false);
+    } else if (!loading) {
+      // Setelah loading selesai, cek apakah ada data rekap
+      if (rekapBulanan.length > 0) {
+        setHasGeneratedRekap(true);
+      } else {
+        setHasGeneratedRekap(false);
+      }
+    }
+  }, [periodeFilter, rekapBulanan.length, loading]);
+
   const handleGenerate = async () => {
     if (!periodeInput.match(/^\d{4}-\d{2}$/)) {
       toast.error("Format periode tidak valid. Gunakan format YYYY-MM");
@@ -147,6 +163,7 @@ export default function RekapBulananPage() {
       toast.success("Rekap bulanan berhasil di-generate");
       setGenerateDialogOpen(false);
       setPeriodeFilter(periodeInput);
+      setHasGeneratedRekap(true);
     } catch (err: any) {
       toast.error(err.message || "Gagal generate rekap bulanan");
     } finally {
@@ -439,7 +456,12 @@ export default function RekapBulananPage() {
                 <Button
                   variant="gradient"
                   onClick={handleGenerateAllGaji}
-                  disabled={rekapBulanan.length === 0 || isGeneratingGaji === -1}
+                  disabled={
+                    rekapBulanan.length === 0 ||
+                    !hasGeneratedRekap ||
+                    !periodeFilter ||
+                    isGeneratingGaji === -1
+                  }
                 >
                   <DollarSign className="mr-2 h-4 w-4" />
                   {isGeneratingGaji === -1 ? "Generating..." : "Generate Semua Gaji"}

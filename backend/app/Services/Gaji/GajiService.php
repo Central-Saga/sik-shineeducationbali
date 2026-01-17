@@ -121,6 +121,10 @@ class GajiService extends BaseService implements GajiServiceInterface
             abort(404, 'Employee not found for this rekap.');
         }
 
+        if ($employee->status !== 'aktif') {
+            abort(422, 'Cannot generate gaji for inactive employee.');
+        }
+
         return DB::transaction(function () use ($employee, $rekap) {
             return $this->calculateGaji($employee, $rekap);
         });
