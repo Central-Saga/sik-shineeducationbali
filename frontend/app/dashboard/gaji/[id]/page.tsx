@@ -753,7 +753,7 @@ export default function GajiDetailPage() {
                       <Input
                         id="tanggal_transfer"
                         value={tanggalTransferValue}
-                        placeholder="Pilih tanggal transfer"
+                        placeholder="Pilih Tanggal Transfer"
                         className={cn(
                           "bg-background pr-10"
                         )}
@@ -785,7 +785,7 @@ export default function GajiDetailPage() {
                             className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
                           >
                             <CalendarIcon className="size-3.5" />
-                            <span className="sr-only">Pilih tanggal transfer</span>
+                            <span className="sr-only">Pilih Tanggal Transfer</span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
@@ -839,7 +839,7 @@ export default function GajiDetailPage() {
                     <Input
                       id="bukti_transfer"
                       type="text"
-                      placeholder="URL atau nomor referensi bukti transfer"
+                      placeholder="URL atau nomor referensi Bukti Transfer"
                       value={formData.bukti_transfer || ''}
                       onChange={(e) =>
                         setFormData({ ...formData, bukti_transfer: e.target.value })
