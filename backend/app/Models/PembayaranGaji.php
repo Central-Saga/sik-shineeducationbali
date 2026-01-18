@@ -28,6 +28,7 @@ class PembayaranGaji extends Model
         'bukti_transfer',
         'status_pembayaran',
         'disetujui_oleh',
+        'created_by',
         'catatan',
     ];
 
@@ -61,6 +62,16 @@ class PembayaranGaji extends Model
     public function disetujuiOleh(): BelongsTo
     {
         return $this->belongsTo(User::class, 'disetujui_oleh');
+    }
+
+    /**
+     * Get the user who created the pembayaran gaji.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

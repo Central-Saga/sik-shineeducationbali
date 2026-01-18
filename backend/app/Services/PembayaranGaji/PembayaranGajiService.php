@@ -76,6 +76,14 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
             abort(403, 'You do not have permission to create pembayaran gaji.');
         }
 
+        // Set created_by
+        $data['created_by'] = auth()->id();
+
+        // Validasi: Admin tidak bisa create jika sudah ada pembayaran
+        if (isset($data['gaji_id'])) {
+            $this->validateAdminCanModify($data['gaji_id'], 'create');
+        }
+
         $pembayaranGaji = parent::create($data);
 
         // Clear cache for this gaji_id
@@ -99,6 +107,12 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
         if (!$this->hasPermission('mengelola pembayaran gaji')) {
             abort(403, 'You do not have permission to update pembayaran gaji.');
         }
+
+        // Get existing pembayaran to check gaji_id
+        $existingPembayaran = $this->getRepository()->findOrFail($id);
+        
+        // Validasi: Admin tidak bisa update jika sudah ada pembayaran
+        $this->validateAdminCanModify($existingPembayaran->gaji_id, 'update');
 
         $pembayaranGaji = parent::update($id, $data);
 
@@ -124,6 +138,9 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
         // Get gaji_id before delete
         $pembayaranGaji = $this->getRepository()->findOrFail($id);
         $gajiId = $pembayaranGaji->gaji_id;
+
+        // Validasi: Admin tidak bisa delete jika sudah ada pembayaran
+        $this->validateAdminCanModify($gajiId, 'delete');
 
         $deleted = parent::delete($id);
 
@@ -152,6 +169,12 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
             abort(422, 'Invalid status. Must be one of: menunggu, berhasil, gagal');
         }
 
+        // Get existing pembayaran to check gaji_id
+        $existingPembayaran = $this->getRepository()->findOrFail($id);
+        
+        // Validasi: Admin tidak bisa update status jika sudah ada pembayaran
+        $this->validateAdminCanModify($existingPembayaran->gaji_id, 'update status');
+
         $updateData = ['status_pembayaran' => $status];
 
         // If status is berhasil, set disetujui_oleh
@@ -166,5 +189,51 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
         $this->getRepository()->clearCacheForGajiId($gajiId);
 
         return $pembayaranGaji->fresh();
+    }
+
+    /**
+     * Validate if Admin can modify pembayaran gaji.
+     * Admin tidak bisa modify jika sudah ada pembayaran untuk gaji_id tersebut.
+     * Owner tetap bisa melakukan semua operasi.
+     *
+     * @param  int|string  $gajiId
+     * @param  string  $action
+     * @return void
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException
+     */
+    protected function validateAdminCanModify($gajiId, string $action): void
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            abort(401, 'User not authenticated.');
+        }
+
+        // Load roles untuk validasi
+        $user->load('roles');
+
+        // Owner bisa melakukan semua operasi
+        if ($user->hasRole('Owner')) {
+            return;
+        }
+
+        // Jika user adalah Admin, cek apakah sudah ada pembayaran
+        if ($user->hasRole('Admin')) {
+            $existingPembayaran = $this->getRepository()->findByGajiId($gajiId);
+            
+            // Jika sudah ada pembayaran, Admin tidak bisa modify
+            if ($existingPembayaran->count() > 0) {
+                $actionMessages = [
+                    'create' => 'menambahkan',
+                    'update' => 'mengubah',
+                    'update status' => 'mengubah status',
+                    'delete' => 'menghapus',
+                ];
+                
+                $actionMessage = $actionMessages[$action] ?? 'mengubah';
+                
+                abort(422, "Admin tidak dapat {$actionMessage} pembayaran gaji yang sudah ada. Hanya Owner yang dapat melakukan perubahan.");
+            }
+        }
     }
 }

@@ -42,6 +42,12 @@ export interface PembayaranGaji {
     name: string;
     email: string;
   } | null;
+  created_by?: number | null;
+  createdBy?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
   catatan?: string | null;
   created_at?: string;
   updated_at?: string;

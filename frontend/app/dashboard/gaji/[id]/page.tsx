@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, CalendarIcon } from "lucide-react";
 import { HasCan } from "@/components/has-can";
+import { useAuth } from "@/contexts/auth-context";
 import type { PembayaranGaji, PembayaranGajiFormData, StatusPembayaran } from "@/lib/types/gaji";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -84,6 +85,7 @@ function isValidDate(date: Date | undefined) {
 export default function GajiDetailPage() {
   const params = useParams();
   const gajiId = params.id as string;
+  const { hasRole } = useAuth();
   const [gaji, setGaji] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const { komponenGaji: komponenGajiFromHook, loading: loadingKomponen } = useKomponenGaji(gajiId);
@@ -96,6 +98,12 @@ export default function GajiDetailPage() {
     remove: deletePembayaran,
     refetch: refetchPembayaran,
   } = usePembayaranGaji(gajiId);
+  
+  // Check if user is Admin and if there are existing payments
+  const isAdmin = hasRole('Admin');
+  const isOwner = hasRole('Owner');
+  const hasExistingPayments = pembayaranGajiFromHook.length > 0;
+  const canModifyPayments = isOwner || (isAdmin && !hasExistingPayments);
   
   // Dialog states
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -630,10 +638,12 @@ export default function GajiDetailPage() {
                   </CardDescription>
                 </div>
                 <HasCan permission="mengelola pembayaran gaji">
-                  <Button onClick={() => handleOpenDialog()} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tambah Pembayaran
-                  </Button>
+                  {canModifyPayments && (
+                    <Button onClick={() => handleOpenDialog()} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Pembayaran
+                    </Button>
+                  )}
                 </HasCan>
               </div>
             </CardHeader>
@@ -673,40 +683,44 @@ export default function GajiDetailPage() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <HasCan permission="mengelola pembayaran gaji">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenDialog(pembayaran)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              {pembayaran.status_pembayaran !== 'berhasil' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleUpdateStatus(pembayaran.id, 'berhasil')}
-                                  title="Tandai sebagai Berhasil"
-                                >
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                </Button>
+                              {canModifyPayments && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleOpenDialog(pembayaran)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  {pembayaran.status_pembayaran !== 'berhasil' && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleUpdateStatus(pembayaran.id, 'berhasil')}
+                                      title="Tandai sebagai Berhasil"
+                                    >
+                                      <CheckCircle className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                  )}
+                                  {pembayaran.status_pembayaran !== 'gagal' && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleUpdateStatus(pembayaran.id, 'gagal')}
+                                      title="Tandai sebagai Gagal"
+                                    >
+                                      <XCircle className="h-4 w-4 text-red-600" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePembayaran(pembayaran.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </>
                               )}
-                              {pembayaran.status_pembayaran !== 'gagal' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleUpdateStatus(pembayaran.id, 'gagal')}
-                                  title="Tandai sebagai Gagal"
-                                >
-                                  <XCircle className="h-4 w-4 text-red-600" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePembayaran(pembayaran.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
                             </HasCan>
                           </div>
                         </TableCell>
