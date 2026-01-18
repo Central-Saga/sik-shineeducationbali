@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Cuti } from "@/lib/types/cuti";
-import { Eye, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Eye, Trash2, CheckCircle2, XCircle, X, Ban } from "lucide-react";
 
 interface CutiTableProps {
   cuti: Cuti[];
@@ -23,7 +23,13 @@ interface CutiTableProps {
   onDelete?: (cuti: Cuti) => void;
   onApprove?: (cuti: Cuti) => void;
   onReject?: (cuti: Cuti) => void;
+  onCancel?: (cuti: Cuti) => void;
+  onRequestCancellation?: (cuti: Cuti) => void;
+  onApproveCancellation?: (cuti: Cuti) => void;
+  onRejectCancellation?: (cuti: Cuti) => void;
   showActions?: boolean;
+  isKaryawan?: boolean;
+  isAdmin?: boolean;
 }
 
 export function CutiTable({
@@ -34,7 +40,13 @@ export function CutiTable({
   onDelete,
   onApprove,
   onReject,
+  onCancel,
+  onRequestCancellation,
+  onApproveCancellation,
+  onRejectCancellation,
   showActions = true,
+  isKaryawan = false,
+  isAdmin = false,
 }: CutiTableProps) {
   const getJenisLabel = (jenis: string) => {
     const labels: Record<string, string> = {
@@ -59,27 +71,33 @@ export function CutiTable({
       diajukan: 'Diajukan',
       disetujui: 'Disetujui',
       ditolak: 'Ditolak',
+      dibatalkan: 'Dibatalkan',
+      pembatalan_diajukan: 'Pembatalan Diajukan',
     };
     return labels[status] || status;
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    const variants: Record<string, "success" | "danger" | "secondary" | "outline"> = {
+    const variants: Record<string, "success" | "danger" | "secondary" | "outline" | "destructive"> = {
       diajukan: 'secondary',
       disetujui: 'success',
       ditolak: 'danger',
+      dibatalkan: 'destructive',
+      pembatalan_diajukan: 'secondary',
     };
     return variants[status] || 'outline';
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-      weekday: 'short',
+    const weekday = date.toLocaleDateString('id-ID', { weekday: 'short' });
+    const formatted = date.toLocaleDateString('id-ID', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
+    // Capitalize first letter of weekday (KBBI format)
+    return weekday.charAt(0).toUpperCase() + weekday.slice(1) + ', ' + formatted;
   };
 
   if (loading) {
@@ -226,6 +244,57 @@ export function CutiTable({
                           >
                             <XCircle className="h-4 w-4" />
                             <span className="sr-only">Tolak</span>
+                          </Button>
+                        )}
+                        {/* Kondisi A: Batalkan untuk status "diajukan" (hanya karyawan pemilik) */}
+                        {onCancel && item.status === 'diajukan' && isKaryawan && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onCancel(item)}
+                            title="Batalkan"
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          >
+                            <Ban className="h-4 w-4" />
+                            <span className="sr-only">Batalkan</span>
+                          </Button>
+                        )}
+                        {/* Kondisi B: Ajukan Pembatalan untuk status "disetujui" (hanya karyawan pemilik) */}
+                        {onRequestCancellation && item.status === 'disetujui' && isKaryawan && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRequestCancellation(item)}
+                            title="Ajukan Pembatalan"
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Ajukan Pembatalan</span>
+                          </Button>
+                        )}
+                        {/* Admin: Setujui/Tolak Pembatalan untuk status "pembatalan_diajukan" */}
+                        {onApproveCancellation && item.status === 'pembatalan_diajukan' && isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onApproveCancellation(item)}
+                            title="Setujui Pembatalan"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span className="sr-only">Setujui Pembatalan</span>
+                          </Button>
+                        )}
+                        {onRejectCancellation && item.status === 'pembatalan_diajukan' && isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRejectCancellation(item)}
+                            title="Tolak Pembatalan"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            <span className="sr-only">Tolak Pembatalan</span>
                           </Button>
                         )}
                         {onDelete && (

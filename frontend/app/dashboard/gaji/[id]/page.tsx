@@ -502,41 +502,42 @@ export default function GajiDetailPage() {
                       </span>
                     </div>
                     <div className="mt-2 p-3 bg-muted rounded-md">
-                      <p className="text-sm font-mono">
+                      <p className="text-sm">
                         <span className="font-semibold">Rumus:</span>{" "}
                         {(() => {
-                          const penghasilan = komponenGaji
+                          // Ambil nama komponen penghasilan (nominal > 0)
+                          const komponenPenghasilan = komponenGaji
                             .filter((k) => k.nominal > 0)
-                            .reduce((sum, k) => sum + k.nominal, 0);
-                          const potongan = komponenGaji
+                            .map((k) => k.nama_komponen);
+                          
+                          // Ambil nama komponen potongan (nominal < 0)
+                          const komponenPotongan = komponenGaji
                             .filter((k) => k.nominal < 0)
-                            .reduce((sum, k) => sum + Math.abs(k.nominal), 0);
+                            .map((k) => k.nama_komponen);
                           
                           const parts: string[] = [];
-                          if (penghasilan > 0) {
-                            parts.push(
-                              new Intl.NumberFormat("id-ID", {
-                                style: "currency",
-                                currency: "IDR",
-                              }).format(penghasilan)
-                            );
-                          }
-                          if (potongan > 0) {
-                            parts.push(
-                              new Intl.NumberFormat("id-ID", {
-                                style: "currency",
-                                currency: "IDR",
-                              }).format(potongan)
-                            );
+                          
+                          // Tambahkan komponen penghasilan
+                          if (komponenPenghasilan.length > 0) {
+                            parts.push(komponenPenghasilan.join(" + "));
                           }
                           
-                          return parts.join(" - ");
+                          // Tambahkan komponen potongan
+                          if (komponenPotongan.length > 0) {
+                            parts.push(komponenPotongan.join(" + "));
+                          }
+                          
+                          // Gabungkan dengan operator "-" jika ada potongan
+                          if (komponenPenghasilan.length > 0 && komponenPotongan.length > 0) {
+                            return `${komponenPenghasilan.join(" + ")} - ${komponenPotongan.join(" + ")} = Total Gaji`;
+                          } else if (komponenPenghasilan.length > 0) {
+                            return `${komponenPenghasilan.join(" + ")} = Total Gaji`;
+                          } else if (komponenPotongan.length > 0) {
+                            return `- ${komponenPotongan.join(" + ")} = Total Gaji`;
+                          }
+                          
+                          return "Total Gaji";
                         })()}
-                        {" = "}
-                        {new Intl.NumberFormat("id-ID", {
-                          style: "currency",
-                          currency: "IDR",
-                        }).format(gaji.total_gaji)}
                       </p>
                     </div>
                   </div>

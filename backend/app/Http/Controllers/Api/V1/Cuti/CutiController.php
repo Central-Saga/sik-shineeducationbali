@@ -374,5 +374,73 @@ class CutiController extends BaseApiController
             'Leave requests retrieved successfully'
         );
     }
+
+    /**
+     * Cancel a leave request (Kondisi A: status "diajukan" → "dibatalkan").
+     *
+     * @param  string|int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cancel($id): JsonResponse
+    {
+        $cuti = $this->cutiService->cancelCuti($id);
+        $cuti->load(['employee.user', 'approvedBy']);
+
+        return $this->success(
+            new CutiResource($cuti),
+            'Leave request cancelled successfully'
+        );
+    }
+
+    /**
+     * Request cancellation of an approved leave request (Kondisi B: status "disetujui" → "pembatalan_diajukan").
+     *
+     * @param  string|int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function requestCancellation($id): JsonResponse
+    {
+        $cuti = $this->cutiService->requestCancellation($id);
+        $cuti->load(['employee.user', 'approvedBy']);
+
+        return $this->success(
+            new CutiResource($cuti),
+            'Cancellation request submitted successfully'
+        );
+    }
+
+    /**
+     * Approve cancellation request (Admin only).
+     *
+     * @param  string|int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function approveCancellation($id): JsonResponse
+    {
+        $cuti = $this->cutiService->approveCancellation($id);
+        $cuti->load(['employee.user', 'approvedBy']);
+
+        return $this->success(
+            new CutiResource($cuti),
+            'Cancellation request approved successfully'
+        );
+    }
+
+    /**
+     * Reject cancellation request (Admin only).
+     *
+     * @param  string|int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function rejectCancellation($id): JsonResponse
+    {
+        $cuti = $this->cutiService->rejectCancellation($id);
+        $cuti->load(['employee.user', 'approvedBy']);
+
+        return $this->success(
+            new CutiResource($cuti),
+            'Cancellation request rejected successfully'
+        );
+    }
 }
 

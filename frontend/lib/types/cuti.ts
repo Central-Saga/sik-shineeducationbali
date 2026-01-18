@@ -12,7 +12,7 @@ export interface Cuti {
   };
   tanggal: string;
   jenis: 'izin' | 'sakit';
-  status: 'diajukan' | 'disetujui' | 'ditolak';
+  status: 'diajukan' | 'disetujui' | 'ditolak' | 'dibatalkan' | 'pembatalan_diajukan';
   disetujui_oleh?: number | null;
   approved_by?: {
     id: number;
@@ -28,7 +28,7 @@ export interface CutiFormData {
   karyawan_id: number;
   tanggal: string;
   jenis: 'izin' | 'sakit';
-  status?: 'diajukan' | 'disetujui' | 'ditolak';
+  status?: 'diajukan' | 'disetujui' | 'ditolak' | 'dibatalkan' | 'pembatalan_diajukan';
   catatan: string;
   disetujui_oleh?: number | null;
 }

@@ -7,7 +7,7 @@ export interface GetCutiParams {
   start_date?: string;
   end_date?: string;
   jenis?: 'cuti' | 'izin' | 'sakit';
-  status?: 'diajukan' | 'disetujui' | 'ditolak';
+  status?: 'diajukan' | 'disetujui' | 'ditolak' | 'dibatalkan' | 'pembatalan_diajukan';
   include?: string;
 }
 
@@ -87,7 +87,7 @@ export async function getCutiByJenis(
  * Get leave requests by status
  */
 export async function getCutiByStatus(
-  status: 'diajukan' | 'disetujui' | 'ditolak',
+  status: 'diajukan' | 'disetujui' | 'ditolak' | 'dibatalkan' | 'pembatalan_diajukan',
   params?: Omit<GetCutiParams, 'status'>
 ): Promise<Cuti[]> {
   const response = await apiClient.get<Cuti[]>(`/v1/cuti/status/${status}`, { params });
@@ -108,3 +108,34 @@ export async function rejectCuti(id: number | string): Promise<Cuti> {
   return updateCuti(id, { status: 'ditolak' });
 }
 
+/**
+ * Cancel a leave request (Kondisi A: status "diajukan" → "dibatalkan")
+ */
+export async function cancelCuti(id: number | string): Promise<Cuti> {
+  const response = await apiClient.post<Cuti>(`/v1/cuti/${id}/cancel`);
+  return response.data;
+}
+
+/**
+ * Request cancellation of an approved leave request (Kondisi B: status "disetujui" → "pembatalan_diajukan")
+ */
+export async function requestCancellation(id: number | string): Promise<Cuti> {
+  const response = await apiClient.post<Cuti>(`/v1/cuti/${id}/request-cancellation`);
+  return response.data;
+}
+
+/**
+ * Approve cancellation request (Admin only)
+ */
+export async function approveCancellation(id: number | string): Promise<Cuti> {
+  const response = await apiClient.post<Cuti>(`/v1/cuti/${id}/approve-cancellation`);
+  return response.data;
+}
+
+/**
+ * Reject cancellation request (Admin only)
+ */
+export async function rejectCancellation(id: number | string): Promise<Cuti> {
+  const response = await apiClient.post<Cuti>(`/v1/cuti/${id}/reject-cancellation`);
+  return response.data;
+}

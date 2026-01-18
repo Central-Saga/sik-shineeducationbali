@@ -108,7 +108,7 @@ export default function CutiPage() {
     return Object.keys(filters).length > 0 ? filters : undefined;
   }, [statusFilter, jenisFilter, dateFilter, hasRole, employeeId]);
 
-  const { cuti, loading, error, refetch, removeCuti } = useCuti(params);
+  const { cuti, loading, error, refetch, removeCuti, cancelCuti, requestCancellation, approveCancellation, rejectCancellation } = useCuti(params);
 
   // Calculate statistics
   const stats = React.useMemo(() => {
@@ -122,8 +122,14 @@ export default function CutiPage() {
     const totalDitolak = cuti.filter(
       (item) => item.status === "ditolak"
     ).length;
+    const totalDibatalkan = cuti.filter(
+      (item) => item.status === "dibatalkan"
+    ).length;
+    const totalPembatalanDiajukan = cuti.filter(
+      (item) => item.status === "pembatalan_diajukan"
+    ).length;
 
-    return { total, totalDiajukan, totalDisetujui, totalDitolak };
+    return { total, totalDiajukan, totalDisetujui, totalDitolak, totalDibatalkan, totalPembatalanDiajukan };
   }, [cuti]);
 
   const handleViewDetail = (cuti: Cuti) => {
@@ -183,7 +189,68 @@ export default function CutiPage() {
     await refetch();
   };
 
+  const handleCancel = async (cuti: Cuti) => {
+    try {
+      await cancelCuti(cuti.id);
+      toast.success("Cuti berhasil dibatalkan");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal membatalkan cuti";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRequestCancellation = async (cuti: Cuti) => {
+    try {
+      await requestCancellation(cuti.id);
+      toast.success("Pengajuan pembatalan berhasil dikirim");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal mengajukan pembatalan";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleApproveCancellation = async (cuti: Cuti) => {
+    try {
+      await approveCancellation(cuti.id);
+      toast.success("Pembatalan cuti berhasil disetujui");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menyetujui pembatalan";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRejectCancellation = async (cuti: Cuti) => {
+    try {
+      await rejectCancellation(cuti.id);
+      toast.success("Pembatalan cuti berhasil ditolak");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menolak pembatalan";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleCancelled = async () => {
+    await refetch();
+  };
+
+  const handleCancellationRequested = async () => {
+    await refetch();
+  };
+
+  const handleCancellationApproved = async () => {
+    await refetch();
+  };
+
+  const handleCancellationRejected = async () => {
+    await refetch();
+  };
+
   const isAdmin = hasRole('Admin') || hasRole('Owner');
+  const isKaryawan = hasRole('Karyawan');
 
   return (
     <SidebarProvider
@@ -240,6 +307,8 @@ export default function CutiPage() {
                   <SelectItem value="diajukan">Diajukan</SelectItem>
                   <SelectItem value="disetujui">Disetujui</SelectItem>
                   <SelectItem value="ditolak">Ditolak</SelectItem>
+                  <SelectItem value="dibatalkan">Dibatalkan</SelectItem>
+                  <SelectItem value="pembatalan_diajukan">Pembatalan Diajukan</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={jenisFilter} onValueChange={setJenisFilter}>
@@ -318,6 +387,12 @@ export default function CutiPage() {
             onDelete={isAdmin ? handleDeleteClick : undefined}
             onApprove={isAdmin ? handleApprove : undefined}
             onReject={isAdmin ? handleReject : undefined}
+            onCancel={isKaryawan ? handleCancel : undefined}
+            onRequestCancellation={isKaryawan ? handleRequestCancellation : undefined}
+            onApproveCancellation={isAdmin ? handleApproveCancellation : undefined}
+            onRejectCancellation={isAdmin ? handleRejectCancellation : undefined}
+            isKaryawan={isKaryawan}
+            isAdmin={isAdmin}
           />
         </div>
       </SidebarInset>
@@ -329,6 +404,11 @@ export default function CutiPage() {
         onOpenChange={setDetailDialogOpen}
         onApproved={handleApproved}
         onRejected={handleRejected}
+        onCancelled={handleCancelled}
+        onCancellationRequested={handleCancellationRequested}
+        onCancellationApproved={handleCancellationApproved}
+        onCancellationRejected={handleCancellationRejected}
+        isKaryawan={isKaryawan}
       />
 
       {/* Delete Confirmation Dialog */}

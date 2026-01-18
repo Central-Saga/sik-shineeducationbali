@@ -433,5 +433,143 @@ class CutiService extends BaseService implements CutiServiceInterface
 
         // Sakit tidak ada batasan quota untuk semua kategori karyawan
     }
+
+    /**
+     * Cancel a leave request (Kondisi A: status "diajukan" → "dibatalkan").
+     * Only the employee who owns the leave request can cancel it.
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function cancelCuti($id): Cuti
+    {
+        $cuti = $this->getById($id);
+        $user = auth()->user();
+
+        // Check if user has permission to cancel
+        if (!$this->hasPermission('melakukan cuti') && !$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to cancel leave requests.');
+        }
+
+        // For karyawan role, check if they own this cuti
+        if ($user && $user->hasRole('Karyawan')) {
+            $employee = $user->employee;
+            if (!$employee || $cuti->karyawan_id !== $employee->id) {
+                abort(403, 'You can only cancel your own leave requests.');
+            }
+        }
+
+        // Validate status must be "diajukan"
+        if ($cuti->status !== 'diajukan') {
+            abort(422, 'Hanya cuti dengan status "Diajukan" yang dapat dibatalkan langsung.');
+        }
+
+        // Update status to "dibatalkan"
+        return $this->getRepository()->update($id, [
+            'status' => 'dibatalkan',
+            'disetujui_oleh' => null, // Reset disetujui_oleh karena dibatalkan
+        ]);
+    }
+
+    /**
+     * Request cancellation of an approved leave request (Kondisi B: status "disetujui" → "pembatalan_diajukan").
+     * Only the employee who owns the leave request can request cancellation.
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function requestCancellation($id): Cuti
+    {
+        $cuti = $this->getById($id);
+        $user = auth()->user();
+
+        // Check if user has permission to request cancellation
+        if (!$this->hasPermission('melakukan cuti') && !$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to request cancellation.');
+        }
+
+        // For karyawan role, check if they own this cuti
+        if ($user && $user->hasRole('Karyawan')) {
+            $employee = $user->employee;
+            if (!$employee || $cuti->karyawan_id !== $employee->id) {
+                abort(403, 'You can only request cancellation for your own leave requests.');
+            }
+        }
+
+        // Validate status must be "disetujui"
+        if ($cuti->status !== 'disetujui') {
+            abort(422, 'Hanya cuti dengan status "Disetujui" yang dapat diajukan pembatalannya.');
+        }
+
+        // Update status to "pembatalan_diajukan"
+        return $this->getRepository()->update($id, [
+            'status' => 'pembatalan_diajukan',
+            // Keep disetujui_oleh as is, will be updated when admin approves/rejects
+        ]);
+    }
+
+    /**
+     * Approve cancellation request (Admin only).
+     * Changes status from "pembatalan_diajukan" to "dibatalkan".
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function approveCancellation($id): Cuti
+    {
+        // Check permission - only admin can approve cancellation
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to approve cancellation requests.');
+        }
+
+        $cuti = $this->getById($id);
+
+        // Validate status must be "pembatalan_diajukan"
+        if ($cuti->status !== 'pembatalan_diajukan') {
+            abort(422, 'Hanya cuti dengan status "Pembatalan Diajukan" yang dapat disetujui pembatalannya.');
+        }
+
+        // Update status to "dibatalkan"
+        return $this->getRepository()->update($id, [
+            'status' => 'dibatalkan',
+            'disetujui_oleh' => auth()->id(), // Admin who approved the cancellation
+        ]);
+    }
+
+    /**
+     * Reject cancellation request (Admin only).
+     * Changes status from "pembatalan_diajukan" back to "disetujui".
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     * @throws \App\Exceptions\NotFoundException
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function rejectCancellation($id): Cuti
+    {
+        // Check permission - only admin can reject cancellation
+        if (!$this->hasPermission('mengelola cuti')) {
+            abort(403, 'You do not have permission to reject cancellation requests.');
+        }
+
+        $cuti = $this->getById($id);
+
+        // Validate status must be "pembatalan_diajukan"
+        if ($cuti->status !== 'pembatalan_diajukan') {
+            abort(422, 'Hanya cuti dengan status "Pembatalan Diajukan" yang dapat ditolak pembatalannya.');
+        }
+
+        // Update status back to "disetujui"
+        return $this->getRepository()->update($id, [
+            'status' => 'disetujui',
+            'disetujui_oleh' => $cuti->disetujui_oleh, // Keep original approver
+        ]);
+    }
 }
 

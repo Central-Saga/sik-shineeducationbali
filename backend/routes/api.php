@@ -143,6 +143,12 @@ Route::prefix('v1')->group(function () {
         // Get leave requests by status
         Route::get('/cuti/status/{status}', [CutiController::class, 'byStatus'])->middleware('permission:mengelola cuti');
 
+        // Cancellation routes (must be before standard CRUD routes)
+        Route::post('/cuti/{id}/cancel', [CutiController::class, 'cancel'])->middleware('permission:melakukan cuti|mengelola cuti');
+        Route::post('/cuti/{id}/request-cancellation', [CutiController::class, 'requestCancellation'])->middleware('permission:melakukan cuti|mengelola cuti');
+        Route::post('/cuti/{id}/approve-cancellation', [CutiController::class, 'approveCancellation'])->middleware('permission:mengelola cuti');
+        Route::post('/cuti/{id}/reject-cancellation', [CutiController::class, 'rejectCancellation'])->middleware('permission:mengelola cuti');
+
         // Standard CRUD routes
         Route::get('/cuti', [CutiController::class, 'index'])->middleware('permission:mengelola cuti|melakukan cuti');
         Route::post('/cuti', [CutiController::class, 'store'])->middleware('permission:melakukan cuti|mengelola cuti');
