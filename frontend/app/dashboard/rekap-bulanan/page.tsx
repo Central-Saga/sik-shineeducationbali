@@ -19,10 +19,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRekapBulanan } from "@/hooks/use-rekap-bulanan";
 import { useGaji } from "@/hooks/use-gaji";
+import { generateGajiFromRekap } from "@/lib/api/gaji";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon, Plus, DollarSign, Printer, Download } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, DollarSign, Printer, Download, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function formatMonth(date: Date | undefined): string {
   if (!date) {
@@ -133,8 +135,43 @@ export default function RekapBulananPage() {
   const { rekapBulanan, loading, error, refetch, generate } = useRekapBulanan(
     Object.keys(params).length > 0 ? params : undefined
   );
-  const { generateFromRekap: generateGajiFromRekap } = useGaji();
   const { hasPermission, hasRole } = useAuth();
+
+  // Fetch gaji untuk periode yang sedang difilter untuk validasi
+  const gajiParams = React.useMemo(() => {
+    if (periodeFilter) {
+      return { periode: periodeFilter };
+    }
+    return undefined;
+  }, [periodeFilter]);
+
+  const { gaji: gajiList } = useGaji(gajiParams);
+
+  // Check if there are any gaji with status 'disetujui' or 'dibayar' for this periode
+  const hasFinalGaji = React.useMemo(() => {
+    if (!periodeFilter || gajiList.length === 0) {
+      return false;
+    }
+    return gajiList.some((g) => g.status === 'disetujui' || g.status === 'dibayar');
+  }, [gajiList, periodeFilter]);
+
+  // Fetch gaji untuk periode yang diinput di dialog untuk validasi
+  const gajiInputParams = React.useMemo(() => {
+    if (periodeInput && periodeInput.match(/^\d{4}-\d{2}$/)) {
+      return { periode: periodeInput };
+    }
+    return undefined;
+  }, [periodeInput]);
+
+  const { gaji: gajiInputList } = useGaji(gajiInputParams);
+
+  // Check if there are any gaji with status 'disetujui' or 'dibayar' for periodeInput
+  const hasFinalGajiForInput = React.useMemo(() => {
+    if (!periodeInput || !periodeInput.match(/^\d{4}-\d{2}$/) || gajiInputList.length === 0) {
+      return false;
+    }
+    return gajiInputList.some((g) => g.status === 'disetujui' || g.status === 'dibayar');
+  }, [gajiInputList, periodeInput]);
 
   // Auto-detect jika rekap sudah ada untuk periode yang dipilih
   // Reset hasGeneratedRekap ketika periode filter berubah
@@ -168,18 +205,6 @@ export default function RekapBulananPage() {
       toast.error(err.message || "Gagal generate rekap bulanan");
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const handleGenerateGaji = async (rekapId: number) => {
-    try {
-      setIsGeneratingGaji(rekapId);
-      await generateGajiFromRekap(rekapId);
-      toast.success("Gaji berhasil di-generate dari rekap bulanan");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal generate gaji");
-    } finally {
-      setIsGeneratingGaji(null);
     }
   };
 
@@ -460,8 +485,10 @@ export default function RekapBulananPage() {
                     rekapBulanan.length === 0 ||
                     !hasGeneratedRekap ||
                     !periodeFilter ||
-                    isGeneratingGaji === -1
+                    isGeneratingGaji === -1 ||
+                    hasFinalGaji
                   }
+                  title={hasFinalGaji ? "Tidak dapat generate gaji karena sudah ada gaji yang disetujui atau dibayar untuk periode ini" : ""}
                 >
                   <DollarSign className="mr-2 h-4 w-4" />
                   {isGeneratingGaji === -1 ? "Generating..." : "Generate Semua Gaji"}
@@ -572,7 +599,6 @@ export default function RekapBulananPage() {
                     <TableHead>Sesi Coding</TableHead>
                     <TableHead>Sesi Non-Coding</TableHead>
                     <TableHead>Total Pendapatan</TableHead>
-                    {hasPermission("mengelola gaji") && <TableHead>Aksi</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -595,19 +621,6 @@ export default function RekapBulananPage() {
                           currency: "IDR",
                         }).format(rekap.total_pendapatan_sesi)}
                       </TableCell>
-                      {hasPermission("mengelola gaji") && (
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGenerateGaji(rekap.id)}
-                            disabled={isGeneratingGaji === rekap.id || isGeneratingGaji === -1}
-                          >
-                            <DollarSign className="mr-2 h-4 w-4" />
-                            {isGeneratingGaji === rekap.id ? "Generating..." : "Generate Gaji"}
-                          </Button>
-                        </TableCell>
-                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -694,6 +707,14 @@ export default function RekapBulananPage() {
                     </Popover>
                   </div>
                 </div>
+                {hasFinalGajiForInput && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Tidak dapat generate rekap bulanan untuk periode ini karena sudah ada gaji yang disetujui atau dibayar. Generate ulang akan menyebabkan inkonsistensi data.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
               <DialogFooter>
                 <Button
@@ -703,7 +724,11 @@ export default function RekapBulananPage() {
                 >
                   Batal
                 </Button>
-                <Button onClick={handleGenerate} disabled={isGenerating}>
+                <Button 
+                  onClick={handleGenerate} 
+                  disabled={isGenerating || hasFinalGajiForInput}
+                  title={hasFinalGajiForInput ? "Tidak dapat generate karena sudah ada gaji yang disetujui atau dibayar untuk periode ini" : ""}
+                >
                   {isGenerating ? "Generating..." : "Generate"}
                 </Button>
               </DialogFooter>

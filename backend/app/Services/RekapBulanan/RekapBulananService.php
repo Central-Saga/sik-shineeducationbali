@@ -3,6 +3,7 @@
 namespace App\Services\RekapBulanan;
 
 use App\Models\Employee;
+use App\Models\Gaji;
 use App\Models\RekapBulanan;
 use App\Repositories\Contracts\AbsensiRepositoryInterface;
 use App\Repositories\Contracts\CutiRepositoryInterface;
@@ -78,6 +79,15 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
         // Validate periode format (YYYY-MM)
         if (!preg_match('/^\d{4}-\d{2}$/', $periode)) {
             abort(422, 'Invalid periode format. Use YYYY-MM format.');
+        }
+
+        // Check if there are any gaji with status 'disetujui' or 'dibayar' for this periode
+        $finalGaji = Gaji::where('periode', $periode)
+            ->whereIn('status', ['disetujui', 'dibayar'])
+            ->exists();
+
+        if ($finalGaji) {
+            abort(422, 'Tidak dapat generate ulang rekap bulanan untuk periode ' . $periode . ' karena sudah ada gaji yang disetujui atau dibayar. Generate ulang akan menyebabkan inkonsistensi data.');
         }
 
         return DB::transaction(function () use ($periode) {
