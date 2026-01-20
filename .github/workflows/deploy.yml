@@ -1,16 +1,39 @@
-script: |
-          # Masuk ke folder project
-          cd /opt/apps/sik-shineeducationbali
+name: Deploy to VPS
 
-          # PENTING: Paksa server mengikuti versi GitHub (hapus edit manual)
-          git fetch --all
-          git reset --hard origin/main
-          
-          # Matikan container lama
-          docker compose down
+on:
+  push:
+    branches:
+      - main
 
-          # Nyalakan ulang dengan build baru
-          docker compose up -d --build
-          
-          # Hapus image sampah (opsional, biar disk gak penuh)
-          docker image prune -f
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            # 1. Masuk ke folder project
+            cd /opt/apps/sik-shineeducationbali
+
+            # 2. PENTING: Paksa server menyamakan codingan dengan GitHub
+            # (Ini akan menimpa edit manual 'nano' yang kita lakukan tadi)
+            git fetch --all
+            git reset --hard origin/main
+
+            # 3. Matikan container lama
+            docker compose down
+
+            # 4. Nyalakan ulang dengan konfigurasi baru (Caddy & Docker Compose baru)
+            docker compose up -d --build
+
+            # 5. Bersihkan sampah image bekas update (opsional)
+            docker image prune -f
