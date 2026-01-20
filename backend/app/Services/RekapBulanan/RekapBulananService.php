@@ -52,15 +52,27 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
     }
 
     /**
-     * Get all rekap bulanan records, filtered to only include active employees.
+     * Get all rekap bulanan records, filtered to only include active employees (excluding Owner and Admin).
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAll(): Collection
     {
-        return $this->getRepository()->findAll()->filter(function ($rekap) {
-            return $rekap->employee && $rekap->employee->status === 'aktif';
-        })->values();
+        return $this->getRepository()->findAll()
+            ->filter(function ($rekap) {
+                if (!$rekap->employee || $rekap->employee->status !== 'aktif') {
+                    return false;
+                }
+                // Exclude employees with Owner or Admin roles
+                $user = $rekap->employee->user;
+                if (!$user) {
+                    return false;
+                }
+                $user->load('roles');
+                $roles = $user->roles->pluck('name')->toArray();
+                return !in_array('Owner', $roles) && !in_array('Admin', $roles);
+            })
+            ->values();
     }
 
     /**
@@ -91,7 +103,13 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
         }
 
         return DB::transaction(function () use ($periode) {
-            $employees = Employee::active()->with('user')->get();
+            // Get active employees excluding Owner and Admin
+            $employees = Employee::active()
+                ->whereDoesntHave('user.roles', function ($query) {
+                    $query->whereIn('name', ['Owner', 'Admin']);
+                })
+                ->with('user')
+                ->get();
             $rekapBulananList = new Collection();
 
             foreach ($employees as $employee) {

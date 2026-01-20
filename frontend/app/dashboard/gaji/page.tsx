@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { useGaji } from "@/hooks/use-gaji";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { DollarSign, Download, Printer, CalendarIcon } from "lucide-react";
+import { DollarSign, Download, Printer, CalendarIcon, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { format } from "date-fns";
 
 function formatMonth(date: Date | undefined): string {
   if (!date) {
@@ -66,18 +67,29 @@ function parseMonth(monthString: string): Date | undefined {
 }
 
 export default function GajiPage() {
-  const [periodeFilter, setPeriodeFilter] = React.useState<string>("");
+  const { hasRole, hasPermission, user } = useAuth();
+  const isAdmin = hasRole("Admin");
+  const isKaryawan = hasRole("Karyawan");
+  const canViewGaji = hasPermission("melihat gaji") || hasPermission("mengelola gaji");
+  
+  // Set default periode to current month for Admin
+  const currentMonth = format(new Date(), "yyyy-MM");
+  const [periodeFilter, setPeriodeFilter] = React.useState<string>(() => {
+    // For Admin, default to current month
+    return isAdmin ? currentMonth : "";
+  });
   const [tahunFilter, setTahunFilter] = React.useState<string>("");
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [updatingStatus, setUpdatingStatus] = React.useState<number | null>(null);
 
   // Date picker state for periode filter
   const [periodeFilterPickerOpen, setPeriodeFilterPickerOpen] = React.useState(false);
   const [periodeFilterDate, setPeriodeFilterDate] = React.useState<Date | undefined>(() => {
-    return periodeFilter ? parseMonth(periodeFilter) : undefined;
+    return periodeFilter ? parseMonth(periodeFilter) : (isAdmin ? parseMonth(currentMonth) : undefined);
   });
   const [periodeFilterMonth, setPeriodeFilterMonth] = React.useState<Date | undefined>(periodeFilterDate || new Date());
-  const [periodeFilterValue, setPeriodeFilterValue] = React.useState(() => formatMonth(periodeFilterDate));
+  const [periodeFilterValue, setPeriodeFilterValue] = React.useState(() => formatMonth(periodeFilterDate || (isAdmin ? parseMonth(currentMonth) : undefined)));
 
   // Sync periodeFilter with date picker
   React.useEffect(() => {
@@ -94,9 +106,6 @@ export default function GajiPage() {
     }
   }, [periodeFilter]);
 
-  const { hasRole, hasPermission, user } = useAuth();
-  const isKaryawan = hasRole("Karyawan");
-  const canViewGaji = hasPermission("melihat gaji") || hasPermission("mengelola gaji");
 
   const params = React.useMemo(() => {
     const filters: Record<string, string> = {};
@@ -138,8 +147,16 @@ export default function GajiPage() {
       });
     }
     
+    // Filter berdasarkan search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((item) =>
+        item.employee?.user?.name?.toLowerCase().includes(query)
+      );
+    }
+    
     return filtered;
-  }, [allGaji, tahunFilter, isKaryawan]);
+  }, [allGaji, tahunFilter, isKaryawan, searchQuery]);
 
   React.useEffect(() => {
     if (error) {
@@ -520,6 +537,15 @@ export default function GajiPage() {
                 <SelectItem value="dibayar">Dibayar</SelectItem>
               </SelectContent>
             </Select>
+            <div className="relative w-[250px]">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Cari nama karyawan..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
 
           {loading ? (

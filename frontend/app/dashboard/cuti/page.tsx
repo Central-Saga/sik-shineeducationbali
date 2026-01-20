@@ -32,12 +32,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CutiTable } from "@/components/cuti/cuti-table";
 import { CutiDetailDialog } from "@/components/cuti/cuti-detail-dialog";
 import { useCuti } from "@/hooks/use-cuti";
 import { toast } from "sonner";
 import type { Cuti } from "@/lib/types/cuti";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays, Plus, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { getMyEmployee } from "@/lib/api/employees";
@@ -48,6 +49,7 @@ export default function CutiPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [jenisFilter, setJenisFilter] = React.useState<string>("semua");
   const [dateFilter, setDateFilter] = React.useState<string>("semua");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [selectedCuti, setSelectedCuti] = React.useState<Cuti | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -110,27 +112,38 @@ export default function CutiPage() {
 
   const { cuti, loading, error, refetch, removeCuti, cancelCuti, requestCancellation, approveCancellation, rejectCancellation } = useCuti(params);
 
+  // Filter cuti berdasarkan search query
+  const filteredCuti = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return cuti;
+    }
+    const query = searchQuery.toLowerCase();
+    return cuti.filter((item) =>
+      item.employee?.user?.name?.toLowerCase().includes(query)
+    );
+  }, [cuti, searchQuery]);
+
   // Calculate statistics
   const stats = React.useMemo(() => {
-    const total = cuti.length;
-    const totalDiajukan = cuti.filter(
+    const total = filteredCuti.length;
+    const totalDiajukan = filteredCuti.filter(
       (item) => item.status === "diajukan"
     ).length;
-    const totalDisetujui = cuti.filter(
+    const totalDisetujui = filteredCuti.filter(
       (item) => item.status === "disetujui"
     ).length;
-    const totalDitolak = cuti.filter(
+    const totalDitolak = filteredCuti.filter(
       (item) => item.status === "ditolak"
     ).length;
-    const totalDibatalkan = cuti.filter(
+    const totalDibatalkan = filteredCuti.filter(
       (item) => item.status === "dibatalkan"
     ).length;
-    const totalPembatalanDiajukan = cuti.filter(
+    const totalPembatalanDiajukan = filteredCuti.filter(
       (item) => item.status === "pembatalan_diajukan"
     ).length;
 
     return { total, totalDiajukan, totalDisetujui, totalDitolak, totalDibatalkan, totalPembatalanDiajukan };
-  }, [cuti]);
+  }, [filteredCuti]);
 
   const handleViewDetail = (cuti: Cuti) => {
     setSelectedCuti(cuti);
@@ -333,6 +346,15 @@ export default function CutiPage() {
                   <SelectItem value="bulan-ini">Bulan Ini</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="relative w-[250px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Cari nama karyawan..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
           </div>
 
@@ -381,7 +403,7 @@ export default function CutiPage() {
 
           {/* Cuti Table */}
           <CutiTable
-            cuti={cuti}
+            cuti={filteredCuti}
             loading={loading}
             onViewDetail={handleViewDetail}
             onDelete={isAdmin ? handleDeleteClick : undefined}

@@ -52,7 +52,10 @@ class RekapBulananRepository extends BaseRepository implements RekapBulananRepos
         return $this->remember($cacheKey, function () use ($periode) {
             return $this->model->byPeriode($periode)
                 ->whereHas('employee', function ($query) {
-                    $query->where('status', 'aktif');
+                    $query->where('status', 'aktif')
+                        ->whereDoesntHave('user.roles', function ($q) {
+                            $q->whereIn('name', ['Owner', 'Admin']);
+                        });
                 })
                 ->with('employee.user')
                 ->get();
@@ -72,7 +75,10 @@ class RekapBulananRepository extends BaseRepository implements RekapBulananRepos
         return $this->remember($cacheKey, function () use ($karyawanId) {
             return $this->model->byKaryawan($karyawanId)
                 ->whereHas('employee', function ($query) {
-                    $query->where('status', 'aktif');
+                    $query->where('status', 'aktif')
+                        ->whereDoesntHave('user.roles', function ($q) {
+                            $q->whereIn('name', ['Owner', 'Admin']);
+                        });
                 })
                 ->with('employee.user')
                 ->get();

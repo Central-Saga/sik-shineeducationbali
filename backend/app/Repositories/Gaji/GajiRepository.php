@@ -50,7 +50,12 @@ class GajiRepository extends BaseRepository implements GajiRepositoryInterface
         $cacheKey = "findByPeriode:{$periode}";
 
         return $this->remember($cacheKey, function () use ($periode) {
-            return $this->model->byPeriode($periode)->with('employee.user')->get();
+            return $this->model->byPeriode($periode)
+                ->whereDoesntHave('employee.user.roles', function ($q) {
+                    $q->whereIn('name', ['Owner', 'Admin']);
+                })
+                ->with(['employee.user.roles'])
+                ->get();
         });
     }
 
@@ -65,7 +70,12 @@ class GajiRepository extends BaseRepository implements GajiRepositoryInterface
         $cacheKey = "findByKaryawanId:{$karyawanId}";
 
         return $this->remember($cacheKey, function () use ($karyawanId) {
-            return $this->model->byKaryawan($karyawanId)->with('employee.user')->get();
+            return $this->model->byKaryawan($karyawanId)
+                ->whereDoesntHave('employee.user.roles', function ($q) {
+                    $q->whereIn('name', ['Owner', 'Admin']);
+                })
+                ->with(['employee.user.roles'])
+                ->get();
         });
     }
 
@@ -80,7 +90,12 @@ class GajiRepository extends BaseRepository implements GajiRepositoryInterface
         $cacheKey = "findByStatus:{$status}";
 
         return $this->remember($cacheKey, function () use ($status) {
-            return $this->model->byStatus($status)->with('employee.user')->get();
+            return $this->model->byStatus($status)
+                ->whereDoesntHave('employee.user.roles', function ($q) {
+                    $q->whereIn('name', ['Owner', 'Admin']);
+                })
+                ->with(['employee.user.roles'])
+                ->get();
         });
     }
 }
