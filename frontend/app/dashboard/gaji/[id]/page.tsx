@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, CalendarIcon } from "lucide-react";
 import { HasCan } from "@/components/has-can";
+import { useAuth } from "@/contexts/auth-context";
 import type { PembayaranGaji, PembayaranGajiFormData, StatusPembayaran } from "@/lib/types/gaji";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -84,6 +85,7 @@ function isValidDate(date: Date | undefined) {
 export default function GajiDetailPage() {
   const params = useParams();
   const gajiId = params.id as string;
+  const { hasRole } = useAuth();
   const [gaji, setGaji] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const { komponenGaji: komponenGajiFromHook, loading: loadingKomponen } = useKomponenGaji(gajiId);
@@ -96,6 +98,12 @@ export default function GajiDetailPage() {
     remove: deletePembayaran,
     refetch: refetchPembayaran,
   } = usePembayaranGaji(gajiId);
+  
+  // Check if user is Admin and if there are existing payments
+  const isAdmin = hasRole('Admin');
+  const isOwner = hasRole('Owner');
+  const hasExistingPayments = pembayaranGajiFromHook.length > 0;
+  const canModifyPayments = isOwner || (isAdmin && !hasExistingPayments);
   
   // Dialog states
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -502,41 +510,42 @@ export default function GajiDetailPage() {
                       </span>
                     </div>
                     <div className="mt-2 p-3 bg-muted rounded-md">
-                      <p className="text-sm font-mono">
+                      <p className="text-sm">
                         <span className="font-semibold">Rumus:</span>{" "}
                         {(() => {
-                          const penghasilan = komponenGaji
+                          // Ambil nama komponen penghasilan (nominal > 0)
+                          const komponenPenghasilan = komponenGaji
                             .filter((k) => k.nominal > 0)
-                            .reduce((sum, k) => sum + k.nominal, 0);
-                          const potongan = komponenGaji
+                            .map((k) => k.nama_komponen);
+                          
+                          // Ambil nama komponen potongan (nominal < 0)
+                          const komponenPotongan = komponenGaji
                             .filter((k) => k.nominal < 0)
-                            .reduce((sum, k) => sum + Math.abs(k.nominal), 0);
+                            .map((k) => k.nama_komponen);
                           
                           const parts: string[] = [];
-                          if (penghasilan > 0) {
-                            parts.push(
-                              new Intl.NumberFormat("id-ID", {
-                                style: "currency",
-                                currency: "IDR",
-                              }).format(penghasilan)
-                            );
-                          }
-                          if (potongan > 0) {
-                            parts.push(
-                              new Intl.NumberFormat("id-ID", {
-                                style: "currency",
-                                currency: "IDR",
-                              }).format(potongan)
-                            );
+                          
+                          // Tambahkan komponen penghasilan
+                          if (komponenPenghasilan.length > 0) {
+                            parts.push(komponenPenghasilan.join(" + "));
                           }
                           
-                          return parts.join(" - ");
+                          // Tambahkan komponen potongan
+                          if (komponenPotongan.length > 0) {
+                            parts.push(komponenPotongan.join(" + "));
+                          }
+                          
+                          // Gabungkan dengan operator "-" jika ada potongan
+                          if (komponenPenghasilan.length > 0 && komponenPotongan.length > 0) {
+                            return `${komponenPenghasilan.join(" + ")} - ${komponenPotongan.join(" + ")} = Total Gaji`;
+                          } else if (komponenPenghasilan.length > 0) {
+                            return `${komponenPenghasilan.join(" + ")} = Total Gaji`;
+                          } else if (komponenPotongan.length > 0) {
+                            return `- ${komponenPotongan.join(" + ")} = Total Gaji`;
+                          }
+                          
+                          return "Total Gaji";
                         })()}
-                        {" = "}
-                        {new Intl.NumberFormat("id-ID", {
-                          style: "currency",
-                          currency: "IDR",
-                        }).format(gaji.total_gaji)}
                       </p>
                     </div>
                   </div>
@@ -629,10 +638,12 @@ export default function GajiDetailPage() {
                   </CardDescription>
                 </div>
                 <HasCan permission="mengelola pembayaran gaji">
-                  <Button onClick={() => handleOpenDialog()} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tambah Pembayaran
-                  </Button>
+                  {canModifyPayments && (
+                    <Button onClick={() => handleOpenDialog()} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Pembayaran
+                    </Button>
+                  )}
                 </HasCan>
               </div>
             </CardHeader>
@@ -672,40 +683,44 @@ export default function GajiDetailPage() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <HasCan permission="mengelola pembayaran gaji">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenDialog(pembayaran)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              {pembayaran.status_pembayaran !== 'berhasil' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleUpdateStatus(pembayaran.id, 'berhasil')}
-                                  title="Tandai sebagai Berhasil"
-                                >
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                </Button>
+                              {canModifyPayments && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleOpenDialog(pembayaran)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  {pembayaran.status_pembayaran !== 'berhasil' && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleUpdateStatus(pembayaran.id, 'berhasil')}
+                                      title="Tandai sebagai Berhasil"
+                                    >
+                                      <CheckCircle className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                  )}
+                                  {pembayaran.status_pembayaran !== 'gagal' && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleUpdateStatus(pembayaran.id, 'gagal')}
+                                      title="Tandai sebagai Gagal"
+                                    >
+                                      <XCircle className="h-4 w-4 text-red-600" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePembayaran(pembayaran.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </>
                               )}
-                              {pembayaran.status_pembayaran !== 'gagal' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleUpdateStatus(pembayaran.id, 'gagal')}
-                                  title="Tandai sebagai Gagal"
-                                >
-                                  <XCircle className="h-4 w-4 text-red-600" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePembayaran(pembayaran.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
                             </HasCan>
                           </div>
                         </TableCell>
@@ -738,7 +753,7 @@ export default function GajiDetailPage() {
                       <Input
                         id="tanggal_transfer"
                         value={tanggalTransferValue}
-                        placeholder="Pilih tanggal transfer"
+                        placeholder="Pilih Tanggal Transfer"
                         className={cn(
                           "bg-background pr-10"
                         )}
@@ -770,7 +785,7 @@ export default function GajiDetailPage() {
                             className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
                           >
                             <CalendarIcon className="size-3.5" />
-                            <span className="sr-only">Pilih tanggal transfer</span>
+                            <span className="sr-only">Pilih Tanggal Transfer</span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
@@ -824,7 +839,7 @@ export default function GajiDetailPage() {
                     <Input
                       id="bukti_transfer"
                       type="text"
-                      placeholder="URL atau nomor referensi bukti transfer"
+                      placeholder="URL atau nomor referensi Bukti Transfer"
                       value={formData.bukti_transfer || ''}
                       onChange={(e) =>
                         setFormData({ ...formData, bukti_transfer: e.target.value })

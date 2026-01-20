@@ -12,8 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import type { Cuti } from "@/lib/types/cuti";
-import { CheckCircle2, XCircle, Calendar, User, FileText, Clock } from "lucide-react";
-import { approveCuti, rejectCuti } from "@/lib/api/cuti";
+import { CheckCircle2, XCircle, Calendar, User, FileText, Clock, Ban, X } from "lucide-react";
+import { approveCuti, rejectCuti, cancelCuti, requestCancellation, approveCancellation, rejectCancellation } from "@/lib/api/cuti";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -23,6 +23,11 @@ interface CutiDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onApproved?: () => void;
   onRejected?: () => void;
+  onCancelled?: () => void;
+  onCancellationRequested?: () => void;
+  onCancellationApproved?: () => void;
+  onCancellationRejected?: () => void;
+  isKaryawan?: boolean;
 }
 
 export function CutiDetailDialog({
@@ -31,6 +36,11 @@ export function CutiDetailDialog({
   onOpenChange,
   onApproved,
   onRejected,
+  onCancelled,
+  onCancellationRequested,
+  onCancellationApproved,
+  onCancellationRejected,
+  isKaryawan = false,
 }: CutiDetailDialogProps) {
   const { hasRole } = useAuth();
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -58,27 +68,33 @@ export function CutiDetailDialog({
       diajukan: 'Diajukan',
       disetujui: 'Disetujui',
       ditolak: 'Ditolak',
+      dibatalkan: 'Dibatalkan',
+      pembatalan_diajukan: 'Pembatalan Diajukan',
     };
     return labels[status] || status;
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    const variants: Record<string, "success" | "danger" | "secondary" | "outline"> = {
+    const variants: Record<string, "success" | "danger" | "secondary" | "outline" | "destructive"> = {
       diajukan: 'secondary',
       disetujui: 'success',
       ditolak: 'danger',
+      dibatalkan: 'destructive',
+      pembatalan_diajukan: 'secondary',
     };
     return variants[status] || 'outline';
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", {
-      weekday: "long",
+    const weekday = date.toLocaleDateString("id-ID", { weekday: "long" });
+    const formatted = date.toLocaleDateString("id-ID", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+    // Capitalize first letter of weekday (KBBI format)
+    return weekday.charAt(0).toUpperCase() + weekday.slice(1) + ', ' + formatted;
   };
 
   const formatDateTime = (dateTimeString: string) => {
@@ -130,10 +146,89 @@ export function CutiDetailDialog({
     }
   };
 
+  const handleCancel = async () => {
+    if (!cuti) return;
+
+    try {
+      setIsProcessing(true);
+      await cancelCuti(cuti.id);
+      toast.success("Cuti berhasil dibatalkan");
+      onOpenChange(false);
+      if (onCancelled) {
+        onCancelled();
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal membatalkan cuti";
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRequestCancellation = async () => {
+    if (!cuti) return;
+
+    try {
+      setIsProcessing(true);
+      await requestCancellation(cuti.id);
+      toast.success("Pengajuan pembatalan berhasil dikirim");
+      onOpenChange(false);
+      if (onCancellationRequested) {
+        onCancellationRequested();
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal mengajukan pembatalan";
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleApproveCancellation = async () => {
+    if (!cuti) return;
+
+    try {
+      setIsProcessing(true);
+      await approveCancellation(cuti.id);
+      toast.success("Pembatalan cuti berhasil disetujui");
+      onOpenChange(false);
+      if (onCancellationApproved) {
+        onCancellationApproved();
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menyetujui pembatalan";
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRejectCancellation = async () => {
+    if (!cuti) return;
+
+    try {
+      setIsProcessing(true);
+      await rejectCancellation(cuti.id);
+      toast.success("Pembatalan cuti berhasil ditolak");
+      onOpenChange(false);
+      if (onCancellationRejected) {
+        onCancellationRejected();
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menolak pembatalan";
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (!cuti) return null;
 
   const isAdmin = hasRole('Admin') || hasRole('Owner');
   const canApprove = isAdmin && cuti.status === 'diajukan';
+  const canCancel = isKaryawan && cuti.status === 'diajukan';
+  const canRequestCancellation = isKaryawan && cuti.status === 'disetujui';
+  const canApproveCancellation = isAdmin && cuti.status === 'pembatalan_diajukan';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -239,28 +334,79 @@ export function CutiDetailDialog({
             </div>
           </div>
 
-          {/* Action Buttons for Admin */}
-          {canApprove && (
+          {/* Action Buttons */}
+          {(canApprove || canCancel || canRequestCancellation || canApproveCancellation) && (
             <>
               <Separator />
               <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleReject}
-                  disabled={isProcessing}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  {isProcessing ? "Memproses..." : "Tolak"}
-                </Button>
-                <Button
-                  onClick={handleApprove}
-                  disabled={isProcessing}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  {isProcessing ? "Memproses..." : "Setujui"}
-                </Button>
+                {/* Admin: Approve/Reject untuk status "diajukan" */}
+                {canApprove && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleReject}
+                      disabled={isProcessing}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      {isProcessing ? "Memproses..." : "Tolak"}
+                    </Button>
+                    <Button
+                      onClick={handleApprove}
+                      disabled={isProcessing}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {isProcessing ? "Memproses..." : "Setujui"}
+                    </Button>
+                  </>
+                )}
+                {/* Karyawan: Batalkan untuk status "diajukan" (Kondisi A) */}
+                {canCancel && (
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isProcessing}
+                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {isProcessing ? "Memproses..." : "Batalkan"}
+                  </Button>
+                )}
+                {/* Karyawan: Ajukan Pembatalan untuk status "disetujui" (Kondisi B) */}
+                {canRequestCancellation && (
+                  <Button
+                    variant="outline"
+                    onClick={handleRequestCancellation}
+                    disabled={isProcessing}
+                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    {isProcessing ? "Memproses..." : "Ajukan Pembatalan"}
+                  </Button>
+                )}
+                {/* Admin: Setujui/Tolak Pembatalan untuk status "pembatalan_diajukan" */}
+                {canApproveCancellation && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleRejectCancellation}
+                      disabled={isProcessing}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      {isProcessing ? "Memproses..." : "Tolak Pembatalan"}
+                    </Button>
+                    <Button
+                      onClick={handleApproveCancellation}
+                      disabled={isProcessing}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {isProcessing ? "Memproses..." : "Setujui Pembatalan"}
+                    </Button>
+                  </>
+                )}
               </div>
             </>
           )}

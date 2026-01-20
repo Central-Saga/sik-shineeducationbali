@@ -95,8 +95,17 @@ class GajiController extends BaseApiController
             }
         }
 
-        // Eager load employee->user relationship
-        $query->load('employee.user');
+        // Eager load employee->user->roles relationship
+        $query->load('employee.user.roles');
+        
+        // Additional filter as defense in depth - exclude Owner and Admin
+        $query = $query->filter(function ($gaji) {
+            if (!$gaji->employee || !$gaji->employee->user) {
+                return false;
+            }
+            $roles = $gaji->employee->user->roles->pluck('name')->toArray();
+            return !in_array('Owner', $roles) && !in_array('Admin', $roles);
+        })->values();
 
         return $this->success(
             GajiResource::collection($query),

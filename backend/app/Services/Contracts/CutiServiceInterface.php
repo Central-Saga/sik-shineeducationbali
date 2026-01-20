@@ -85,5 +85,37 @@ interface CutiServiceInterface extends BaseServiceInterface
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function findByKaryawanIdAndStatus($karyawanId, string $status): Collection;
+
+    /**
+     * Cancel a leave request (Kondisi A: status "diajukan" → "dibatalkan").
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     */
+    public function cancelCuti($id): Cuti;
+
+    /**
+     * Request cancellation of an approved leave request (Kondisi B: status "disetujui" → "pembatalan_diajukan").
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     */
+    public function requestCancellation($id): Cuti;
+
+    /**
+     * Approve cancellation request (Admin only).
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     */
+    public function approveCancellation($id): Cuti;
+
+    /**
+     * Reject cancellation request (Admin only).
+     *
+     * @param  int|string  $id
+     * @return \App\Models\Cuti
+     */
+    public function rejectCancellation($id): Cuti;
 }
 

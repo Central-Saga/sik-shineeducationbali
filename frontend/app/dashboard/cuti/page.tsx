@@ -32,12 +32,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CutiTable } from "@/components/cuti/cuti-table";
 import { CutiDetailDialog } from "@/components/cuti/cuti-detail-dialog";
 import { useCuti } from "@/hooks/use-cuti";
 import { toast } from "sonner";
 import type { Cuti } from "@/lib/types/cuti";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays, Plus, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { getMyEmployee } from "@/lib/api/employees";
@@ -48,6 +49,7 @@ export default function CutiPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [jenisFilter, setJenisFilter] = React.useState<string>("semua");
   const [dateFilter, setDateFilter] = React.useState<string>("semua");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [selectedCuti, setSelectedCuti] = React.useState<Cuti | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -108,23 +110,40 @@ export default function CutiPage() {
     return Object.keys(filters).length > 0 ? filters : undefined;
   }, [statusFilter, jenisFilter, dateFilter, hasRole, employeeId]);
 
-  const { cuti, loading, error, refetch, removeCuti } = useCuti(params);
+  const { cuti, loading, error, refetch, removeCuti, cancelCuti, requestCancellation, approveCancellation, rejectCancellation } = useCuti(params);
+
+  // Filter cuti berdasarkan search query
+  const filteredCuti = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return cuti;
+    }
+    const query = searchQuery.toLowerCase();
+    return cuti.filter((item) =>
+      item.employee?.user?.name?.toLowerCase().includes(query)
+    );
+  }, [cuti, searchQuery]);
 
   // Calculate statistics
   const stats = React.useMemo(() => {
-    const total = cuti.length;
-    const totalDiajukan = cuti.filter(
+    const total = filteredCuti.length;
+    const totalDiajukan = filteredCuti.filter(
       (item) => item.status === "diajukan"
     ).length;
-    const totalDisetujui = cuti.filter(
+    const totalDisetujui = filteredCuti.filter(
       (item) => item.status === "disetujui"
     ).length;
-    const totalDitolak = cuti.filter(
+    const totalDitolak = filteredCuti.filter(
       (item) => item.status === "ditolak"
     ).length;
+    const totalDibatalkan = filteredCuti.filter(
+      (item) => item.status === "dibatalkan"
+    ).length;
+    const totalPembatalanDiajukan = filteredCuti.filter(
+      (item) => item.status === "pembatalan_diajukan"
+    ).length;
 
-    return { total, totalDiajukan, totalDisetujui, totalDitolak };
-  }, [cuti]);
+    return { total, totalDiajukan, totalDisetujui, totalDitolak, totalDibatalkan, totalPembatalanDiajukan };
+  }, [filteredCuti]);
 
   const handleViewDetail = (cuti: Cuti) => {
     setSelectedCuti(cuti);
@@ -183,7 +202,68 @@ export default function CutiPage() {
     await refetch();
   };
 
+  const handleCancel = async (cuti: Cuti) => {
+    try {
+      await cancelCuti(cuti.id);
+      toast.success("Cuti berhasil dibatalkan");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal membatalkan cuti";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRequestCancellation = async (cuti: Cuti) => {
+    try {
+      await requestCancellation(cuti.id);
+      toast.success("Pengajuan pembatalan berhasil dikirim");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal mengajukan pembatalan";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleApproveCancellation = async (cuti: Cuti) => {
+    try {
+      await approveCancellation(cuti.id);
+      toast.success("Pembatalan cuti berhasil disetujui");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menyetujui pembatalan";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRejectCancellation = async (cuti: Cuti) => {
+    try {
+      await rejectCancellation(cuti.id);
+      toast.success("Pembatalan cuti berhasil ditolak");
+      await refetch();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal menolak pembatalan";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleCancelled = async () => {
+    await refetch();
+  };
+
+  const handleCancellationRequested = async () => {
+    await refetch();
+  };
+
+  const handleCancellationApproved = async () => {
+    await refetch();
+  };
+
+  const handleCancellationRejected = async () => {
+    await refetch();
+  };
+
   const isAdmin = hasRole('Admin') || hasRole('Owner');
+  const isKaryawan = hasRole('Karyawan');
 
   return (
     <SidebarProvider
@@ -240,6 +320,8 @@ export default function CutiPage() {
                   <SelectItem value="diajukan">Diajukan</SelectItem>
                   <SelectItem value="disetujui">Disetujui</SelectItem>
                   <SelectItem value="ditolak">Ditolak</SelectItem>
+                  <SelectItem value="dibatalkan">Dibatalkan</SelectItem>
+                  <SelectItem value="pembatalan_diajukan">Pembatalan Diajukan</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={jenisFilter} onValueChange={setJenisFilter}>
@@ -264,6 +346,15 @@ export default function CutiPage() {
                   <SelectItem value="bulan-ini">Bulan Ini</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="relative w-[250px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Cari nama karyawan..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
           </div>
 
@@ -312,12 +403,18 @@ export default function CutiPage() {
 
           {/* Cuti Table */}
           <CutiTable
-            cuti={cuti}
+            cuti={filteredCuti}
             loading={loading}
             onViewDetail={handleViewDetail}
             onDelete={isAdmin ? handleDeleteClick : undefined}
             onApprove={isAdmin ? handleApprove : undefined}
             onReject={isAdmin ? handleReject : undefined}
+            onCancel={isKaryawan ? handleCancel : undefined}
+            onRequestCancellation={isKaryawan ? handleRequestCancellation : undefined}
+            onApproveCancellation={isAdmin ? handleApproveCancellation : undefined}
+            onRejectCancellation={isAdmin ? handleRejectCancellation : undefined}
+            isKaryawan={isKaryawan}
+            isAdmin={isAdmin}
           />
         </div>
       </SidebarInset>
@@ -329,6 +426,11 @@ export default function CutiPage() {
         onOpenChange={setDetailDialogOpen}
         onApproved={handleApproved}
         onRejected={handleRejected}
+        onCancelled={handleCancelled}
+        onCancellationRequested={handleCancellationRequested}
+        onCancellationApproved={handleCancellationApproved}
+        onCancellationRejected={handleCancellationRejected}
+        isKaryawan={isKaryawan}
       />
 
       {/* Delete Confirmation Dialog */}

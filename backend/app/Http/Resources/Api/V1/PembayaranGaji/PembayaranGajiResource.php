@@ -36,6 +36,14 @@ class PembayaranGajiResource extends JsonResource
                     'email' => $this->disetujuiOleh->email,
                 ];
             }),
+            'created_by' => $this->created_by,
+            'createdBy' => $this->whenLoaded('createdBy', function () {
+                return [
+                    'id' => $this->createdBy->id,
+                    'name' => $this->createdBy->name,
+                    'email' => $this->createdBy->email,
+                ];
+            }),
             'catatan' => $this->catatan,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),

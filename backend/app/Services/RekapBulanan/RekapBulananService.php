@@ -3,6 +3,7 @@
 namespace App\Services\RekapBulanan;
 
 use App\Models\Employee;
+use App\Models\Gaji;
 use App\Models\RekapBulanan;
 use App\Repositories\Contracts\AbsensiRepositoryInterface;
 use App\Repositories\Contracts\CutiRepositoryInterface;
@@ -51,6 +52,30 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
     }
 
     /**
+     * Get all rekap bulanan records, filtered to only include active employees (excluding Owner and Admin).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAll(): Collection
+    {
+        return $this->getRepository()->findAll()
+            ->filter(function ($rekap) {
+                if (!$rekap->employee || $rekap->employee->status !== 'aktif') {
+                    return false;
+                }
+                // Exclude employees with Owner or Admin roles
+                $user = $rekap->employee->user;
+                if (!$user) {
+                    return false;
+                }
+                $user->load('roles');
+                $roles = $user->roles->pluck('name')->toArray();
+                return !in_array('Owner', $roles) && !in_array('Admin', $roles);
+            })
+            ->values();
+    }
+
+    /**
      * Generate rekap bulanan for all active employees for a given periode.
      *
      * @param  string  $periode
@@ -68,8 +93,23 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
             abort(422, 'Invalid periode format. Use YYYY-MM format.');
         }
 
+        // Check if there are any gaji with status 'disetujui' or 'dibayar' for this periode
+        $finalGaji = Gaji::where('periode', $periode)
+            ->whereIn('status', ['disetujui', 'dibayar'])
+            ->exists();
+
+        if ($finalGaji) {
+            abort(422, 'Tidak dapat generate ulang rekap bulanan untuk periode ' . $periode . ' karena sudah ada gaji yang disetujui atau dibayar. Generate ulang akan menyebabkan inkonsistensi data.');
+        }
+
         return DB::transaction(function () use ($periode) {
-            $employees = Employee::active()->with('user')->get();
+            // Get active employees excluding Owner and Admin
+            $employees = Employee::active()
+                ->whereDoesntHave('user.roles', function ($query) {
+                    $query->whereIn('name', ['Owner', 'Admin']);
+                })
+                ->with('user')
+                ->get();
             $rekapBulananList = new Collection();
 
             foreach ($employees as $employee) {

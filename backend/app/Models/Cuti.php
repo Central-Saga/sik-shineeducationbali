@@ -130,6 +130,28 @@ class Cuti extends Model
     }
 
     /**
+     * Scope a query to only include leave requests with status 'dibatalkan'.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeDibatalkan($query)
+    {
+        return $query->where('status', 'dibatalkan');
+    }
+
+    /**
+     * Scope a query to only include leave requests with status 'pembatalan_diajukan'.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopePembatalanDiajukan($query)
+    {
+        return $query->where('status', 'pembatalan_diajukan');
+    }
+
+    /**
      * Scope a query to filter by date range.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query

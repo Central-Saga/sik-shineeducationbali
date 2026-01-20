@@ -48,6 +48,26 @@ class GajiService extends BaseService implements GajiServiceInterface
     }
 
     /**
+     * Get all gaji records, filtered to exclude Owner and Admin employees.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAll(): Collection
+    {
+        // Check permission
+        if (!$this->hasPermission('mengelola gaji') && !$this->hasPermission('melihat gaji')) {
+            abort(403, 'You do not have permission to view gaji records.');
+        }
+
+        // Use query builder to filter at database level
+        return Gaji::whereDoesntHave('employee.user.roles', function ($q) {
+                $q->whereIn('name', ['Owner', 'Admin']);
+            })
+            ->with(['employee.user.roles'])
+            ->get();
+    }
+
+    /**
      * Get a gaji record by ID.
      *
      * @param  int|string  $id
@@ -119,6 +139,10 @@ class GajiService extends BaseService implements GajiServiceInterface
 
         if (!$employee) {
             abort(404, 'Employee not found for this rekap.');
+        }
+
+        if ($employee->status !== 'aktif') {
+            abort(422, 'Cannot generate gaji for inactive employee.');
         }
 
         return DB::transaction(function () use ($employee, $rekap) {

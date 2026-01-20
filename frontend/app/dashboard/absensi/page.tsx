@@ -32,12 +32,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AbsensiTable } from "@/components/absensi/absensi-table";
 import { AbsensiDetailDialog } from "@/components/absensi/absensi-detail-dialog";
 import { useAbsensi } from "@/hooks/use-absensi";
 import { toast } from "sonner";
 import type { Absensi } from "@/lib/types/absensi";
-import { Clock, Plus } from "lucide-react";
+import { Clock, Plus, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { getMyEmployee } from "@/lib/api/employees";
@@ -46,6 +47,7 @@ export default function AbsensiPage() {
   const { user, hasRole } = useAuth();
   const [statusFilter, setStatusFilter] = React.useState<string>("semua");
   const [dateFilter, setDateFilter] = React.useState<string>("semua");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [selectedAbsensi, setSelectedAbsensi] = React.useState<Absensi | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -104,18 +106,29 @@ export default function AbsensiPage() {
 
   const { absensi, loading, error, refetch, removeAbsensi } = useAbsensi(params);
 
+  // Filter absensi berdasarkan search query
+  const filteredAbsensi = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return absensi;
+    }
+    const query = searchQuery.toLowerCase();
+    return absensi.filter((item) =>
+      item.employee?.user?.name?.toLowerCase().includes(query)
+    );
+  }, [absensi, searchQuery]);
+
   // Calculate statistics
   const stats = React.useMemo(() => {
-    const total = absensi.length;
-    const totalHadir = absensi.filter(
+    const total = filteredAbsensi.length;
+    const totalHadir = filteredAbsensi.filter(
       (item) => item.status_kehadiran === "hadir"
     ).length;
-    const totalIzin = absensi.filter(
+    const totalIzin = filteredAbsensi.filter(
       (item) => item.status_kehadiran === "izin"
     ).length;
 
     return { total, totalHadir, totalIzin };
-  }, [absensi]);
+  }, [filteredAbsensi]);
 
   const handleViewDetail = (absensi: Absensi) => {
     setSelectedAbsensi(absensi);
@@ -211,6 +224,15 @@ export default function AbsensiPage() {
                   <SelectItem value="bulan-ini">Bulan Ini</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="relative w-[250px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Cari nama karyawan..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
           </div>
 
@@ -251,7 +273,7 @@ export default function AbsensiPage() {
 
           {/* Absensi Table */}
           <AbsensiTable
-            absensi={absensi}
+            absensi={filteredAbsensi}
             loading={loading}
             onViewDetail={handleViewDetail}
             onDelete={!hasRole('Karyawan') ? handleDeleteClick : undefined}

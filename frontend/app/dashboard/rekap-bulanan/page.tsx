@@ -19,10 +19,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRekapBulanan } from "@/hooks/use-rekap-bulanan";
 import { useGaji } from "@/hooks/use-gaji";
+import { generateGajiFromRekap } from "@/lib/api/gaji";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon, Plus, DollarSign, Printer, Download } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, DollarSign, Printer, Download, AlertTriangle, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function formatMonth(date: Date | undefined): string {
   if (!date) {
@@ -71,12 +73,14 @@ function parseMonth(monthString: string): Date | undefined {
 
 export default function RekapBulananPage() {
   const [periodeFilter, setPeriodeFilter] = React.useState<string>("");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [generateDialogOpen, setGenerateDialogOpen] = React.useState(false);
   const [periodeInput, setPeriodeInput] = React.useState<string>(
     format(new Date(), "yyyy-MM")
   );
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isGeneratingGaji, setIsGeneratingGaji] = React.useState<number | null>(null);
+  const [hasGeneratedRekap, setHasGeneratedRekap] = React.useState<boolean>(false);
 
   // Date picker state for periode filter
   const [periodeFilterPickerOpen, setPeriodeFilterPickerOpen] = React.useState(false);
@@ -132,8 +136,69 @@ export default function RekapBulananPage() {
   const { rekapBulanan, loading, error, refetch, generate } = useRekapBulanan(
     Object.keys(params).length > 0 ? params : undefined
   );
-  const { generateFromRekap: generateGajiFromRekap } = useGaji();
   const { hasPermission, hasRole } = useAuth();
+
+  // Filter rekap bulanan berdasarkan search query
+  const filteredRekapBulanan = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return rekapBulanan;
+    }
+    const query = searchQuery.toLowerCase();
+    return rekapBulanan.filter((rekap) =>
+      rekap.employee?.user?.name?.toLowerCase().includes(query)
+    );
+  }, [rekapBulanan, searchQuery]);
+
+  // Fetch gaji untuk periode yang sedang difilter untuk validasi
+  const gajiParams = React.useMemo(() => {
+    if (periodeFilter) {
+      return { periode: periodeFilter };
+    }
+    return undefined;
+  }, [periodeFilter]);
+
+  const { gaji: gajiList } = useGaji(gajiParams);
+
+  // Check if there are any gaji with status 'disetujui' or 'dibayar' for this periode
+  const hasFinalGaji = React.useMemo(() => {
+    if (!periodeFilter || gajiList.length === 0) {
+      return false;
+    }
+    return gajiList.some((g) => g.status === 'disetujui' || g.status === 'dibayar');
+  }, [gajiList, periodeFilter]);
+
+  // Fetch gaji untuk periode yang diinput di dialog untuk validasi
+  const gajiInputParams = React.useMemo(() => {
+    if (periodeInput && periodeInput.match(/^\d{4}-\d{2}$/)) {
+      return { periode: periodeInput };
+    }
+    return undefined;
+  }, [periodeInput]);
+
+  const { gaji: gajiInputList } = useGaji(gajiInputParams);
+
+  // Check if there are any gaji with status 'disetujui' or 'dibayar' for periodeInput
+  const hasFinalGajiForInput = React.useMemo(() => {
+    if (!periodeInput || !periodeInput.match(/^\d{4}-\d{2}$/) || gajiInputList.length === 0) {
+      return false;
+    }
+    return gajiInputList.some((g) => g.status === 'disetujui' || g.status === 'dibayar');
+  }, [gajiInputList, periodeInput]);
+
+  // Auto-detect jika rekap sudah ada untuk periode yang dipilih
+  // Reset hasGeneratedRekap ketika periode filter berubah
+  React.useEffect(() => {
+    if (!periodeFilter) {
+      setHasGeneratedRekap(false);
+    } else if (!loading) {
+      // Setelah loading selesai, cek apakah ada data rekap
+      if (rekapBulanan.length > 0) {
+        setHasGeneratedRekap(true);
+      } else {
+        setHasGeneratedRekap(false);
+      }
+    }
+  }, [periodeFilter, rekapBulanan.length, loading]);
 
   const handleGenerate = async () => {
     if (!periodeInput.match(/^\d{4}-\d{2}$/)) {
@@ -147,6 +212,7 @@ export default function RekapBulananPage() {
       toast.success("Rekap bulanan berhasil di-generate");
       setGenerateDialogOpen(false);
       setPeriodeFilter(periodeInput);
+      setHasGeneratedRekap(true);
     } catch (err: any) {
       toast.error(err.message || "Gagal generate rekap bulanan");
     } finally {
@@ -154,20 +220,8 @@ export default function RekapBulananPage() {
     }
   };
 
-  const handleGenerateGaji = async (rekapId: number) => {
-    try {
-      setIsGeneratingGaji(rekapId);
-      await generateGajiFromRekap(rekapId);
-      toast.success("Gaji berhasil di-generate dari rekap bulanan");
-    } catch (err: any) {
-      toast.error(err.message || "Gagal generate gaji");
-    } finally {
-      setIsGeneratingGaji(null);
-    }
-  };
-
   const handleGenerateAllGaji = async () => {
-    if (rekapBulanan.length === 0) {
+    if (filteredRekapBulanan.length === 0) {
       toast.error("Tidak ada rekap bulanan untuk di-generate");
       return;
     }
@@ -177,7 +231,7 @@ export default function RekapBulananPage() {
       let successCount = 0;
       let errorCount = 0;
 
-      for (const rekap of rekapBulanan) {
+      for (const rekap of filteredRekapBulanan) {
         try {
           await generateGajiFromRekap(rekap.id);
           successCount++;
@@ -205,7 +259,7 @@ export default function RekapBulananPage() {
   }, [error]);
 
   const handleExportToCSV = () => {
-    if (rekapBulanan.length === 0) {
+    if (filteredRekapBulanan.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
     }
@@ -226,7 +280,7 @@ export default function RekapBulananPage() {
 
     const csvRows = [
       headers.join(","),
-      ...rekapBulanan.map((rekap) =>
+      ...filteredRekapBulanan.map((rekap) =>
         [
           rekap.periode,
           `"${rekap.employee?.user?.name || `Karyawan #${rekap.karyawan_id}`}"`,
@@ -259,7 +313,7 @@ export default function RekapBulananPage() {
   };
 
   const handlePrint = () => {
-    if (rekapBulanan.length === 0) {
+    if (filteredRekapBulanan.length === 0) {
       toast.error("Tidak ada data untuk dicetak");
       return;
     }
@@ -337,7 +391,7 @@ export default function RekapBulananPage() {
           <div class="info">
             <p><strong>Periode:</strong> ${periodeFilter || "Semua Periode"}</p>
             <p><strong>Tanggal Cetak:</strong> ${new Date().toLocaleDateString("id-ID")}</p>
-            <p><strong>Jumlah Data:</strong> ${rekapBulanan.length}</p>
+            <p><strong>Jumlah Data:</strong> ${filteredRekapBulanan.length}</p>
           </div>
           <table>
             <thead>
@@ -355,7 +409,7 @@ export default function RekapBulananPage() {
               </tr>
             </thead>
             <tbody>
-              ${rekapBulanan
+              ${filteredRekapBulanan
                 .map(
                   (rekap) => `
                 <tr>
@@ -419,8 +473,8 @@ export default function RekapBulananPage() {
                 <>
                   <Button
                     variant="outline"
-                    onClick={handlePrint}
-                    disabled={rekapBulanan.length === 0}
+                  onClick={handlePrint}
+                  disabled={filteredRekapBulanan.length === 0}
                   >
                     <Printer className="mr-2 h-4 w-4" />
                     Cetak Laporan
@@ -428,7 +482,7 @@ export default function RekapBulananPage() {
                   <Button
                     variant="outline"
                     onClick={handleExportToCSV}
-                    disabled={rekapBulanan.length === 0}
+                    disabled={filteredRekapBulanan.length === 0}
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Export CSV
@@ -439,7 +493,14 @@ export default function RekapBulananPage() {
                 <Button
                   variant="gradient"
                   onClick={handleGenerateAllGaji}
-                  disabled={rekapBulanan.length === 0 || isGeneratingGaji === -1}
+                  disabled={
+                    filteredRekapBulanan.length === 0 ||
+                    !hasGeneratedRekap ||
+                    !periodeFilter ||
+                    isGeneratingGaji === -1 ||
+                    hasFinalGaji
+                  }
+                  title={hasFinalGaji ? "Tidak dapat generate gaji karena sudah ada gaji yang disetujui atau dibayar untuk periode ini" : ""}
                 >
                   <DollarSign className="mr-2 h-4 w-4" />
                   {isGeneratingGaji === -1 ? "Generating..." : "Generate Semua Gaji"}
@@ -522,17 +583,28 @@ export default function RekapBulananPage() {
                 </Popover>
               </div>
             </div>
+            <div className="relative w-[250px]">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Cari nama karyawan..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <p>Memuat data...</p>
             </div>
-          ) : rekapBulanan.length === 0 ? (
+          ) : filteredRekapBulanan.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
-                Belum ada rekap bulanan. Klik "Generate Rekap" untuk membuat rekap baru.
+                {searchQuery.trim() 
+                  ? "Tidak ada rekap bulanan yang sesuai dengan pencarian."
+                  : "Belum ada rekap bulanan. Klik \"Generate Rekap\" untuk membuat rekap baru."}
               </p>
             </div>
           ) : (
@@ -550,11 +622,10 @@ export default function RekapBulananPage() {
                     <TableHead>Sesi Coding</TableHead>
                     <TableHead>Sesi Non-Coding</TableHead>
                     <TableHead>Total Pendapatan</TableHead>
-                    {hasPermission("mengelola gaji") && <TableHead>Aksi</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rekapBulanan.map((rekap) => (
+                  {filteredRekapBulanan.map((rekap) => (
                     <TableRow key={rekap.id}>
                       <TableCell>{rekap.periode}</TableCell>
                       <TableCell>
@@ -573,19 +644,6 @@ export default function RekapBulananPage() {
                           currency: "IDR",
                         }).format(rekap.total_pendapatan_sesi)}
                       </TableCell>
-                      {hasPermission("mengelola gaji") && (
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGenerateGaji(rekap.id)}
-                            disabled={isGeneratingGaji === rekap.id || isGeneratingGaji === -1}
-                          >
-                            <DollarSign className="mr-2 h-4 w-4" />
-                            {isGeneratingGaji === rekap.id ? "Generating..." : "Generate Gaji"}
-                          </Button>
-                        </TableCell>
-                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -672,6 +730,14 @@ export default function RekapBulananPage() {
                     </Popover>
                   </div>
                 </div>
+                {hasFinalGajiForInput && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Tidak dapat generate rekap bulanan untuk periode ini karena sudah ada gaji yang disetujui atau dibayar. Generate ulang akan menyebabkan inkonsistensi data.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
               <DialogFooter>
                 <Button
@@ -681,7 +747,11 @@ export default function RekapBulananPage() {
                 >
                   Batal
                 </Button>
-                <Button onClick={handleGenerate} disabled={isGenerating}>
+                <Button 
+                  onClick={handleGenerate} 
+                  disabled={isGenerating || hasFinalGajiForInput}
+                  title={hasFinalGajiForInput ? "Tidak dapat generate karena sudah ada gaji yang disetujui atau dibayar untuk periode ini" : ""}
+                >
                   {isGenerating ? "Generating..." : "Generate"}
                 </Button>
               </DialogFooter>
