@@ -59,6 +59,15 @@ class PembayaranGajiController extends BaseApiController
             'catatan' => 'nullable|string',
         ]);
 
+        // Check if gaji exists and has status 'disetujui'
+        $gaji = \App\Models\Gaji::findOrFail($gajiId);
+        if ($gaji->status !== 'disetujui') {
+            return $this->error(
+                'Pembayaran gaji hanya dapat ditambahkan jika status gaji sudah disetujui.',
+                422
+            );
+        }
+
         $data = $request->only([
             'tanggal_transfer',
             'bukti_transfer',

@@ -76,13 +76,19 @@ class PembayaranGajiService extends BaseService implements PembayaranGajiService
             abort(403, 'You do not have permission to create pembayaran gaji.');
         }
 
-        // Set created_by
-        $data['created_by'] = auth()->id();
-
-        // Validasi: Admin tidak bisa create jika sudah ada pembayaran
+        // Validate: Gaji must have status 'disetujui' before payment can be created
         if (isset($data['gaji_id'])) {
+            $gaji = \App\Models\Gaji::findOrFail($data['gaji_id']);
+            if ($gaji->status !== 'disetujui') {
+                abort(422, 'Pembayaran gaji hanya dapat ditambahkan jika status gaji sudah disetujui.');
+            }
+            
+            // Validasi: Admin tidak bisa create jika sudah ada pembayaran
             $this->validateAdminCanModify($data['gaji_id'], 'create');
         }
+
+        // Set created_by
+        $data['created_by'] = auth()->id();
 
         $pembayaranGaji = parent::create($data);
 

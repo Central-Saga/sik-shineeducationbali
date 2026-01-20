@@ -103,7 +103,11 @@ export default function GajiDetailPage() {
   const isAdmin = hasRole('Admin');
   const isOwner = hasRole('Owner');
   const hasExistingPayments = pembayaranGajiFromHook.length > 0;
-  const canModifyPayments = isOwner || (isAdmin && !hasExistingPayments);
+  // Pembayaran hanya bisa ditambahkan jika status gaji sudah 'disetujui'
+  const canModifyPayments = React.useMemo(() => {
+    if (!gaji) return false;
+    return (isOwner || (isAdmin && !hasExistingPayments)) && gaji.status === 'disetujui';
+  }, [gaji, isOwner, isAdmin, hasExistingPayments]);
   
   // Dialog states
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -650,6 +654,10 @@ export default function GajiDetailPage() {
             <CardContent>
               {loadingPembayaran ? (
                 <p>Memuat pembayaran...</p>
+              ) : gaji?.status !== 'disetujui' ? (
+                <p className="text-muted-foreground">
+                  Pembayaran gaji hanya dapat ditambahkan jika status gaji sudah disetujui oleh Owner.
+                </p>
               ) : pembayaranGaji.length === 0 ? (
                 <p className="text-muted-foreground">Belum ada pembayaran</p>
               ) : (
