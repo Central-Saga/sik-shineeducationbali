@@ -60,10 +60,14 @@ services:
       - DB_USERNAME=${DB_USERNAME:-shine_user}
       - DB_PASSWORD=${DB_PASSWORD:-shine_password}
       - APP_NAME=${APP_NAME:-Shine Education}
-      - APP_ENV=${APP_ENV:-local}
-      - APP_DEBUG=${APP_DEBUG:-true}
-      - APP_URL=https://shine.local.test
-      - ASSET_URL=https://shine.local.test
+      
+      # --- KONFIGURASI PRODUCTION ---
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=https://sik-shineeducationbali.online
+      - ASSET_URL=https://sik-shineeducationbali.online
+      # ------------------------------
+
       - LOG_CHANNEL=daily
       - LOG_LEVEL=debug
       - LOG_DAILY_DAYS=14
@@ -99,8 +103,10 @@ services:
       - frontend_node_modules:/app/node_modules
       - frontend_next:/app/.next
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - NEXT_PUBLIC_API_BASE=https://shine.local.test/api
+      # --- KONFIGURASI PRODUCTION ---
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE=https://sik-shineeducationbali.online/api
+      # ------------------------------
       - WATCHPACK_POLLING=true
     depends_on:
       - backend
@@ -133,7 +139,6 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
-      - ${HOME}/.local/share/mkcert:/root/.local/share/mkcert:ro
     environment:
       - CADDY_ADMIN=0.0.0.0:2019
     depends_on:
