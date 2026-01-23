@@ -122,21 +122,13 @@ export default function RolesPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border p-4">
               <div className="text-sm font-medium text-muted-foreground">
                 Total Peran
               </div>
               <div className="text-2xl font-bold mt-1">
                 {loading ? "..." : roles.length}
-              </div>
-            </div>
-            <div className="rounded-lg border p-4">
-              <div className="text-sm font-medium text-muted-foreground">
-                Peran Tersaring
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                {loading ? "..." : filteredRoles.length}
               </div>
             </div>
             <div className="rounded-lg border p-4">
