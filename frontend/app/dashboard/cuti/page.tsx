@@ -346,15 +346,17 @@ export default function CutiPage() {
                   <SelectItem value="bulan-ini">Bulan Ini</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="relative w-[250px]">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Cari nama karyawan..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+              {!hasRole('Karyawan') && (
+                <div className="relative w-[250px]">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Cari nama karyawan..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
