@@ -93,13 +93,26 @@ class RekapBulananService extends BaseService implements RekapBulananServiceInte
             abort(422, 'Invalid periode format. Use YYYY-MM format.');
         }
 
-        // Check if there are any gaji with status 'disetujui' or 'dibayar' for this periode
-        $finalGaji = Gaji::where('periode', $periode)
-            ->whereIn('status', ['disetujui', 'dibayar'])
+        $periodDate = Carbon::createFromFormat('Y-m', $periode)->startOfMonth();
+        $currentPeriodDate = Carbon::now()->startOfMonth();
+
+        if ($periodDate->ne($currentPeriodDate)) {
+            if ($periodDate->gt($currentPeriodDate)) {
+                abort(422, 'Periode ' . $periode . ' belum dimulai.');
+            }
+            abort(422, 'Rekap hanya dapat di-generate untuk bulan berjalan.');
+        }
+
+        // Check if all gaji are final for this periode
+        $rekapCount = RekapBulanan::where('periode', $periode)->count();
+        $gajiCount = Gaji::where('periode', $periode)->count();
+        $hasDraftGaji = Gaji::where('periode', $periode)
+            ->where('status', 'draft')
             ->exists();
+        $finalGaji = $rekapCount > 0 && $gajiCount >= $rekapCount && !$hasDraftGaji;
 
         if ($finalGaji) {
-            abort(422, 'Tidak dapat generate ulang rekap bulanan untuk periode ' . $periode . ' karena sudah ada gaji yang disetujui atau dibayar. Generate ulang akan menyebabkan inkonsistensi data.');
+            abort(422, 'Tidak dapat generate ulang rekap bulanan untuk periode ' . $periode . ' karena gaji sudah final (disetujui & dibayar). Generate ulang akan menyebabkan inkonsistensi data.');
         }
 
         return DB::transaction(function () use ($periode) {

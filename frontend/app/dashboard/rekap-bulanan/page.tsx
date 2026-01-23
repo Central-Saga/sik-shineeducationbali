@@ -23,7 +23,7 @@ import { generateGajiFromRekap } from "@/lib/api/gaji";
 import { useAuth } from "@/hooks/use-auth";
 import { HasCan } from "@/components/has-can";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon, Plus, DollarSign, Printer, Download, AlertTriangle, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, DollarSign, Printer, Download, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +51,6 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function formatMonth(date: Date | undefined): string {
   if (!date) {
@@ -71,6 +70,17 @@ function parseMonth(monthString: string): Date | undefined {
   return new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
 }
 
+const PERIOD_REGEX = /^\d{4}-\d{2}$/;
+
+function isValidPeriod(value: string): boolean {
+  return PERIOD_REGEX.test(value);
+}
+
+function getPeriodLabel(period: string): string {
+  const parsed = parseMonth(period);
+  return parsed ? formatMonth(parsed) : period;
+}
+
 export default function RekapBulananPage() {
   const [periodeFilter, setPeriodeFilter] = React.useState<string>("");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
@@ -81,6 +91,11 @@ export default function RekapBulananPage() {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isGeneratingGaji, setIsGeneratingGaji] = React.useState<number | null>(null);
   const [hasGeneratedRekap, setHasGeneratedRekap] = React.useState<boolean>(false);
+  const currentPeriod = format(new Date(), "yyyy-MM");
+  const currentMonthDate = React.useMemo(
+    () => parseMonth(currentPeriod) ?? new Date(),
+    [currentPeriod]
+  );
 
   // Date picker state for periode filter
   const [periodeFilterPickerOpen, setPeriodeFilterPickerOpen] = React.useState(false);
@@ -104,14 +119,15 @@ export default function RekapBulananPage() {
       const newDate = parseMonth(periodeFilter);
       if (newDate) {
         setPeriodeFilterDate(newDate);
-        setPeriodeFilterMonth(newDate);
+        const parsedPeriod = format(newDate, "yyyy-MM");
+        setPeriodeFilterMonth(parsedPeriod === currentPeriod ? newDate : currentMonthDate);
         setPeriodeFilterValue(formatMonth(newDate));
       }
     } else {
       setPeriodeFilterDate(undefined);
       setPeriodeFilterValue("");
     }
-  }, [periodeFilter]);
+  }, [currentMonthDate, currentPeriod, periodeFilter]);
 
   // Sync periodeInput with date picker
   React.useEffect(() => {
@@ -119,11 +135,12 @@ export default function RekapBulananPage() {
       const newDate = parseMonth(periodeInput);
       if (newDate) {
         setPeriodeInputDate(newDate);
-        setPeriodeInputMonth(newDate);
+        const parsedPeriod = format(newDate, "yyyy-MM");
+        setPeriodeInputMonth(parsedPeriod === currentPeriod ? newDate : currentMonthDate);
         setPeriodeInputValue(formatMonth(newDate));
       }
     }
-  }, [periodeInput]);
+  }, [currentMonthDate, currentPeriod, periodeInput]);
 
   const params = React.useMemo(() => {
     const filters: Record<string, string> = {};
@@ -150,40 +167,98 @@ export default function RekapBulananPage() {
   }, [rekapBulanan, searchQuery]);
 
   // Fetch gaji untuk periode yang sedang difilter untuk validasi
+  const isPeriodeFilterValid = isValidPeriod(periodeFilter);
+  const isPeriodeInputValid = isValidPeriod(periodeInput);
   const gajiParams = React.useMemo(() => {
-    if (periodeFilter) {
+    if (isPeriodeFilterValid) {
       return { periode: periodeFilter };
     }
     return undefined;
-  }, [periodeFilter]);
+  }, [isPeriodeFilterValid, periodeFilter]);
 
   const { gaji: gajiList } = useGaji(gajiParams);
 
-  // Check if there are any gaji with status 'disetujui' or 'dibayar' for this periode
-  const hasFinalGaji = React.useMemo(() => {
-    if (!periodeFilter || gajiList.length === 0) {
+  // Check if all gaji are final for this periode
+  const isPeriodeFilterLocked = React.useMemo(() => {
+    if (!isPeriodeFilterValid || gajiList.length === 0) {
       return false;
     }
-    return gajiList.some((g) => g.status === 'disetujui' || g.status === 'dibayar');
-  }, [gajiList, periodeFilter]);
+    return gajiList.every((g) => g.status === "disetujui" || g.status === "dibayar");
+  }, [gajiList, isPeriodeFilterValid]);
+
+  const isPeriodeFilterCurrent = isPeriodeFilterValid && periodeFilter === currentPeriod;
+  const periodeFilterLabel = React.useMemo(() => {
+    if (!isPeriodeFilterValid) {
+      return "";
+    }
+    return getPeriodLabel(periodeFilter);
+  }, [isPeriodeFilterValid, periodeFilter]);
 
   // Fetch gaji untuk periode yang diinput di dialog untuk validasi
   const gajiInputParams = React.useMemo(() => {
-    if (periodeInput && periodeInput.match(/^\d{4}-\d{2}$/)) {
+    if (isPeriodeInputValid) {
       return { periode: periodeInput };
     }
     return undefined;
-  }, [periodeInput]);
+  }, [isPeriodeInputValid, periodeInput]);
 
   const { gaji: gajiInputList } = useGaji(gajiInputParams);
 
-  // Check if there are any gaji with status 'disetujui' or 'dibayar' for periodeInput
-  const hasFinalGajiForInput = React.useMemo(() => {
-    if (!periodeInput || !periodeInput.match(/^\d{4}-\d{2}$/) || gajiInputList.length === 0) {
+  // Check if all gaji are final for periodeInput
+  const isPeriodeInputLocked = React.useMemo(() => {
+    if (!isPeriodeInputValid || gajiInputList.length === 0) {
       return false;
     }
-    return gajiInputList.some((g) => g.status === 'disetujui' || g.status === 'dibayar');
-  }, [gajiInputList, periodeInput]);
+    return gajiInputList.every((g) => g.status === "disetujui" || g.status === "dibayar");
+  }, [gajiInputList, isPeriodeInputValid]);
+
+  const isPeriodeInputCurrent = isPeriodeInputValid && periodeInput === currentPeriod;
+  const isPeriodeInputFuture = isPeriodeInputValid && periodeInput > currentPeriod;
+  const periodeInputLabel = React.useMemo(() => {
+    if (!isPeriodeInputValid) {
+      return "";
+    }
+    return getPeriodLabel(periodeInput);
+  }, [isPeriodeInputValid, periodeInput]);
+  const periodeInputMessage = React.useMemo(() => {
+    if (!isPeriodeInputValid || !periodeInputLabel) {
+      return "";
+    }
+    if (isPeriodeInputFuture) {
+      return `Periode ${periodeInputLabel} belum dimulai.`;
+    }
+    if (isPeriodeInputLocked) {
+      return `Periode ${periodeInputLabel} sudah final (gaji disetujui & dibayar). Rekap terkunci.`;
+    }
+    if (!isPeriodeInputCurrent) {
+      return `Periode ${periodeInputLabel} sudah lewat. Rekap hanya bisa digenerate untuk bulan berjalan.`;
+    }
+    return "";
+  }, [
+    isPeriodeInputCurrent,
+    isPeriodeInputFuture,
+    isPeriodeInputLocked,
+    isPeriodeInputValid,
+    periodeInputLabel,
+  ]);
+  const generateGajiDisabledReason = React.useMemo(() => {
+    if (!isPeriodeFilterValid) {
+      return "";
+    }
+    if (isPeriodeFilterLocked) {
+      return `Periode ${periodeFilterLabel || periodeFilter} sudah final (gaji disetujui & dibayar).`;
+    }
+    if (!isPeriodeFilterCurrent) {
+      return "Generate gaji hanya tersedia untuk bulan berjalan.";
+    }
+    return "";
+  }, [
+    isPeriodeFilterCurrent,
+    isPeriodeFilterLocked,
+    isPeriodeFilterValid,
+    periodeFilter,
+    periodeFilterLabel,
+  ]);
 
   // Auto-detect jika rekap sudah ada untuk periode yang dipilih
   // Reset hasGeneratedRekap ketika periode filter berubah
@@ -201,8 +276,18 @@ export default function RekapBulananPage() {
   }, [periodeFilter, rekapBulanan.length, loading]);
 
   const handleGenerate = async () => {
-    if (!periodeInput.match(/^\d{4}-\d{2}$/)) {
+    if (!isPeriodeInputValid) {
       toast.error("Format periode tidak valid. Gunakan format YYYY-MM");
+      return;
+    }
+    if (!isPeriodeInputCurrent) {
+      toast.error("Rekap hanya dapat di-generate untuk bulan berjalan");
+      return;
+    }
+    if (isPeriodeInputLocked) {
+      toast.error(
+        `Periode ${periodeInputLabel || periodeInput} sudah final (gaji disetujui & dibayar)`
+      );
       return;
     }
 
@@ -221,6 +306,16 @@ export default function RekapBulananPage() {
   };
 
   const handleGenerateAllGaji = async () => {
+    if (!isPeriodeFilterValid || !isPeriodeFilterCurrent) {
+      toast.error("Generate gaji hanya tersedia untuk bulan berjalan");
+      return;
+    }
+    if (isPeriodeFilterLocked) {
+      toast.error(
+        `Periode ${periodeFilterLabel || periodeFilter} sudah final (gaji disetujui & dibayar)`
+      );
+      return;
+    }
     if (filteredRekapBulanan.length === 0) {
       toast.error("Tidak ada rekap bulanan untuk di-generate");
       return;
@@ -496,11 +591,12 @@ export default function RekapBulananPage() {
                   disabled={
                     filteredRekapBulanan.length === 0 ||
                     !hasGeneratedRekap ||
-                    !periodeFilter ||
+                    !isPeriodeFilterValid ||
+                    !isPeriodeFilterCurrent ||
                     isGeneratingGaji === -1 ||
-                    hasFinalGaji
+                    isPeriodeFilterLocked
                   }
-                  title={hasFinalGaji ? "Tidak dapat generate gaji karena sudah ada gaji yang disetujui atau dibayar untuk periode ini" : ""}
+                  title={generateGajiDisabledReason}
                 >
                   <DollarSign className="mr-2 h-4 w-4" />
                   {isGeneratingGaji === -1 ? "Generating..." : "Generate Semua Gaji"}
@@ -528,7 +624,10 @@ export default function RekapBulananPage() {
                     const parsed = parseMonth(inputValue);
                     if (parsed) {
                       setPeriodeFilterDate(parsed);
-                      setPeriodeFilterMonth(parsed);
+                      const parsedPeriod = format(parsed, "yyyy-MM");
+                      setPeriodeFilterMonth(
+                        parsedPeriod === currentPeriod ? parsed : currentMonthDate
+                      );
                       const year = parsed.getFullYear();
                       const month = String(parsed.getMonth() + 1).padStart(2, '0');
                       setPeriodeFilter(`${year}-${month}`);
@@ -563,8 +662,8 @@ export default function RekapBulananPage() {
                       mode="single"
                       selected={periodeFilterDate}
                       captionLayout="dropdown"
-                      fromYear={2020}
-                      toYear={2030}
+                      fromMonth={currentMonthDate}
+                      toMonth={currentMonthDate}
                       month={periodeFilterMonth}
                       onMonthChange={setPeriodeFilterMonth}
                       onSelect={(selectedDate) => {
@@ -676,7 +775,10 @@ export default function RekapBulananPage() {
                         const parsed = parseMonth(inputValue);
                         if (parsed) {
                           setPeriodeInputDate(parsed);
-                          setPeriodeInputMonth(parsed);
+                          const parsedPeriod = format(parsed, "yyyy-MM");
+                          setPeriodeInputMonth(
+                            parsedPeriod === currentPeriod ? parsed : currentMonthDate
+                          );
                           const year = parsed.getFullYear();
                           const month = String(parsed.getMonth() + 1).padStart(2, '0');
                           setPeriodeInput(`${year}-${month}`);
@@ -712,8 +814,8 @@ export default function RekapBulananPage() {
                           mode="single"
                           selected={periodeInputDate}
                           captionLayout="dropdown"
-                          fromYear={2020}
-                          toYear={2030}
+                          fromMonth={currentMonthDate}
+                          toMonth={currentMonthDate}
                           month={periodeInputMonth}
                           onMonthChange={setPeriodeInputMonth}
                           onSelect={(selectedDate) => {
@@ -732,13 +834,10 @@ export default function RekapBulananPage() {
                     </Popover>
                   </div>
                 </div>
-                {hasFinalGajiForInput && (
-                  <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      Tidak dapat generate rekap bulanan untuk periode ini karena sudah ada gaji yang disetujui atau dibayar. Generate ulang akan menyebabkan inkonsistensi data.
-                    </AlertDescription>
-                  </Alert>
+                {periodeInputMessage && (
+                  <p className="text-sm text-destructive">
+                    {periodeInputMessage}
+                  </p>
                 )}
               </div>
               <DialogFooter>
@@ -751,8 +850,13 @@ export default function RekapBulananPage() {
                 </Button>
                 <Button 
                   onClick={handleGenerate} 
-                  disabled={isGenerating || hasFinalGajiForInput}
-                  title={hasFinalGajiForInput ? "Tidak dapat generate karena sudah ada gaji yang disetujui atau dibayar untuk periode ini" : ""}
+                  disabled={
+                    isGenerating ||
+                    !isPeriodeInputValid ||
+                    !isPeriodeInputCurrent ||
+                    isPeriodeInputLocked
+                  }
+                  title={periodeInputMessage}
                 >
                   {isGenerating ? "Generating..." : "Generate"}
                 </Button>
@@ -764,4 +868,3 @@ export default function RekapBulananPage() {
     </SidebarProvider>
   );
 }
-
